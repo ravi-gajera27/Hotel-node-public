@@ -1,0 +1,10 @@
+{
+    "explorer.compactFolders": false,
+    "javascript.preferences.quoteStyle": "single",
+    "prettier.singleQuote": true,
+    "prettier.semi": false,
+    "css.completion.completePropertyWithSemicolon": false,
+    "less.completion.completePropertyWithSemicolon": false,
+    "scss.completion.completePropertyWithSemicolon": false,
+    "typescript.format.semicolons": "insert"
+}

@@ -1,0 +1,9 @@
+module.exports =  {
+ BAD_REQUEST: 'Please provide all the required details',
+ SERVER_ERROR:'Internal server error',
+ UNAUTHORIZED:'Unauthorized',
+ INVALID_EMAIL: 'No user was found with this email',
+ EMAIL_USED: 'email is already in use',
+ MOBILE_USED: 'Mobile No is already in use',
+ INVALID_PASS: 'Please provide valid password'
+}
