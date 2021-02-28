@@ -7,6 +7,7 @@ exports.InitializeDatabase = () => {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
+    
   } catch (e) {
     console.log(e); 
   }

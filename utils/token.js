@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto-js');
 
 const generateToken = async (data) => {
+  console.log('token', data)
   try{
    token = await crypto.AES.encrypt(JSON.stringify(data), process.env.ENC_SECRET).toString();
   return await jwt.sign(token, process.env.TOKEN_SECRET);
