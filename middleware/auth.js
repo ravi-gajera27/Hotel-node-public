@@ -1,6 +1,6 @@
 const ErrorResponse = require('../utils/errorResponse');
 const HASH = require('../utils/token');
-const status = require('../utils/status').default;
+const status = require('../utils/status');
 const admin = require('firebase-admin');
 const firstore = admin.firestore();
 
@@ -21,14 +21,19 @@ exports.protect = async (req, res, next) => {
   try {
     // Verify token
     const decoded = await HASH.verifyToken(token);
-
+   console.log(decoded)
     if (!decoded) {
       return next(new ErrorResponse(status.UNAUTHORIZED, 401));
     } else {
-      let user = await firstore.collection('users').doc(decoded.user_id);
-      if (user.exists()) {
-        req.user = user.doc();
+      let user = await firstore.collection('admin').doc(decoded.user_id).get()
+      if (user.exists) {
+        req.user = user.data();
         req.user.id = user.id;
+        if (decoded.business_id) {
+          req.user.business_id = decoded.business_id;
+        } else if (user.business_id) {
+          req.user.business_id = user.business_id;
+        }
         next();
       } else {
         return next(new ErrorResponse(status.UNAUTHORIZED, 401));
