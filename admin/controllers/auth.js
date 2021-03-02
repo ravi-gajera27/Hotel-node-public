@@ -7,29 +7,29 @@ const ErrorResponse = require('../../utils/errorResponse');
 
 exports.login = async (req, res, next) => {
   let data = req.body;
-  
+
   if (!data.email || !data.password) {
-    return next(new ErrorResponse(status.BAD_REQUEST, 400));
+    return res.status(400).json({ success: false, err: status.BAD_REQUEST });
   }
 
   let usersRef = firstore.collection('admin');
   let user = await usersRef.where('email', '==', data.email).limit(1).get();
 
   if (user.empty) {
-    return next(new ErrorResponse(status.INVALID_EMAIL, 401));
+    return res.status(401).json({ success: false, err: status.INVALID_EMAIL });
   }
 
   let password, id;
 
   user.forEach((doc) => {
     password = doc.data().password;
-    id = doc.id
+    id = doc.id;
   });
 
   let verifyPassword = await HASH.verifyHash(data.password, password);
 
   if (!verifyPassword) {
-    return next(new ErrorResponse(status.INVALID_PASS, 401));
+    return res.status(401).json({ success: false, err: status.INVALID_PASS });
   } else {
     await sendToken({ user_id: id }, res);
   }
@@ -45,20 +45,20 @@ exports.signup = async (req, res, next) => {
     !data.last_name ||
     !data.mobile_no
   ) {
-    return next(new ErrorResponse(status.BAD_REQUEST, 400));
+    return res.status(400).json({ success: false, err: status.BAD_REQUEST });
   }
 
   let usersRef = firstore.collection('admin');
   let user = await usersRef.where('email', '==', data.email).limit(1).get();
 
   if (!user.empty) {
-    return next(new ErrorResponse(status.EMAIL_USED, 400));
+    return res.status(403).json({ success: false, err: status.EMAIL_USED });
   }
 
   user = await usersRef.where('mobile_no', '==', data.mobile_no).limit(1).get();
 
   if (!user.empty) {
-    return next(new ErrorResponse(status.MOBILE_USED, 400));
+    return res.status(403).json({ success: false, err: status.MOBILE_USED });
   }
 
   data.password = await HASH.generateHash(data.password, 10);
@@ -86,18 +86,36 @@ exports.restaurantRegister = async (req, res, next) => {
       sendToken(data, res);
     })
     .catch((err) => {
-      return next(new ErrorResponse(status.SERVER_ERROR, 500));
+      return res.status(500).json({ success: false, err: status.SERVER_ERROR });
     });
 };
 
 exports.getUser = async (req, res, next) => {
-  firstore.collection('admin').doc(req.user.id).get().then((user)=>{
-    if(user.exists){
-      res.status(200).json({success: true, data: user.data()})
-    }
-  }).catch(err => {
-    return next(new ErrorResponse(status.SERVER_ERROR, 500))
-  })
+  firstore
+    .collection('admin')
+    .doc(req.user.id)
+    .get()
+    .then((user) => {
+      if (user.exists) {
+        res.status(200).json({ success: true, data: user.data() });
+      }
+    })
+    .catch((err) => {
+      return res.status(500).json({ success: false, err: status.SERVER_ERROR });
+    });
+};
+
+exports.verifyOtp = async (req, res, next) => {
+  await firstore
+    .collection('admin')
+    .doc(req.user.id)
+    .set({ verify_otp: true }, { merge: true })
+    .then((user) => {
+      res.status(200).json({ success: true });
+    })
+    .catch((err) => {
+      return res.status(500).json({ success: false, err: status.SERVER_ERROR });
+    });
 };
 
 sendToken = async (data, res) => {

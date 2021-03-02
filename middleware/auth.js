@@ -21,7 +21,6 @@ exports.protect = async (req, res, next) => {
   try {
     // Verify token
     const decoded = await HASH.verifyToken(token);
-   console.log(decoded)
     if (!decoded) {
       return next(new ErrorResponse(status.UNAUTHORIZED, 401));
     } else {
