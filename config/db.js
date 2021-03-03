@@ -1,14 +1,22 @@
-exports.InitializeDatabase = () => {
-  var admin = require("firebase-admin");
+let firestore;
+exports.InitializeDatabase = async () => {
+  var admin = require('firebase-admin');
 
-  var serviceAccount = require("../hotelman-58fc6-firebase-adminsdk-p8gjz-519d6d8be2.json");
+  var serviceAccount = require('../hotelman-58fc6-firebase-adminsdk-p8gjz-519d6d8be.json');
+  return new Promise((resolve, reject) => {
+    try {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      firestore = admin.firestore();
+      resolve(true);
+    } catch (e) {
+      resolve(true);
+      console.log(e);
+    }
+  });
+};
 
-  try {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    
-  } catch (e) {
-    console.log(e); 
-  }
+exports.firestore = () => {
+  return firestore;
 };
