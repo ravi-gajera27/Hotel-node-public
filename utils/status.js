@@ -5,5 +5,6 @@ module.exports =  {
  INVALID_EMAIL: 'Please provide valid email',
  EMAIL_USED: 'email is already in use',
  MOBILE_USED: 'Mobile No is already in use',
- INVALID_PASS: 'Please provide valid password'
+ INVALID_PASS: 'Please provide valid password',
+ SESSION_EXIST: 'Someone alreay using this table'
 }
