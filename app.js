@@ -18,6 +18,7 @@ DbInitialize()
 // listing routes
 const authAdmin = require('./admin/routes/auth');
 const authUsers = require('./customer/routes/auth')
+const order = require('./customer/routes/order')
 
 const corsConfig = {
   credentials: true,
@@ -33,6 +34,7 @@ app.use(cookieParser())
 //process routes
 app.use('/api/admin/auth', authAdmin);
 app.use('/api/user/auth', authUsers);
+app.use('/api/user/order', order);
 
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {

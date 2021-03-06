@@ -59,7 +59,7 @@ exports.signup = async (req, res, next) => {
   }
 
   data.password = await HASH.generateHash(data.password, 10);
-  data.created_at = Date.now();
+  data.created_at = new Date();
   delete data.repassword;
   user = await firstore.collection('users').add({ ...data });
   await sendToken({ user_id: user.id }, res);

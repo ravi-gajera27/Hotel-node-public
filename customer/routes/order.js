@@ -1,9 +1,9 @@
 const router = require('express').Router()
-const auth = require('../controllers/auth')
+const order = require('../controllers/order')
 const { protect } = require('../../middleware/auth')
 
-router.post('/add', auth.login)
-router.get('', protect, auth.getUser)
-router.put('/verify-otp', protect, auth.verifyOtp)
+router.post('/place-order', protect, order.addOrder)
+router.get('/get-order', protect, order.getOrder)
+router.post('/checkout', protect, order.checkout)
 
 module.exports = router
