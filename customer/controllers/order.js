@@ -1,4 +1,4 @@
-const firstore = require('firebase-admin').firestore();
+const firstore = require('../../config/db').firestore();
 const { extractCookie } = require('../../utils/cookie-parser');
 const status = require('../../utils/status');
 
@@ -27,6 +27,7 @@ exports.addOrder = async (req, res, next) => {
   }
 
   let send_data;
+  req.body.time = new Date();
   if (orderData.length == 0) {
     send_data = {
       user: req.user.id,
@@ -88,12 +89,12 @@ exports.checkout = async (req, res, next) => {
     .collection(`restaurants/${cookie.rest_id}/order/`)
     .doc(`table-${cookie.table}`);
 
-  let order = await orderRef.get()
+  let order = await orderRef.get();
   await orderRef.delete();
-  
-  req.body.user = order.data().user
-  req.body.name = order.data().name
-  req.body.table = `table-${cookie.table}`
+
+  req.body.user = order.data().user;
+  req.body.name = order.data().name;
+  req.body.table = `table-${cookie.table}`;
 
   await firstore
     .collection(`orders/${cookie.rest_id}/invoices`)

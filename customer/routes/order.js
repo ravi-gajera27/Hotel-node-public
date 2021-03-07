@@ -1,6 +1,6 @@
 const router = require('express').Router()
 const order = require('../controllers/order')
-const { protect } = require('../../middleware/auth')
+const { protect } = require('../../middleware/customerAuth')
 
 router.post('/place-order', protect, order.addOrder)
 router.get('/get-order', protect, order.getOrder)

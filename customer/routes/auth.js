@@ -1,6 +1,6 @@
 const router = require('express').Router()
 const auth = require('../controllers/auth')
-const { protect } = require('../../middleware/auth')
+const { protect } = require('../../middleware/customerAuth')
 
 router.post('/login', auth.login)
 router.post('/signup', auth.signup)
