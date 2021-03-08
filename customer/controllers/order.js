@@ -28,6 +28,8 @@ exports.addOrder = async (req, res, next) => {
 
   let send_data;
   req.body.time = new Date();
+  req.body.table = Number(cookie.table);
+
   if (orderData.length == 0) {
     send_data = {
       user: req.user.id,
