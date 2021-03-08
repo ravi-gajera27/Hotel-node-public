@@ -1,14 +1,11 @@
-let firestore;
+const admin = require('firebase-admin');
 exports.InitializeDatabase = async () => {
-  var admin = require('firebase-admin');
-
   var serviceAccount = require('../hotelman-58fc6-firebase-adminsdk-p8gjz-519d6d8be.json');
   return new Promise((resolve, reject) => {
     try {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
-      firestore = admin.firestore();
       resolve(true);
     } catch (e) {
       resolve(true);
@@ -18,5 +15,5 @@ exports.InitializeDatabase = async () => {
 };
 
 exports.firestore = () => {
-  return firestore;
+  return admin.firestore()
 };

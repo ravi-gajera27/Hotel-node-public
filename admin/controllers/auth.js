@@ -1,9 +1,8 @@
-const admin = require('firebase-admin');
-const firstore = admin.firestore();
+const firstore = require('../../config/db').firestore()
 const status = require('../../utils/status');
 const HASH = require('../../utils/encryption');
 const TOKEN = require('../../utils/token');
-const ErrorResponse = require('../../utils/errorResponse');
+
 
 exports.login = async (req, res, next) => {
   let data = req.body;
@@ -62,7 +61,7 @@ exports.signup = async (req, res, next) => {
   }
 
   data.password = await HASH.generateHash(data.password, 10);
-  data.created_at = Date.now();
+  data.created_at = new Date();
   delete data.repassword;
   user = await firstore.collection('admin').add({ ...data });
   await sendToken({ user_id: user.id }, res);
