@@ -28,6 +28,8 @@ exports.addOrder = async (req, res, next) => {
 
   let send_data;
   req.body.time = new Date();
+  req.body.table = Number(cookie.table);
+
   if (orderData.length == 0) {
     send_data = {
       user: req.user.id,
@@ -53,10 +55,8 @@ exports.addOrder = async (req, res, next) => {
 
 exports.getOrder = async (req, res, next) => {
   console.log(req.body);
-
   let cookie = await extractCookie(req, res);
-  console.log("cookie:"+ cookie)
-  console.log("cookie table:"+ cookie.table)
+  console.log(cookie)
   if (!cookie) {
     res.status(401).json({ success: false, err: status.UNAUTHORIZED });
   }
