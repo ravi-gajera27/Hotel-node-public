@@ -56,7 +56,7 @@ exports.addOrder = async (req, res, next) => {
 exports.getOrder = async (req, res, next) => {
   console.log(req.body);
   let cookie = await extractCookie(req, res);
-  console.log(cookie)
+
   if (!cookie) {
     res.status(401).json({ success: false, err: status.UNAUTHORIZED });
   }
