@@ -6,5 +6,6 @@ module.exports = {
   EMAIL_USED: 'email is already in use',
   MOBILE_USED: 'Mobile No is already in use',
   INVALID_PASS: 'Please provide valid password',
-  SESSION_EXIST: 'Someone alreay using this table',
+  SESSION_EXIST: 'Someone is already using this table',
+  FORBIDDEN: 'You have already occupied another table'
 };

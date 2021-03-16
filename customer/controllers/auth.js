@@ -2,6 +2,7 @@ const firstore = require('../../config/db').firestore()
 const status = require('../../utils/status');
 const HASH = require('../../utils/encryption');
 const TOKEN = require('../../utils/token');
+const { extractCookie } = require('../../utils/cookie-parser');
 
 exports.login = async (req, res, next) => {
   let data = req.body;
@@ -35,7 +36,7 @@ exports.login = async (req, res, next) => {
 
 exports.signup = async (req, res, next) => {
   let data = req.body;
- console.log(data)
+  console.log(data)
   if (
     !data.email ||
     !data.password ||
@@ -91,6 +92,62 @@ exports.verifyOtp = async (req, res, next) => {
     .catch((err) => {
       return res.status(500).json({ success: false, err: status.SERVER_ERROR });
     });
+};
+
+exports.verifySession = async (req, res, next) => {
+  console.log(req.body);
+  let cookie = await extractCookie(req, res);
+
+  if (!cookie) {
+    return res.status(403).json({ success: false, err: status.UNAUTHORIZED });
+  }
+
+  let customersRef = await firstore
+    .collection(`restaurants`).doc(cookie.rest_id)
+
+
+  let data = await customersRef.get()
+  data = data.data()
+
+  if (data.customers && data.customers.length != 0) {
+
+    let customers = data.customers
+
+    if (Number(cookie.table) > Number(data.total_tables)) {
+      return res.status(403).json({ success: false, err: status.UNAUTHORIZED });
+    }
+
+    for (ele of customers) {
+      if (ele.user_id == req.user.id) {
+        if (Number(ele.table) == Number(cookie.table)) {
+          return res.status(200).json({ success: true })
+        }
+        else {
+          return res.status(403).json({ success: false, err: status.FORBIDDEN })
+        }
+      }
+      else if (Number(ele.table) == Number(cookie.table)) {
+        return res.status(403).json({ success: false, err: status.SESSION_EXIST })
+      }
+    }
+
+    customers.push({ table: Number(cookie.table), user_id: req.user.id })
+
+    await customersRef.set({ customers: [...customers] }, { merge: true });
+
+   return res.status(200).json({ success: true });
+
+  } else {
+    let obj = {
+      table: Number(cookie.table),
+      user_id: req.user.id
+    }
+
+    await customersRef.set({ customers: [{ ...obj }] }, { merge: true })
+    return res.status(200).json({ success: true });
+  }
+
+  
 };
 
 sendToken = async (data, res) => {
