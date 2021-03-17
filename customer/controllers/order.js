@@ -33,7 +33,6 @@ exports.addOrder = async (req, res, next) => {
   if (orderData.length == 0) {
     send_data = {
       user: req.user.id,
-      name: req.user.name,
       order: [{ ...req.body }],
     };
   } else {
@@ -91,8 +90,16 @@ exports.checkout = async (req, res, next) => {
     .collection(`restaurants/${cookie.rest_id}/order/`)
     .doc(`table-${cookie.table}`);
 
+    await firstore.collection('restaurants').doc(cookie.rest_id).update({
+      customers: customers.filter(cust => cust.user_id != req.user.id)
+    }).catch(err => {
+      console.log(err)
+      return
+    })
+  
   let order = await orderRef.get();
   await orderRef.delete();
+
 
   req.body.user = order.data().user;
   req.body.name = order.data().name;
