@@ -1,7 +1,7 @@
 const firstore = require('../../config/db').firestore();
 const { extractCookie } = require('../../utils/cookie-parser');
 const status = require('../../utils/status');
-
+const admin = require('firebase-admin')
 exports.addOrder = async (req, res, next) => {
   console.log(req.body);
   let cookie = await extractCookie(req, res);
@@ -91,7 +91,7 @@ exports.checkout = async (req, res, next) => {
     .doc(`table-${cookie.table}`);
 
     await firstore.collection('restaurants').doc(cookie.rest_id).update({
-      customers: customers.filter(cust => cust.user_id != req.user.id)
+     customers: admin.firestore.FieldValue.arrayRemove({ user_id: req.user.id, table: Number(cookie.table), customer_name: req.user.name })
     }).catch(err => {
       console.log(err)
       return
