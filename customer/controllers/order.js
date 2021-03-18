@@ -99,11 +99,10 @@ exports.checkout = async (req, res, next) => {
     return
   })
 
-  let order = await orderRef.get();
-  await orderRef.delete();
+  let order = await orderRef.delete();
 
 
-  req.body.user = order.data().user;
+  req.body.user = req.user.id
   req.body.name = req.user.name;
   req.body.table = `table-${cookie.table}`;
 
