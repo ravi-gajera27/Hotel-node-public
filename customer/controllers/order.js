@@ -1,4 +1,5 @@
-const firstore = require('../../config/db').firestore();
+const firestore = require('../../config/db').firestore()
+const admin = require('firebase-admin')
 const { extractCookie } = require('../../utils/cookie-parser');
 const status = require('../../utils/status');
 
@@ -10,7 +11,7 @@ exports.addOrder = async (req, res, next) => {
     res.status(401).json({ success: false, err: status.UNAUTHORIZED });
   }
 
-  let orderRef = await firstore
+  let orderRef = await firestore
     .collection(`restaurants/${cookie.rest_id}/order/`)
     .doc(`table-${cookie.table}`);
 
@@ -33,7 +34,6 @@ exports.addOrder = async (req, res, next) => {
   if (orderData.length == 0) {
     send_data = {
       user: req.user.id,
-      name: req.user.name,
       order: [{ ...req.body }],
     };
   } else {
@@ -61,7 +61,7 @@ exports.getOrder = async (req, res, next) => {
     res.status(401).json({ success: false, err: status.UNAUTHORIZED });
   }
 
-  let orderRef = await firstore
+  let orderRef = await firestore
     .collection(`restaurants/${cookie.rest_id}/order/`)
     .doc(`table-${cookie.table}`);
 
@@ -87,18 +87,27 @@ exports.checkout = async (req, res, next) => {
     res.status(401).json({ success: false, err: status.UNAUTHORIZED });
   }
 
-  let orderRef = await firstore
+  let orderRef = await firestore
     .collection(`restaurants/${cookie.rest_id}/order/`)
     .doc(`table-${cookie.table}`);
+
+
+  await firestore.collection('restaurants').doc(cookie.rest_id).update({
+    customers: admin.firestore.FieldValue.arrayRemove({ user_id: req.user.id, table: Number(cookie.table), customer_name: req.user.name })
+  }).catch(err => {
+    console.log(err)
+    return
+  })
 
   let order = await orderRef.get();
   await orderRef.delete();
 
+
   req.body.user = order.data().user;
-  req.body.name = order.data().name;
+  req.body.name = req.user.name;
   req.body.table = `table-${cookie.table}`;
 
-  await firstore
+  await firestore
     .collection(`orders/${cookie.rest_id}/invoices`)
     .add(req.body)
     .then((order) => {

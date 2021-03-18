@@ -131,7 +131,7 @@ exports.verifySession = async (req, res, next) => {
       }
     }
 
-    customers.push({ table: Number(cookie.table), user_id: req.user.id })
+    customers.push({ table: Number(cookie.table), user_id: req.user.id, customer_name: req.user.name })
 
     await customersRef.set({ customers: [...customers] }, { merge: true });
 
@@ -140,7 +140,8 @@ exports.verifySession = async (req, res, next) => {
   } else {
     let obj = {
       table: Number(cookie.table),
-      user_id: req.user.id
+      user_id: req.user.id,
+      customer_name: req.user.name
     }
 
     await customersRef.set({ customers: [{ ...obj }] }, { merge: true })
