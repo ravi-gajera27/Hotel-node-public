@@ -15,6 +15,19 @@ exports.addOrder = async (req, res, next) => {
     .collection(`restaurants/${cookie.rest_id}/order/`)
     .doc(`table-${cookie.table}`);
 
+  let data = await firestore.collection('restaurants').doc(cookie.rest_id).get()
+
+  let customers = data.data().customers
+  let valid = false
+  for(let cust of customers){
+    if(cust.table == cookie.table && cust.user_id == req.user.id){
+      valid = true
+    }
+  }
+  if(!valid){
+    return res.status(401).json({ success: false, err: status.UNAUTHORIZED });
+  }
+
   let order = await orderRef.get();
 
   let orderData = [];
@@ -28,7 +41,7 @@ exports.addOrder = async (req, res, next) => {
   }
 
   let send_data;
-  req.body.time = new Date();
+  req.body.time = Date.now()
   req.body.table = Number(cookie.table);
 
   if (orderData.length == 0) {

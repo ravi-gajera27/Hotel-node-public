@@ -5,10 +5,12 @@ const TOKEN = require('../../utils/token');
 
 exports.cancelOrder = async (req, res, next) => {
   let table_no = req.params.table_no;
-  let order_no = req.params.oreder_no;
-
+  let order_no = req.params.order_no;
+  console.log(table_no, order_no)
   if (!table_no || !order_no) {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    if (order_no != 0) {
+      return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    }
   }
 
   let orderRef = firstore
@@ -17,9 +19,9 @@ exports.cancelOrder = async (req, res, next) => {
 
   let orderData = await orderRef.get();
   if (orderData.exists) {
-    let order = JSON.parse(JSON.stringify(orderData.order));
+    let order = JSON.parse(JSON.stringify(orderData.data().order));
     if (Number(order_no) <= order.length) {
-      order.splice(Number(table_no), 1);
+      order.splice(Number(order_no), 1);
 
       orderRef
         .set({ order: order }, { merge: true })
@@ -37,8 +39,9 @@ exports.cancelOrder = async (req, res, next) => {
     } else {
       return res.status(400).json({ status: false, err: status.BAD_REQUEST });
     }
+  } else {
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
   }
-  return res.status(400).json({ status: false, err: status.BAD_REQUEST });
 };
 
 exports.terminateSession = async (req, res, next) => {
@@ -51,6 +54,19 @@ exports.terminateSession = async (req, res, next) => {
   let orderRef = firstore
     .collection(`restaurants/${req.user.rest_id}/order`)
     .doc(`table-${table_no}`);
+
+  let customersRef = await firstore
+    .collection(`restaurants`).doc(req.user.rest_id)
+
+
+  let data = await customersRef.get()
+  customers = data.data().customers;
+
+  customers = customers.filter(ele => ele.table != table_no)
+
+  await customersRef.set({
+    customers: customers
+  }, { merge: true })
 
   await orderRef
     .delete()
@@ -66,5 +82,5 @@ exports.terminateSession = async (req, res, next) => {
 };
 
 exports.checkoutCustomer = async (req, res, next) => {
-    
+
 };
