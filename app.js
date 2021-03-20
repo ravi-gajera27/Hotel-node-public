@@ -20,6 +20,7 @@ const authAdmin = require('./admin/routes/auth');
 const authUsers = require('./customer/routes/auth')
 const order = require('./customer/routes/order')
 const orderAdmin = require('./admin/routes/order')
+const menuAdmin = require('./admin/routes/menu')
 
 const corsConfig = {
   credentials: true,
@@ -35,6 +36,7 @@ app.use(cookieParser())
 //process routes of admin
 app.use('/api/admin/auth', authAdmin);
 app.use('/api/admin/order', orderAdmin);
+app.use('/api/admin/menu', menuAdmin);
 
 //process routes of customer
 app.use('/api/user/auth', authUsers);
