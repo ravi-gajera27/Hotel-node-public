@@ -9,8 +9,8 @@ exports.getCategory = async (req, res, next) => {
         .then(cat => {
             let data = {}
             cat.docs.map(e => {
-               data.cat =  e.data().cat
-               data.id = e.id
+                data.cat = e.data().cat
+                data.id = e.id
             })
             res.status(200).json({ success: true, data: data })
         })
@@ -23,7 +23,7 @@ exports.getCategory = async (req, res, next) => {
 exports.setCategory = async (req, res, next) => {
 
     await firstore.collection('restaurants').doc(req.user.rest_id).collection('categories')
-        .doc(req.params.id).set({cat: [...req.body]}, { merge: true })
+        .doc(req.params.id).set({ cat: [...req.body] }, { merge: true })
         .then(cat => {
             res.status(200).json({ success: true, data: cat })
         })
@@ -37,7 +37,13 @@ exports.setCategory = async (req, res, next) => {
 exports.getMenu = async (req, res, next) => {
     await firstore.collection('restaurants').doc(req.user.rest_id).collection('menu').get()
         .then(menu => {
-            res.status(200).json({ success: true, data: menu })
+            let data = []
+            menu.docs.map(ele => {
+                let temp = ele.data()
+                temp.id = ele.id
+                data.push(temp)
+            })
+            res.status(200).json({ success: true, data: data })
         })
         .catch(err => {
             res.status(500).json({ success: false, err: status.SERVER_ERROR })
