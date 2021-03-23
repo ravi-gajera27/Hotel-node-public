@@ -15,14 +15,14 @@ exports.protect = async (req, res, next) => {
 
   // Make sure token exists
   if (!token) {
-    return next(new ErrorResponse(status.UNAUTHORIZED, 401));
+    res.status(401).json({ success: false, err: status.UNAUTHORIZED });
   }
 
   try {
     // Verify token
     const decoded = await HASH.verifyToken(token);
     if (!decoded) {
-      return next(new ErrorResponse(status.UNAUTHORIZED, 401));
+      res.status(401).json({ success: false, err: status.UNAUTHORIZED });
     } else {
       let user = await firstore.collection('users').doc(decoded.user_id).get()
       if (user.exists) {
@@ -30,10 +30,10 @@ exports.protect = async (req, res, next) => {
         req.user.id = user.id;
         next();
       } else {
-        return next(new ErrorResponse(status.UNAUTHORIZED, 401));
+        res.status(401).json({ success: false, err: status.UNAUTHORIZED });
       }
     }
   } catch (err) {
-    return next(new ErrorResponse(status.UNAUTHORIZED, 401));
+    res.status(401).json({ success: false, err: status.UNAUTHORIZED });
   }
 };
