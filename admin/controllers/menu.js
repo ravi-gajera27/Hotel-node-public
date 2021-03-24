@@ -33,7 +33,6 @@ exports.setCategory = async (req, res, next) => {
 
 }
 
-
 exports.getMenu = async (req, res, next) => {
     await firstore.collection('restaurants').doc(req.user.rest_id).collection('menu').get()
         .then(menu => {
