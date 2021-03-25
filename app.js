@@ -3,8 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')
-const db = require('./config/db');
+const expressFileUpload = require('express-fileupload');
 
+const db = require('./config/db');
+const drive = require('./config/googleDrive');
 //initialize server
 let app = express();
 
@@ -12,8 +14,14 @@ let app = express();
 DbInitialize = async () => {
   await db.InitializeDatabase()
 }
-
 DbInitialize()
+
+//initialize drive
+DriveInitialize = async () => {
+  await drive.InitializeGoogleDrive()
+}
+
+DriveInitialize()
 
 // listing routes
 const authAdmin = require('./admin/routes/auth');
@@ -32,6 +40,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors(corsConfig));
 app.use(cookieParser())
+app.use(expressFileUpload())
+app.use(express.static(__dirname + '/public'))
 
 //process routes of admin
 app.use('/api/admin/auth', authAdmin);
