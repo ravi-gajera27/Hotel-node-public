@@ -2,8 +2,27 @@ const firstore = require('../../config/db').firestore();
 const status = require('../../utils/status');
 const HASH = require('../../utils/encryption');
 const TOKEN = require('../../utils/token');
-const drive = require('../../config/googleDrive').authClient()
+const { google } = require('googleapis');
+const oauth = require('../../config/googleDrive')
 const fs = require('fs')
+const path = require('path')
+
+var credentials = require('../../firestep-google-drive-api.json');
+let scopes = ['https://www.googleapis.com/auth/drive'];
+
+let oAuthClient = new google.auth.JWT(
+    credentials.client_email,
+    null,
+    credentials.private_key,
+    scopes
+)
+
+oAuthClient.authorize((err, token) => {
+    if (err) { console.log('err', err) }
+    else {
+
+    }
+})
 
 exports.getCategory = async (req, res, next) => {
 
@@ -65,55 +84,80 @@ exports.addMenu = async (req, res, next) => {
 }
 
 exports.updateMenu = async (req, res, next) => {
-     let photo = ''; let menu_id = ''
+    let photo = ''; let menu_id = ''
+    let data = JSON.parse(req.body.data)
     if (req.files && req.files.menu_pic != 'undefined') {
         photo = req.files.menu_pic
-    
-        if (!photo.mimetype.startsWith('image')) {
-          return  res.status(400).json({ success: false, err: 'Please upload an valid image file'})
-        }
-    
-        if (photo.size > process.env.MAX_FILE_UPLOAD) {
-          return res.status(400).json({ success: false, err: 'Please upload an image less than 1MB'})
-        }
-    
-        photo.name = `menu_${Date.now()}${path.parse(photo.name).ext}`
-       let path = `${process.env.FILE_UPLOAD_PATH}/${photo.name}`
-        photo.mv(path, async (err) => {
-          if (err) {
-            return  res.status(500).json({ success: false, err: 'Problem With image upload'})
-          }
-          else{
-            const fileMetadata = {
-                'name': photo.name
-              };
-              const media = {
-                mimeType: photo.mimetype,
-                body: fs.createReadStream(path)
-              };
-              drive.files.create({
-                resource: fileMetadata,
-                media: media,
-                fields: 'id'
-              }, (err, file) => {
-                if (err) {
-                  // Handle error
-                  console.error(err);
-                } else {
-                  console.log('File Id: ', file.id);
-                  menu_id = file.id
-                }
-              });
-          //  fs.unlinkSync(path)
-          }
-        })
-      }
 
-      if(menu_id){
-          req.body.img = menu_id
-      }
+        if (!photo.mimetype.startsWith('image')) {
+            return res.status(400).json({ success: false, err: 'Please upload an valid image file' })
+        }
+
+        if (photo.size > process.env.MAX_FILE_UPLOAD) {
+            return res.status(400).json({ success: false, err: 'Please upload an image less than 1MB' })
+        }
+
+        photo.name = `menu_${Date.now()}${path.parse(photo.name).ext}`
+        let path_name = `${process.env.FILE_UPLOAD_PATH}/${photo.name}`
+        await photo.mv(path_name, async (err) => {
+            if (err) {
+                return res.status(500).json({ success: false, err: 'Problem With image upload' })
+            }
+            else {
+                const fileMetadata = {
+                    'name': photo.name,
+                    parents: ['1Z-X9GegJCOBsFPFmJFdjj9n6Ob6i0KXC']
+                };
+                const media = {
+                    mimeType: photo.mimetype,
+                    body: fs.createReadStream(path_name)
+                };
+
+                let drive = google.drive({
+                    version: 'v3',
+                    auth: oAuthClient,
+                })
+             /*    drive.files.list({}, (err, res) => {
+                    if (err) {console.log(err)};
+                    const files = res.data.files;
+                    if (files.length) {
+                        files.map((file) => {
+                            console.log(file);
+                        });
+                    } else {
+                        console.log('No files found');
+                    }
+                }); */
+                  await drive.files.create({
+                      resource: fileMetadata,
+                      media: media,
+                     fields: 'id',
+                     
+                  }, (err, file) => {
+                      if (err) {
+                          // Handle error
+                          console.error(err);
+                      } else {
+                          console.log('File Id: ', file);
+                          //data.id = file.id
+                          updateMenuFun(req, res, data)
+                      }
+                  });
+
+                //  fs.unlinkSync(path_name)
+            }
+        })
+    }
+    else {
+        updateMenuFun(req, res, data)
+    }
+
+
+}
+
+updateMenuFun = async (req, res, data) => {
     await firstore.collection('restaurants').doc(req.user.rest_id).collection('menu')
-        .doc(req.params.id).set(req.body, { merge: true })
+        .doc(req.params.id).set(data, { merge: true })
         .then(menu => {
             res.status(200).json({ success: true, data: menu })
         })

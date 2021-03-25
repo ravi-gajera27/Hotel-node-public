@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "firestep-9161f",
+  "private_key_id": "755041f99df60aefa4fea7dcf53611e9fba05b01",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCycGd3BvjTIBir\nW33WWuaBk/m3AMmJuqIgKcaB2TLt+mYVuvKEQr1inMLxw/Jt+VJbRa0qVwj+RXed\nclc0scKP7M5E7V3XE4IHKwsasdDdAVDHN9UoHlC7Wqyj5TMc/8hVxO9SN9MEqWyk\nWd5Xjr5zYW7cyfvAPiRGd7gADp9KXtHvixL0Bp8pcyJlkRDk/IIN5+xrJnmiFP7J\nL6Hhj7mrfcYwxKUW/mTU2Ew3z+WkwS2WXJrVx0ZvQFRI2xs7L6WxBpY6bBi1x4/p\nxkrz4s3QjyUL371qWaWZGEQDGaR/Flu8P+rpJW4gBtgdSpZkNtABGhIJrFPFCMQ0\nf31tnUcDAgMBAAECggEAAfFzemuxYzBzzev4BvzYUDmr7zTZEvMXfwCDLN1HItkq\nKjsohMRCb4sxieEXj1ySa5/cIt43B1eqm0H1E52DJndnOSCI1xrXpsS7bekTlQ6Z\nyCq/g4azgJgugUg8kwe6RyUPrVOeeUPO8rI0/D7weNzneoiPE8RSKN2bWPvluSZO\nIPedf8bn0LliQ6ZOjUqc1UaOljOo7qT5LNKJfoav64qcdoY5hCoZ9vE+XMifrRme\nS5Wh8VmgK/9FHi1ZEHRGA/eUEL5ktvkhVXrUd31QqnjLMPBXtFXG1GAQnzHckIEO\nx8+ZCEwGIU/ckGZzC0HWPw7+kvw/zGFdkd+aKGrGYQKBgQDjn7YXlBthP47lBYwv\n1teDaEssfzcSGpo/jUg2ly9/7zrVfW7wLUZNbC60lWdlQSHAdn7y/1Tbx/l7QmD4\nBgXydZ0AvWjzO6hdT3duUl0w+aPYi2qcSHWsn9eiYLBvF6jQS07xmPvxWmr61zHi\nDRan429WEK/B6O+aJkIeo5Ys8wKBgQDIrwfnacbCcsB0rMAhgmWeZr2a2MDo3se/\ngIJI9JynvnLXNGJzn3tqFDNjZdAqTCPZp/5FtAXe76sMUrvgtCUdT6U4HEZq9D+o\nWG7GUV/CkcAZTa3PKBpSx2kK7X47neGMkHvrUg7vC+BUGtJx1GLGyqYZtBEKxcJQ\noK6QrsfBsQKBgQCexVtNLQjAF4ZDp0/2WoQu68NrwTyXiyjGZXTWZzRBp4vBOGH2\nc44TGP+nBIN/dCPnzH+WXZVCTEVvvYhH2GOzkGg4COY4qwcwNurWb+sC605nEDAH\n3N7/zuqpH4pRow4kZDMngA9UdT4jw5DO3VRNPO3++VqvBhyCyGbcWjy5EwKBgQCW\nJvfH+sm/NXKwGY0LxW/Y69BTqnf0BLP5oeJZScRoccOlJ0m+bwY9IW4tocD11NBC\nC0LhzkdSPYqChuiRwNfALZZV/DnnzmZOxBPmCH6YqsrLY+Z3B+9iHleG2JlJa+CV\ndolxUY1g6EbpRsRMbPeW+4r50lOp9rtj7kWOdWd6kQKBgGOEw8za9lWeGi9xEkvB\npU37oplVKB0eQloP/oQ4Uh5mQSH7cTXX/wfSzedbKzJr2TkovvdzV+tpZ012+Zcz\nc8IkYe0utqPvUla04ta4eJP0mxjAwkh9MZWHHqx9QK1f61djuEMOh85Q1fZebzQ6\nS9+2I4UWV0WYaOaYJSqngEus\n-----END PRIVATE KEY-----\n",
+  "client_email": "firestep-google-drive-api@firestep-9161f.iam.gserviceaccount.com",
+  "client_id": "105143989213659068759",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firestep-google-drive-api%40firestep-9161f.iam.gserviceaccount.com"
+}
