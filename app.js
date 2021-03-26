@@ -6,7 +6,6 @@ const cookieParser = require('cookie-parser')
 const expressFileUpload = require('express-fileupload');
 
 const db = require('./config/db');
-const drive = require('./config/googleDrive');
 //initialize server
 let app = express();
 
@@ -16,12 +15,7 @@ DbInitialize = async () => {
 }
 DbInitialize()
 
-//initialize drive
-DriveInitialize = async () => {
-  await drive.InitializeGoogleDrive()
-}
 
-DriveInitialize()
 
 // listing routes
 const authAdmin = require('./admin/routes/auth');

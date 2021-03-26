@@ -28,7 +28,7 @@ exports.protect = async (req, res, next) => {
       if (user.exists) {
         req.user = user.data();
         req.user.id = user.id;
-        req.user.rest_id = 'id6ptcomnJSJXwHqiFK7'
+        req.user.rest_id = 'AlF2j3zoh5KKUyIowNcf';
         if (decoded.rest_id) {
           req.user.rest_id = decoded.rest_id;
         } else if (user.rest_id) {

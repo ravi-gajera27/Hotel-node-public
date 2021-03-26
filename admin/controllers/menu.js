@@ -7,7 +7,7 @@ const oauth = require('../../config/googleDrive')
 const fs = require('fs')
 const path = require('path')
 
-var credentials = require('../../firestep-google-drive-api.json');
+var credentials = require('../../peraket-rms-google-drive.json');
 let scopes = ['https://www.googleapis.com/auth/drive'];
 
 let oAuthClient = new google.auth.JWT(
@@ -138,8 +138,8 @@ exports.updateMenu = async (req, res, next) => {
                           // Handle error
                           console.error(err);
                       } else {
-                          console.log('File Id: ', file);
-                          //data.id = file.id
+                          
+                          data.id = file.params.id
                           updateMenuFun(req, res, data)
                       }
                   });
