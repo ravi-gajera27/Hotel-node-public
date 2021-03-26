@@ -1,6 +1,6 @@
 const admin = require('firebase-admin');
 exports.InitializeDatabase = async () => {
-  var serviceAccount = require('../hotelman-58fc6-firebase-adminsdk-p8gjz-519d6d8be.json');
+  var serviceAccount = require('../peraket-rms-firebase-adminsdk.json');
   return new Promise((resolve, reject) => {
     try {
       admin.initializeApp({
