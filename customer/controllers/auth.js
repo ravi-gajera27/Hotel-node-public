@@ -107,7 +107,11 @@ exports.verifySession = async (req, res, next) => {
 
 
   let data = await customersRef.get()
+ if(!data.exists){
+  return res.status(403).json({ success: false, err: status.UNAUTHORIZED });
+ }
   data = data.data()
+
 
   if (data.customers && data.customers.length != 0) {
 
