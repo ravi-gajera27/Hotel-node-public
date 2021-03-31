@@ -8,5 +8,5 @@ router.get('', protect, menu.getMenu)
 router.put('/:id', protect, menu.updateMenu)
 router.post('', protect, menu.addMenu)
 router.delete('/:id', protect, menu.deleteMenu)
-
+router.delete('/:id/:img_url', protect, menu.deleteMenu)
 module.exports = router

@@ -139,6 +139,9 @@ exports.updateMenu = async (req, res, next) => {
 
 
 exports.deleteMenu = async (req, res, next) => {
+  if(req.params.img_url){
+  let img = await removeImage(req.params.img_url)
+  }
   await firstore
     .collection("restaurants")
     .doc(req.user.rest_id)
@@ -152,6 +155,7 @@ exports.deleteMenu = async (req, res, next) => {
       res.status(500).json({ success: false, err: status.SERVER_ERROR });
     });
 };
+
 
 extractImage = async(req, res) => {
   
@@ -204,6 +208,17 @@ return new Promise(async(resolve, reject)=>{
     }
   });
 })
+}
+
+removeImage = async(id)=>{
+  return new Promise(async(resolve, reject)=>{
+    await drive.files.delete({
+      fileId: id
+    }).then(res=>{
+      console.log(res)
+      resolve(true)
+    })
+  })
 }
 
 compressImage = async (path) => {
