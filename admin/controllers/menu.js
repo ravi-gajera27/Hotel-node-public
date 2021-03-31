@@ -86,85 +86,41 @@ exports.getMenu = async (req, res, next) => {
 };
 
 exports.addMenu = async (req, res, next) => {
+  let data = JSON.parse(req.body.data);
+  if (req.files && req.files.menu_pic != "undefined") {
+    let {success, err, id} = await extractImage(req, res)
+     if(success){
+       data.img_url = id
+     }else{
+     return res.status(500).json({ success: false, err: err });
+     }
+    } 
   await firstore
     .collection("restaurants")
     .doc(req.user.rest_id)
     .collection("menu")
-    .add(req.body)
+    .add(data)
     .then((menu) => {
-      res.status(200).json({ success: true, data: menu });
+      res.status(200).json({ success: true, data: data });
     })
     .catch((err) => {
+      console.log(err)
       res.status(500).json({ success: false, err: status.SERVER_ERROR });
     });
 };
 
 exports.updateMenu = async (req, res, next) => {
-  let photo = "";
-  let menu_id = "";
   let data = JSON.parse(req.body.data);
   if (req.files && req.files.menu_pic != "undefined") {
-    photo = req.files.menu_pic;
-
-    if (!photo.mimetype.startsWith("image")) {
-      return res
-        .status(400)
-        .json({ success: false, err: "Please upload an valid image file" });
-    }
-
-    if (photo.size > process.env.MAX_FILE_UPLOAD) {
-      return res
-        .status(400)
-        .json({ success: false, err: "Please upload an image less than 1MB" });
-    }
-
-    photo.name = `Img-${Date.now()}${path.parse(photo.name).ext}`;
-    let path_name = `${process.env.FILE_UPLOAD_PATH}/${photo.name}`;
-    let output_path = `${process.env.FILE_BUILD_PATH}/${photo.name}`;
-
-    await photo.mv(path_name, async (err) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ success: false, err: "Problem With image upload" });
-      } else {
-        let img = await compressImage(path_name);
-
-        const fileMetadata = {
-          name: photo.name,
-          parents: ["15Gzb1kyQF7QFmpoqLfvipETYnURMb_Ev"],
-        };
-        const media = {
-          mimeType: photo.mimetype,
-          body: fs.createReadStream(output_path),
-        };
-
-        await drive.files.create(
-          {
-            resource: fileMetadata,
-            media: media,
-          },
-          (err, file) => {
-            if (err) {
-              // Handle error
-              console.error(err);
-            } else {
-              console.log(file);
-              data.img_url = file.data.id;
-              updateMenuFun(req, res, data);
-            }
-          }
-        );
-        fs.unlinkSync(path_name);
-        fs.unlinkSync(output_path);
-      }
-    });
-  } else {
-    updateMenuFun(req, res, data);
-  }
-};
-
-updateMenuFun = async (req, res, data) => {
+  let {success, err, id} = await extractImage(req, res)
+  console.log(success, err, id)
+   if(success){
+     data.img_url = id
+   }else{
+    console.log(err)
+   return res.status(500).json({ success: false, err: err });
+   }
+  } 
   delete data.id;
   await firstore
     .collection("restaurants")
@@ -176,9 +132,11 @@ updateMenuFun = async (req, res, data) => {
       res.status(200).json({ success: true, data: data });
     })
     .catch((err) => {
+      console.log(err)
       res.status(500).json({ success: false, err: status.SERVER_ERROR });
     });
 };
+
 
 exports.deleteMenu = async (req, res, next) => {
   await firstore
@@ -195,9 +153,63 @@ exports.deleteMenu = async (req, res, next) => {
     });
 };
 
+extractImage = async(req, res) => {
+  
+return new Promise(async(resolve, reject)=>{
+  photo = req.files.menu_pic;
+
+  if (!photo.mimetype.startsWith("image")) {
+    resolve({success: false, err:'Please upload an valid image file'});
+  }
+
+  photo.name = `Img-${Date.now()}${path.parse(photo.name).ext}`;
+  let path_name = `${process.env.FILE_UPLOAD_PATH}/${photo.name}`;
+  let output_path = `${process.env.FILE_BUILD_PATH}/${photo.name}`;
+
+  await photo.mv(path_name, async (err) => {
+    if (err) {
+      console.log(err)
+      resolve({success: false, err:'Problem With image upload'});
+    } else {
+      let img = await compressImage(path_name);
+      console.log('img', img)
+      const fileMetadata = {
+        name: photo.name,
+        parents: ["15Gzb1kyQF7QFmpoqLfvipETYnURMb_Ev"],
+      };
+      const media = {
+        mimeType: photo.mimetype,
+        body: fs.createReadStream(output_path),
+      };
+
+      await drive.files.create(
+        {
+          resource: fileMetadata,
+          media: media,
+        },
+        (err, file) => {
+          if (err) {
+            console.log(err)
+            fs.unlinkSync(path_name);
+            fs.unlinkSync(output_path);
+            resolve({success: false, err:'Problem With image upload'});
+          } else {
+             console.log(file)
+            fs.unlinkSync(path_name);
+            fs.unlinkSync(output_path);
+            resolve({success: true, id: file.data.id});
+          }
+        }
+      );
+    }
+  });
+})
+}
+
 compressImage = async (path) => {
-  return new Promise((resolve, reject) => {
-    compress_images(
+  return new Promise(async(resolve, reject) => {
+    console.log('comprexsss')
+   await compress_images(
       path,
       `${process.env.FILE_BUILD_PATH}/`,
       { compress_force: true, statistic: true, autoupdate: true },
@@ -212,6 +224,7 @@ compressImage = async (path) => {
         },
       },
       function (error, completed, statistic) {
+        console.log(error);
         console.log(statistic);
         if (completed === true) {
           resolve(true);
