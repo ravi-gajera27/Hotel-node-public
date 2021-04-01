@@ -18,11 +18,12 @@ exports.login = async (req, res, next) => {
     return res.status(401).json({ success: false, err: status.INVALID_EMAIL });
   }
 
-  let password, id;
+  let password, id, rest_id;
 
   user.forEach((doc) => {
     password = doc.data().password;
     id = doc.id;
+    rest_id = doc.data().rest_id
   });
 
   let verifyPassword = await HASH.verifyHash(data.password, password);
@@ -30,7 +31,12 @@ exports.login = async (req, res, next) => {
   if (!verifyPassword) {
     return res.status(401).json({ success: false, err: status.INVALID_PASS });
   } else {
-    await sendToken({ user_id: id }, res);
+    if(rest_id){
+      await sendToken({ user_id: id, rest_id: rest_id}, res);
+    }else{
+      await sendToken({ user_id: id }, res);
+    }
+    
   }
 };
 
