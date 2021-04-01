@@ -77,10 +77,10 @@ exports.restaurantRegister = async (req, res, next) => {
       await firstore
         .collection('admin')
         .doc(req.user.id)
-        .set({ business_id: profile.id }, { merge: true });
+        .set({ rest_id: profile.id }, { merge: true });
       data = {
         user_id: req.user.id,
-        business_id: profile.id,
+        rest_id: profile.id,
       };
       sendToken(data, res);
     })
