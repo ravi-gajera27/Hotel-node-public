@@ -34,7 +34,7 @@ oAuthClient.authorize((err, token) => {
 exports.getCategory = async (req, res, next) => {
   await firstore
     .collection("restaurants")
-    .doc(req.user.rest_id)
+    .doc('AlF2j3zoh5KKUyIowNcf')
     .collection("categories")
     .get()
     .then((cat) => {
@@ -43,6 +43,7 @@ exports.getCategory = async (req, res, next) => {
         data.cat = e.data().cat;
         data.id = e.id;
       });
+     
       res.status(200).json({ success: true, data: data });
     })
     .catch((err) => {
