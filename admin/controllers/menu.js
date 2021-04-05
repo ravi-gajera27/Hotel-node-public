@@ -34,17 +34,36 @@ oAuthClient.authorize((err, token) => {
 exports.getCategory = async (req, res, next) => {
   await firstore
     .collection("restaurants")
-    .doc('AlF2j3zoh5KKUyIowNcf')
+    .doc(req.user.rest_id)
     .collection("categories")
     .get()
     .then((cat) => {
-      let data = {};
-      cat.docs.map((e) => {
-        data.cat = e.data().cat;
-        data.id = e.id;
-      });
-     
-      res.status(200).json({ success: true, data: data });
+      if (!cat.empty) {
+        let data = {};
+        cat.docs.map((e) => {
+          data.cat = e.data().cat;
+          data.id = e.id;
+        });
+        res.status(200).json({ success: true, data: data });
+      } else {
+        res.status(200).json({ success: true, data: { cat: [], id: "" } });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+    });
+};
+
+exports.addCategory = async (req, res, next) => {
+  await firstore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .collection("categories")
+    .add({ cat: req.body })
+    .then((cat) => {
+      res
+        .status(200)
+        .json({ success: true, data: { cat: req.body, id: cat.id } });
     })
     .catch((err) => {
       res.status(500).json({ success: false, err: status.SERVER_ERROR });
@@ -57,9 +76,11 @@ exports.setCategory = async (req, res, next) => {
     .doc(req.user.rest_id)
     .collection("categories")
     .doc(req.params.id)
-    .set({ cat: [...req.body] }, { merge: true })
+    .set({ cat: [...req.body] })
     .then((cat) => {
-      res.status(200).json({ success: true, data: cat });
+      res
+        .status(200)
+        .json({ success: true, data: { cat: req.body, id: req.params.id } });
     })
     .catch((err) => {
       res.status(500).json({ success: false, err: status.SERVER_ERROR });
@@ -89,13 +110,13 @@ exports.getMenu = async (req, res, next) => {
 exports.addMenu = async (req, res, next) => {
   let data = JSON.parse(req.body.data);
   if (req.files && req.files.menu_pic != "undefined") {
-    let {success, err, id} = await extractImage(req, res)
-     if(success){
-       data.img_url = id
-     }else{
-     return res.status(500).json({ success: false, err: err });
-     }
-    } 
+    let { success, err, id } = await extractImage(req, res);
+    if (success) {
+      data.img_url = id;
+    } else {
+      return res.status(500).json({ success: false, err: err });
+    }
+  }
   await firstore
     .collection("restaurants")
     .doc(req.user.rest_id)
@@ -105,7 +126,7 @@ exports.addMenu = async (req, res, next) => {
       res.status(200).json({ success: true, data: data });
     })
     .catch((err) => {
-      console.log(err)
+      console.log(err);
       res.status(500).json({ success: false, err: status.SERVER_ERROR });
     });
 };
@@ -113,15 +134,15 @@ exports.addMenu = async (req, res, next) => {
 exports.updateMenu = async (req, res, next) => {
   let data = JSON.parse(req.body.data);
   if (req.files && req.files.menu_pic != "undefined") {
-  let {success, err, id} = await extractImage(req, res)
-  console.log(success, err, id)
-   if(success){
-     data.img_url = id
-   }else{
-    console.log(err)
-   return res.status(500).json({ success: false, err: err });
-   }
-  } 
+    let { success, err, id } = await extractImage(req, res);
+    console.log(success, err, id);
+    if (success) {
+      data.img_url = id;
+    } else {
+      console.log(err);
+      return res.status(500).json({ success: false, err: err });
+    }
+  }
   delete data.id;
   await firstore
     .collection("restaurants")
@@ -133,15 +154,14 @@ exports.updateMenu = async (req, res, next) => {
       res.status(200).json({ success: true, data: data });
     })
     .catch((err) => {
-      console.log(err)
+      console.log(err);
       res.status(500).json({ success: false, err: status.SERVER_ERROR });
     });
 };
 
-
 exports.deleteMenu = async (req, res, next) => {
-  if(req.params.img_url){
-  let img = await removeImage(req.params.img_url)
+  if (req.params.img_url) {
+    let img = await removeImage(req.params.img_url);
   }
   await firstore
     .collection("restaurants")
@@ -157,75 +177,75 @@ exports.deleteMenu = async (req, res, next) => {
     });
 };
 
+extractImage = async (req, res) => {
+  return new Promise(async (resolve, reject) => {
+    photo = req.files.menu_pic;
 
-extractImage = async(req, res) => {
-  
-return new Promise(async(resolve, reject)=>{
-  photo = req.files.menu_pic;
-
-  if (!photo.mimetype.startsWith("image")) {
-    resolve({success: false, err:'Please upload an valid image file'});
-  }
-
-  photo.name = `Img-${Date.now()}${path.parse(photo.name).ext}`;
-  let path_name = `${process.env.FILE_UPLOAD_PATH}/${photo.name}`;
-  let output_path = `${process.env.FILE_BUILD_PATH}/${photo.name}`;
-
-  await photo.mv(path_name, async (err) => {
-    if (err) {
-      console.log(err)
-      resolve({success: false, err:'Problem With image upload'});
-    } else {
-      let img = await compressImage(path_name);
-      console.log('img', img)
-      const fileMetadata = {
-        name: photo.name,
-        parents: ["15Gzb1kyQF7QFmpoqLfvipETYnURMb_Ev"],
-      };
-      const media = {
-        mimeType: photo.mimetype,
-        body: fs.createReadStream(output_path),
-      };
-
-      await drive.files.create(
-        {
-          resource: fileMetadata,
-          media: media,
-        },
-        (err, file) => {
-          if (err) {
-            console.log(err)
-            fs.unlinkSync(path_name);
-            fs.unlinkSync(output_path);
-            resolve({success: false, err:'Problem With image upload'});
-          } else {
-             console.log(file)
-            fs.unlinkSync(path_name);
-            fs.unlinkSync(output_path);
-            resolve({success: true, id: file.data.id});
-          }
-        }
-      );
+    if (!photo.mimetype.startsWith("image")) {
+      resolve({ success: false, err: "Please upload an valid image file" });
     }
-  });
-})
-}
 
-removeImage = async(id)=>{
-  return new Promise(async(resolve, reject)=>{
-    await drive.files.delete({
-      fileId: id
-    }).then(res=>{
-      console.log(res)
-      resolve(true)
-    })
-  })
-}
+    photo.name = `Img-${Date.now()}${path.parse(photo.name).ext}`;
+    let path_name = `${process.env.FILE_UPLOAD_PATH}/${photo.name}`;
+    let output_path = `${process.env.FILE_BUILD_PATH}/${photo.name}`;
+
+    await photo.mv(path_name, async (err) => {
+      if (err) {
+        console.log(err);
+        resolve({ success: false, err: "Problem With image upload" });
+      } else {
+        let img = await compressImage(path_name);
+        console.log("img", img);
+        const fileMetadata = {
+          name: photo.name,
+          parents: ["15Gzb1kyQF7QFmpoqLfvipETYnURMb_Ev"],
+        };
+        const media = {
+          mimeType: photo.mimetype,
+          body: fs.createReadStream(output_path),
+        };
+
+        await drive.files.create(
+          {
+            resource: fileMetadata,
+            media: media,
+          },
+          (err, file) => {
+            if (err) {
+              console.log(err);
+              fs.unlinkSync(path_name);
+              fs.unlinkSync(output_path);
+              resolve({ success: false, err: "Problem With image upload" });
+            } else {
+              console.log(file);
+              fs.unlinkSync(path_name);
+              fs.unlinkSync(output_path);
+              resolve({ success: true, id: file.data.id });
+            }
+          }
+        );
+      }
+    });
+  });
+};
+
+removeImage = async (id) => {
+  return new Promise(async (resolve, reject) => {
+    await drive.files
+      .delete({
+        fileId: id,
+      })
+      .then((res) => {
+        console.log(res);
+        resolve(true);
+      });
+  });
+};
 
 compressImage = async (path) => {
-  return new Promise(async(resolve, reject) => {
-    console.log('comprexsss')
-   await compress_images(
+  return new Promise(async (resolve, reject) => {
+    console.log("comprexsss");
+    await compress_images(
       path,
       `${process.env.FILE_BUILD_PATH}/`,
       { compress_force: true, statistic: true, autoupdate: true },
