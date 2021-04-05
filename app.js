@@ -15,8 +15,6 @@ DbInitialize = async () => {
 }
 DbInitialize()
 
-
-
 // listing routes
 const authAdmin = require('./admin/routes/auth');
 const authUsers = require('./customer/routes/auth')
