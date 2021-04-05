@@ -117,7 +117,7 @@ exports.checkout = async (req, res, next) => {
 
   req.body.user = req.user.id
   req.body.name = req.user.name;
-  req.body.table = `table-${cookie.table}`;
+  req.body.table = Number(`${cookie.table}`);
 
   await firestore
     .collection(`orders/${cookie.rest_id}/invoices`)

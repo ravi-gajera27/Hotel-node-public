@@ -7,7 +7,6 @@ const TOKEN = require("../../utils/token");
 
 
 exports.getInvoices = (req, res) => {
-    console.log("aa chalu che");
     firestore.collection('orders').doc(req.user.rest_id).collection('invoices')
     .get().then((resp) =>{ 
         let data = [];
