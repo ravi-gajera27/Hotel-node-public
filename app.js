@@ -23,6 +23,7 @@ const authUsers = require('./customer/routes/auth')
 const order = require('./customer/routes/order')
 const orderAdmin = require('./admin/routes/order')
 const menuAdmin = require('./admin/routes/menu')
+const statsAdmin = require('./admin/routes/stats')
 
 const corsConfig = {
   credentials: true,
@@ -41,6 +42,7 @@ app.use(express.static(__dirname + '/public'))
 app.use('/api/admin/auth', authAdmin);
 app.use('/api/admin/order', orderAdmin);
 app.use('/api/admin/menu', menuAdmin);
+app.use('/api/admin/stats', statsAdmin);
 
 //process routes of customer
 app.use('/api/user/auth', authUsers);
