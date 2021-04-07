@@ -131,6 +131,21 @@ exports.addMenu = async (req, res, next) => {
     });
 };
 
+exports.addMenuFile = async (req, res, next) => {
+  try {
+    for (let ele of req.body) {
+      await firstore
+        .collection("restaurants")
+        .doc(req.user.rest_id)
+        .collection("menu")
+        .add(data);
+    }
+  } catch (e) {
+    res.status(500).json({ success: false, err: status.SERVER_ERROR });
+  }
+  res.status(200).json({ success: true, msg: "Successfully Saved" });
+};
+
 exports.updateMenu = async (req, res, next) => {
   let data = JSON.parse(req.body.data);
   if (req.files && req.files.menu_pic != "undefined") {
