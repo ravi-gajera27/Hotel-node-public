@@ -23,6 +23,7 @@
     "gifsicle": "^5.2.0",
     "googleapis": "^68.0.0",
     "jsonwebtoken": "^8.5.1",
+    "nodemon": "^2.0.7",
     "pngquant-bin": "^6.0.0"
   }
 }
