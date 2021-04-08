@@ -7,7 +7,7 @@ const TOKEN = require('../../utils/token');
 exports.cancelOrder = async (req, res, next) => {
   let table_no = req.params.table_no;
   let order_no = req.params.order_no;
-  console.log(table_no, order_no)
+
   if (!table_no || !order_no) {
     if (order_no != 0) {
       return res.status(400).json({ status: false, err: status.BAD_REQUEST });
