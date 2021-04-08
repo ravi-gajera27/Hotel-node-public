@@ -13,9 +13,9 @@ exports.getInvoices = (req, res) => {
         
         for(let ele of resp.docs){
             let temp = ele.data()
+            temp.id = ele.id
             data.push(temp);
         }
-
         res.status(200).json({data:data,success:true});
     } ).catch(err =>{
         res.status(500).json({success:false,err:status.SERVER_ERROR});
