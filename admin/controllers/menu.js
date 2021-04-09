@@ -213,7 +213,7 @@ extractImage = async (req, res) => {
         console.log("img", img);
         const fileMetadata = {
           name: photo.name,
-          parents: ["15Gzb1kyQF7QFmpoqLfvipETYnURMb_Ev"],
+          parents: [`${process.env.DRIVE_PARENT}`],
         };
         const media = {
           mimeType: photo.mimetype,
