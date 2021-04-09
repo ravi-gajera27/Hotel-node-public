@@ -4,7 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')
 const expressFileUpload = require('express-fileupload');
-
+let moment = require('moment')
 const db = require('./config/db');
 //initialize server
 let app = express();
@@ -46,10 +46,8 @@ app.use('/api/admin/stats', statsAdmin);
 app.use('/api/user/auth', authUsers);
 app.use('/api/user/order', order);
 
-app.get('**', (req, res )=> {
-  console.log(req.query.code)
-})
+
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
-  console.log('app is running');
+  console.log('app is running', moment().format('DD-MM-YYYY'));
 });
