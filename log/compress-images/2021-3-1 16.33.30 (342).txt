@@ -1,0 +1,8 @@
+File from: [./public/uploads/Img-1617275009697.jpeg]
+
+File to: [./public/build/Img-1617275009697.jpeg]
+
+Compression algorithm: [mozjpeg]
+
+Description: Error: Command failed: E:\RMS\Hotel-Node-V.1.0.0\node_modules\mozjpeg\vendor\cjpeg.exe -quality 60 -outfile ./public/build/Img-1617275009697.jpeg ./public/uploads/Img-1617275009697.jpeg
+Unrecognized input file format --- perhaps you need -targa
