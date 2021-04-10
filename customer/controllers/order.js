@@ -3,6 +3,10 @@ const admin = require("firebase-admin");
 const { extractCookie } = require("../../utils/cookie-parser");
 const status = require("../../utils/status");
 let moment = require("moment");
+const path = require("path");
+const fs = require("fs");
+let ejs = require("ejs");
+let pdf = require("html-pdf");
 
 exports.addOrder = async (req, res, next) => {
   console.log(req.body);
@@ -209,6 +213,14 @@ exports.checkout = async (req, res, next) => {
   req.body.cust_name = req.user.name;
   req.body.table = Number(`${cookie.table}`);
   req.body.invoice_no = set_invoice_no;
+  delete req.body.date;
+  req.body.invoice_date = Date.now();
+  req.body.tax = 5;
+  req.body.total_amt =
+    req.body.total_taxable + (req.body.total_taxable * req.body.tax) / 100;
+
+  let userRef = await firestore.collection("users").doc(req.body.user_id).get();
+  let user = userRef.data();
 
   await firestore
     .collection(`orders/${cookie.rest_id}/invoices`)
@@ -220,11 +232,49 @@ exports.checkout = async (req, res, next) => {
         .doc(cookie.rest_id)
         .set(data, { merge: true });
 
-      return res
-        .status(200)
-        .json({ success: true, message: "Bill is generated successfully !" });
+      downloadInvoicePdf(res, req.body, user, data);
     })
     .catch((err) => {
       return res.status(500).json({ success: false, err: status.SERVER_ERROR });
     });
+};
+
+const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
+  var fileName = `invoice-${invoice.user_id}.pdf`;
+
+  var output_path = process.env.INVOICE_PATH + fileName;
+
+  await ejs.renderFile(
+    path.join(__dirname + "/../../utils/templates/invoice.ejs"),
+    {
+      invoice: invoice,
+      user: user,
+      rest: rest_details,
+      invoice_date: moment(invoice.invoice_date).format("DD/MM/YYYY"),
+    },
+    (err, data) => {
+      if (err) {
+        console.log(err)
+      } else {
+        let options = {
+          format: "A3", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
+          orientation: "portrait", // portrait or landscape
+          border: "0",
+          type: "pdf",
+        };
+
+        pdf.create(data, options).toFile(output_path, function (err, data) {
+          if (err) {
+            console.log(err)
+          } else {
+            fs.readFile(output_path, function (err, data) {
+              fs.unlinkSync(output_path)
+              res.contentType("application/pdf");
+              res.status(200).send(data);
+            });
+          }
+        });
+      }
+    }
+  );
 };
