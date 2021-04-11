@@ -232,7 +232,7 @@ exports.checkout = async (req, res, next) => {
         .doc(cookie.rest_id)
         .set(data, { merge: true });
 
-      downloadInvoicePdf(res, req.body, user, data);
+     // downloadInvoicePdf(res, req.body, user, data);
     })
     .catch((err) => {
       return res.status(500).json({ success: false, err: status.SERVER_ERROR });
