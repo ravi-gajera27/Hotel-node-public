@@ -81,6 +81,7 @@ article, aside, details, figcaption, figure, footer, header, hgroup, main, menu,
  */
 html, body {
   /* MOVE ALONG, NOTHING TO CHANGE HERE! */
+   min-height: 1100px;
 }
 
 /** 
@@ -106,8 +107,8 @@ b, strong, .bold {
 
 #container {
   font: normal 13px/1.4em 'Open Sans', Sans-serif;
-  margin: 0 auto;
-  min-height: 1158px;
+  margin: 0 0;
+  height: auto;
   position: relative;
 }
 
@@ -116,10 +117,14 @@ b, strong, .bold {
   top: 0;
   left: 0;
   bottom: 0;
+  min-height: 1122px;
   width: 100px;
-  background: url("./stripe-bottom.png") center bottom no-repeat, url("./stripe-bg.jpg") repeat;
+  background: url("https://drive.google.com/thumbnail?id=1hgGQNIMxQIgEA72UlUU8eF0crWFnsKVL") center bottom no-repeat, url("https://drive.google.com/thumbnail?id=1RnQX_4yl-cSc9rhXtC3BC_AoJnL4d0IE") repeat;
 }
-
+/* stripe -bg     1RnQX_4yl-cSc9rhXtC3BC_AoJnL4d0IE */
+/* https://drive.google.com/thumbnail?id=/* 1hgGQNIMxQIgEA72UlUU8eF0crWFnsKVL */
+ 
+/* 1hgGQNIMxQIgEA72UlUU8eF0crWFnsKVL */
 .left-stripes .circle {
   -moz-border-radius: 50%;
   -webkit-border-radius: 50%;
@@ -139,7 +144,7 @@ b, strong, .bold {
 
 .right-invoice {
   padding: 40px 30px 40px 130px;
-  min-height: 1078px;
+  height: auto;
 }
 
 #memo .company-info {
@@ -343,12 +348,12 @@ table th, table td {
 #terms > span {
   font-weight: bold;
   display: inline-block;
-  min-width: 20px;
+  width: auto;
   text-transform: uppercase;
 }
 #terms > div {
-  min-height: 50px;
-  min-width: 50px;
+  height: auto;
+  width: auto;
 }
 
 .payment-info {
@@ -399,7 +404,7 @@ table th, table td {
           </div>
 
           <div class="logo">
-            <img data-logo="" />
+            <img src="https://drive.google.com/thumbnail?id=<%= rest.logo_url %>" />
           </div>
         </section>
 
@@ -450,9 +455,24 @@ table th, table td {
               <th>AMOUNT</th>
             </tr>
             <% let i = 0; for(let item of invoice.data)  { %>
+              <!-- <% var temp_price=0 %> -->
             <tr>
               <td><%= ++i %></td> <!-- Don't remove this column as it's needed for the row commands -->
-              <td><%= item.name %></td>
+              <td><%= item.name %> <%= (item.variant && item.variant.name) ? '(' + item.variant.name +')' : '' %>
+                
+            
+             
+             
+           <span style=" color: #858585;">
+              <% let k = 0; for(let addon of item.addon)  { %>
+              </br>
+                   
+               <%= addon %> 
+                  
+               
+                <% } %>
+           </span> 
+              </td>
               <td><%= item.qty %></td>
               <td>₹<%= item.price.toFixed(2) %></td>
               <td><%= item.discount || '' %></td>
@@ -489,8 +509,8 @@ table th, table td {
         
         <section id="terms">
         
-          <span>Terms</span>
-          <div>Thanks to visit !!</div>
+          
+          <div style="font-weight: bold; font-size: medium;">Thanks to visit !!</div>
           
         </section>
 <!-- 
