@@ -7,6 +7,8 @@ const expressFileUpload = require("express-fileupload");
 const ejs = require("ejs");
 let moment = require("moment");
 const db = require("./config/db");
+const path = require('path');
+
 //initialize server
 let app = express();
 
@@ -35,7 +37,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors(corsConfig));
 app.use(cookieParser());
 app.use(expressFileUpload());
-app.use(express.static("public"));
+app.use(express.static(__dirname + '/public'));
 app.set("view engine", "ejs");
 
 //process routes of admin
