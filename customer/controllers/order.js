@@ -118,13 +118,14 @@ exports.checkout = async (req, res, next) => {
     .get();
 
   let data = rest_details.data();
-  data.customers = data.customers.filter((ele) => {
-    return (
-      ele.user_id != req.user.id &&
-      ele.table != Number(cookie.table) &&
-      ele.customer_name != req.user.name
-    );
-  });
+
+  let index = data.customers.findIndex((ele) =>  (
+      ele.user_id == req.user.id &&
+      ele.table == Number(cookie.table) &&
+      ele.customer_name == req.user.name
+    ));
+  data.customers[index].checkout = true;
+  
 
   let invoice_format = data.invoice_format;
   let invoice_start_number = "";
@@ -217,7 +218,7 @@ exports.checkout = async (req, res, next) => {
   req.body.invoice_date = Date.now();
   req.body.tax = 5;
   req.body.total_amt =
-    req.body.total_taxable + (req.body.total_taxable * req.body.tax) / 100;
+  req.body.total_taxable + (req.body.total_taxable * req.body.tax) / 100;
 
   let userRef = await firestore.collection("users").doc(req.body.user_id).get();
   let user = userRef.data();
@@ -227,12 +228,13 @@ exports.checkout = async (req, res, next) => {
     .add(req.body)
     .then(async (order) => {
       data.invoice_no = set_invoice_no;
+      data.customers[index].invoice_id = order.id;
       await firestore
         .collection("restaurants")
         .doc(cookie.rest_id)
         .set(data, { merge: true });
-
-      downloadInvoicePdf(res, req.body, user, data);
+      
+     downloadInvoicePdf(res, req.body, user, data);
     })
     .catch((err) => {
       return res.status(500).json({ success: false, err: status.SERVER_ERROR });
@@ -254,10 +256,10 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
     },
     (err, data) => {
       if (err) {
-        console.log(err)
+        return res.status(500).json({success: false, err: status.SERVER_ERROR})
       } else {
         let options = {
-          format: "A3", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
+          format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
           orientation: "portrait", // portrait or landscape
           border: "0",
           type: "pdf",
@@ -265,12 +267,12 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
 
         pdf.create(data, options).toFile(output_path, function (err, data) {
           if (err) {
-            console.log(err)
+           return res.status(500).json({success: false, err: status.SERVER_ERROR})
           } else {
             fs.readFile(output_path, function (err, data) {
               fs.unlinkSync(output_path)
               res.contentType("application/pdf");
-              res.status(200).send(data);
+              return res.status(200).send(data);
             });
           }
         });

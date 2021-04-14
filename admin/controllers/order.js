@@ -1,8 +1,7 @@
-const firstore = require('../../config/db').firestore();
-const status = require('../../utils/status');
-const HASH = require('../../utils/encryption');
-const TOKEN = require('../../utils/token');
-
+const firstore = require("../../config/db").firestore();
+const status = require("../../utils/status");
+const HASH = require("../../utils/encryption");
+const TOKEN = require("../../utils/token");
 
 exports.cancelOrder = async (req, res, next) => {
   let table_no = req.params.table_no;
@@ -57,31 +56,74 @@ exports.terminateSession = async (req, res, next) => {
     .doc(`table-${table_no}`);
 
   let customersRef = await firstore
-    .collection(`restaurants`).doc(req.user.rest_id)
+    .collection(`restaurants`)
+    .doc(req.user.rest_id);
 
-
-  let data = await customersRef.get()
+  let data = await customersRef.get();
   customers = data.data().customers;
 
-  customers = customers.filter(ele => ele.table != table_no)
+  customers = customers.filter((ele) => ele.table != table_no);
 
-  await customersRef.set({
-    customers: customers
-  }, { merge: true })
+  await customersRef.set(
+    {
+      customers: customers,
+    },
+    { merge: true }
+  );
 
-  await orderRef
-    .delete()
-    .then((ord) => {
-      return res.status(200).json({
-        success: true,
-        message: `Sessoin from table-${table_no} is successfully terminated`,
+  if (orderRef.exists) {
+    await orderRef
+      .delete()
+      .then((ord) => {
+        return res.status(200).json({
+          success: true,
+          message: `Sessoin from table-${table_no} is successfully terminated`,
+        });
+      })
+      .catch((err) => {
+        return res
+          .status(500)
+          .json({ status: false, err: status.SERVER_ERROR });
       });
-    })
-    .catch((err) => {
-      return res.status(500).json({ status: false, err: status.SERVER_ERROR });
+  }else{
+    return res.status(200).json({
+      success: true,
+      message: `Sessoin from table-${table_no} is successfully terminated`,
     });
+  }
 };
 
 exports.checkoutCustomer = async (req, res, next) => {
+  let table_no = req.params.table_no;
+  let user_id = req.params.user_id;
 
+  if (!table_no || !user_id) {
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
+
+  let rest_details = await firestore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .get();
+
+  let data = rest_details.data();
+
+  data.customers = data.customers.filter((ele) => {
+    return (
+      ele.user_id != user_id &&
+      ele.table != Number(table_no) &&
+      ele.customer_name != req.user.name
+    );
+  });
+
+  await firestore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .set(data, { merge: true })
+    .then((result) => {
+      res.status(200).json({ success: true });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 };
