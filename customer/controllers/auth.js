@@ -135,7 +135,8 @@ exports.verifySession = async (req, res, next) => {
       }
     }
 
-    customers.push({ table: Number(cookie.table), user_id: req.user.id, customer_name: req.user.name, checkout: false })
+    customers.push({ table: Number(cookie.table), user_id: req.user.id,
+       customer_name: req.user.name, checkout: false})
 
     await customersRef.set({ customers: [...customers] }, { merge: true });
 

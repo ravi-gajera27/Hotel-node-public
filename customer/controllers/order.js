@@ -42,7 +42,6 @@ exports.addOrder = async (req, res, next) => {
   if (order.exists) {
     let data = order.data();
     orderData = data.order;
-    console.log("order", orderData);
     if (data.user_id && data.user_id != req.user.id) {
       res.status(401).json({ success: false, err: status.SESSION_EXIST });
     }
@@ -57,6 +56,28 @@ exports.addOrder = async (req, res, next) => {
       user_id: req.user.id,
       order: [{ ...req.body }],
     };
+
+
+   let userRef = await firestore.collection(`restaurants/${cookie.rest_id}/users/`).doc(req.user.id)
+   let  user = userRef.get()
+   if(user.exists){
+     
+     user = user.data()
+    await userRef.set({
+       name: req.user.name,
+       mobile_no: req.user.mobile_no,
+       last_visit: Date.now(),
+       count: user.count++
+     },{merge: true})
+   }else{
+    await userRef.set({
+       name: req.user.name,
+       mobile_no: req.user.mobile_no,
+       last_visit: Date.now(),
+       count: 1
+     })
+   }
+
   } else {
     orderData.push(req.body);
     send_data = orderData;
