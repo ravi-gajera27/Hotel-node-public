@@ -3,6 +3,7 @@ const stats = require('../controllers/stats')
 const { protect } = require('../../middleware/adminAuth')
 
 router.get('/invoices', protect, stats.getInvoices)
+router.get('/invoices/:interval', protect, stats.getInvoicesByInterval)
 router.get('/download-invoice/:id', protect, stats.downloadInvoicePdf)
 
-module.exports = router
+module.exports = router 

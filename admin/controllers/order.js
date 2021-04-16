@@ -111,8 +111,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   data.customers = data.customers.filter((ele) => {
     return (
       ele.user_id != user_id &&
-      ele.table != Number(table_no) &&
-      ele.customer_name != req.user.name
+      ele.table != Number(table_no)
     );
   });
 
@@ -127,3 +126,26 @@ exports.checkoutCustomer = async (req, res, next) => {
       console.log(err);
     });
 };
+
+exports.generateInvoice = async(req, res, next) => {
+
+  let invoiceRef = await firstore.collection('orders').doc(req.user.rest_id)
+  .collection('invoices').doc(req.params.invoice_id).get()
+
+  if(!invoiceRef.exists){
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
+
+  let rest_ref = await firstore.collection('restaurants').doc(req.user.rest_id).get()
+
+  rest_ref = rest_ref.data()
+
+  let rest_details = {
+    rest_name: rest_ref.rest_name,
+    rest_address: rest_ref.address,
+    gst_in: rest_ref.gst_in || '',
+  }
+
+  res.status(200).json({success: true, data:{invoice: invoiceRef.data(), rest_details: rest_details}})
+
+}

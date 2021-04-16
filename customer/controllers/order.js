@@ -42,7 +42,6 @@ exports.addOrder = async (req, res, next) => {
   if (order.exists) {
     let data = order.data();
     orderData = data.order;
-    console.log("order", orderData);
     if (data.user_id && data.user_id != req.user.id) {
       res.status(401).json({ success: false, err: status.SESSION_EXIST });
     }
@@ -57,6 +56,31 @@ exports.addOrder = async (req, res, next) => {
       user_id: req.user.id,
       order: [{ ...req.body }],
     };
+
+
+   let userRef = await firestore.collection(`restaurants/${cookie.rest_id}/users/`).doc(req.user.id)
+   let  user = userRef.get()
+   if(user.exists){
+     
+     user = user.data()
+    await userRef.set({
+       name: req.user.name,
+       mobile_no: req.user.mobile_no,
+       email: req.user.email,
+       last_visit: moment().format('YYYY-MM-DD'),
+       count: user.count++
+     },{merge: true})
+   }else{
+    await userRef.set({
+       name: req.user.name,
+       mobile_no: req.user.mobile_no,
+       email: req.user.email,
+       last_visit: moment().format('YYYY-MM-DD'),
+       count: 1
+     })
+     send_data.unique = true
+   }
+
   } else {
     orderData.push(req.body);
     send_data = orderData;
@@ -215,7 +239,7 @@ exports.checkout = async (req, res, next) => {
   req.body.table = Number(`${cookie.table}`);
   req.body.invoice_no = set_invoice_no;
   delete req.body.date;
-  req.body.invoice_date = Date.now();
+  req.body.invoice_date = moment().format('YYYY-MM-DD')
   req.body.tax = 5;
   req.body.total_amt =
   req.body.total_taxable + (req.body.total_taxable * req.body.tax) / 100;
@@ -252,7 +276,7 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
       invoice: invoice,
       user: user,
       rest: rest_details,
-      invoice_date: moment(invoice.invoice_date).format("DD/MM/YYYY"),
+      invoice_date: moment(invoice.invoice_date, 'YYYY-MM-DD').format("DD/MM/YYYY"),
     },
     (err, data) => {
       if (err) {
