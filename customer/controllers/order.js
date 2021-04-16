@@ -78,6 +78,7 @@ exports.addOrder = async (req, res, next) => {
        last_visit: moment().format('YYYY-MM-DD'),
        count: 1
      })
+     send_data.unique = true
    }
 
   } else {

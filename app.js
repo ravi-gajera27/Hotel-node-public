@@ -8,6 +8,7 @@ const ejs = require("ejs");
 let moment = require("moment");
 const db = require("./config/db");
 const path = require('path');
+const HASH = require('./utils/encryption');
 
 //initialize server
 let app = express();
@@ -26,6 +27,7 @@ const orderAdmin = require("./admin/routes/order");
 const menuAdmin = require("./admin/routes/menu");
 const statsAdmin = require("./admin/routes/stats");
 const userAdmin = require("./admin/routes/user");
+
 const corsConfig = {
   credentials: true,
   origin: true,
