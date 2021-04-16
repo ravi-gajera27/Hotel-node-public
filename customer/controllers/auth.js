@@ -123,7 +123,7 @@ exports.verifySession = async (req, res, next) => {
 
     for (ele of customers) {
       if (ele.user_id == req.user.id) {
-        if (Number(ele.table) == Number(cookie.table)) {
+        if (Number(ele.table) == Number(cookie.table) && ele.checkout == false) {
           return res.status(200).json({ success: true })
         }
         else {
