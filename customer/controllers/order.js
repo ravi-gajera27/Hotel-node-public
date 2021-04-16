@@ -66,6 +66,7 @@ exports.addOrder = async (req, res, next) => {
     await userRef.set({
        name: req.user.name,
        mobile_no: req.user.mobile_no,
+       email: req.user.email,
        last_visit: Date.now(),
        count: user.count++
      },{merge: true})
@@ -73,7 +74,8 @@ exports.addOrder = async (req, res, next) => {
     await userRef.set({
        name: req.user.name,
        mobile_no: req.user.mobile_no,
-       last_visit: Date.now(),
+       email: req.user.email,
+       last_visit: moment().format('YYYY-MM-DD'),
        count: 1
      })
    }
@@ -236,7 +238,7 @@ exports.checkout = async (req, res, next) => {
   req.body.table = Number(`${cookie.table}`);
   req.body.invoice_no = set_invoice_no;
   delete req.body.date;
-  req.body.invoice_date = Date.now();
+  req.body.invoice_date = moment().format('YYYY-MM-DD')
   req.body.tax = 5;
   req.body.total_amt =
   req.body.total_taxable + (req.body.total_taxable * req.body.tax) / 100;
@@ -273,7 +275,7 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
       invoice: invoice,
       user: user,
       rest: rest_details,
-      invoice_date: moment(invoice.invoice_date).format("DD/MM/YYYY"),
+      invoice_date: moment(invoice.invoice_date, 'YYYY-MM-DD').format("DD/MM/YYYY"),
     },
     (err, data) => {
       if (err) {
