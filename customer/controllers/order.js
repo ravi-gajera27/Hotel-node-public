@@ -59,9 +59,8 @@ exports.addOrder = async (req, res, next) => {
 
 
    let userRef = await firestore.collection(`restaurants/${cookie.rest_id}/users/`).doc(req.user.id)
-   let  user = userRef.get()
+   let  user = await userRef.get()
    if(user.exists){
-     
      user = user.data()
     await userRef.set({
        name: req.user.name,
@@ -232,7 +231,7 @@ exports.checkout = async (req, res, next) => {
     return
   }) */
 
-  let order = await orderRef.delete();
+  let order = await orderRef.delete()
 
   req.body.user_id = req.user.id;
   req.body.cust_name = req.user.name;
