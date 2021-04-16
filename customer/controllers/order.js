@@ -67,7 +67,7 @@ exports.addOrder = async (req, res, next) => {
        name: req.user.name,
        mobile_no: req.user.mobile_no,
        email: req.user.email,
-       last_visit: Date.now(),
+       last_visit: moment().format('YYYY-MM-DD'),
        count: user.count++
      },{merge: true})
    }else{
