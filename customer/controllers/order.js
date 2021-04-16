@@ -59,16 +59,17 @@ exports.addOrder = async (req, res, next) => {
 
 
    let userRef = await firestore.collection(`restaurants/${cookie.rest_id}/users/`).doc(req.user.id)
-   let  user = await userRef.get()
+   let user = await userRef.get()
    if(user.exists){
      user = user.data()
+     console.log(user)
     await userRef.set({
        name: req.user.name,
        mobile_no: req.user.mobile_no,
        email: req.user.email,
        last_visit: moment().format('YYYY-MM-DD'),
-       count: user.count++
-     },{merge: true})
+       count: user.count + 1
+     })
    }else{
     await userRef.set({
        name: req.user.name,
