@@ -9,6 +9,10 @@ const path = require("path");
 const fs = require("fs");
 let ejs = require("ejs");
 let pdf = require("html-pdf");
+const sizeof = require('firestore-size');
+
+
+
 
 exports.getInvoices = (req, res) => {
   firestore
@@ -20,8 +24,10 @@ exports.getInvoices = (req, res) => {
       let data = [];
 
       for (let ele of resp.docs) {
+       
         let temp = ele.data();
         temp.id = ele.id;
+       
         data.push(temp);
       }
       res.status(200).json({ data: data, success: true });
@@ -128,6 +134,11 @@ exports.getInvoicesByInterval = async (req, res, next) => {
     .then((data) => {
       let invoices = [];
       for (let invoice of data.docs) {
+        if(invoice.id== "5Oyy6sUF2e9yE3U5vbDw"){
+          const bytes = sizeof(invoice);
+          console.log("Aniket Patel")
+          console.log(typeof bytes === 'number',(Number)(bytes)/8);
+        }
         invoices.push(invoice.data());
       }
       res.status(200).json({ success: true, data: invoices });
