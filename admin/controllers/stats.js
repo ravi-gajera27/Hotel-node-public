@@ -113,12 +113,19 @@ exports.downloadInvoicePdf = async (req, res) => {
 
 exports.getInvoicesByInterval = async (req, res, next) => {
   let interval = req.params.interval;
-
+  
   if (!interval) {
     return res.status(400).json({ status: false, err: status.BAD_REQUEST });
   }
 
-  let { start_date, end_date } = await getDateBetweenInterval(interval);
+  interval = interval.split('_')
+
+  if(interval.length != 2){
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
+
+  let start_date = interval[0];
+  let end_date = interval[0];
 
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
