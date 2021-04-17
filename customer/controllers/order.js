@@ -49,7 +49,7 @@ exports.addOrder = async (req, res, next) => {
 
   let send_data;
   req.body.date = Date.now();
-  req.body.table = Number(cookie.table);
+  req.body.table = cookie.table
 
   if (orderData.length == 0) {
     send_data = {
@@ -57,29 +57,30 @@ exports.addOrder = async (req, res, next) => {
       order: [{ ...req.body }],
     };
 
-
-   let userRef = await firestore.collection(`restaurants/${cookie.rest_id}/users/`).doc(req.user.id)
-   let  user = await userRef.get()
-   if(user.exists){
-     user = user.data()
-    await userRef.set({
-       name: req.user.name,
-       mobile_no: req.user.mobile_no,
-       email: req.user.email,
-       last_visit: moment().format('YYYY-MM-DD'),
-       count: user.count++
-     },{merge: true})
-   }else{
-    await userRef.set({
-       name: req.user.name,
-       mobile_no: req.user.mobile_no,
-       email: req.user.email,
-       last_visit: moment().format('YYYY-MM-DD'),
-       count: 1
-     })
-     send_data.unique = true
-   }
-
+    let userRef = await firestore
+      .collection(`restaurants/${cookie.rest_id}/users/`)
+      .doc(req.user.id);
+    let user = await userRef.get();
+    if (user.exists) {
+      user = user.data();
+      console.log(user);
+      await userRef.set({
+        name: req.user.name,
+        mobile_no: req.user.mobile_no,
+        email: req.user.email,
+        last_visit: moment().format("YYYY-MM-DD"),
+        count: user.count + 1,
+      });
+    } else {
+      await userRef.set({
+        name: req.user.name,
+        mobile_no: req.user.mobile_no,
+        email: req.user.email,
+        last_visit: moment().format("YYYY-MM-DD"),
+        count: 1,
+      });
+      send_data.unique = true;
+    }
   } else {
     orderData.push(req.body);
     send_data = orderData;
@@ -135,6 +136,14 @@ exports.checkout = async (req, res, next) => {
     .collection(`restaurants/${cookie.rest_id}/order/`)
     .doc(`table-${cookie.table}`);
 
+  let orderExist = await orderRef.get();
+
+  if (!orderExist.exists) {
+    res.status(400).json({ success: false, err: status.BAD_REQUEST });
+  } else if (orderExist.data().user_id != req.user.id) {
+    res.status(400).json({ success: false, err: status.BAD_REQUEST });
+  }
+
   let rest_details = await firestore
     .collection("restaurants")
     .doc(cookie.rest_id)
@@ -142,13 +151,13 @@ exports.checkout = async (req, res, next) => {
 
   let data = rest_details.data();
 
-  let index = data.customers.findIndex((ele) =>  (
+  let index = data.customers.findIndex(
+    (ele) =>
       ele.user_id == req.user.id &&
-      ele.table == Number(cookie.table) &&
+      ele.table == cookie.table &&
       ele.customer_name == req.user.name
-    ));
+  );
   data.customers[index].checkout = true;
-  
 
   let invoice_format = data.invoice_format;
   let invoice_start_number = "";
@@ -231,17 +240,18 @@ exports.checkout = async (req, res, next) => {
     return
   }) */
 
-  let order = await orderRef.delete()
+  let order = await orderRef.delete();
 
   req.body.user_id = req.user.id;
   req.body.cust_name = req.user.name;
-  req.body.table = Number(`${cookie.table}`);
+  req.body.table = cookie.table;
   req.body.invoice_no = set_invoice_no;
   delete req.body.date;
-  req.body.invoice_date = moment().format('YYYY-MM-DD')
-  req.body.tax = 5;
+  delete req.body.qty;
+  req.body.invoice_date = moment().format("YYYY-MM-DD");
+  req.body.tax = data.tax.toString();
   req.body.total_amt =
-  req.body.total_taxable + (req.body.total_taxable * req.body.tax) / 100;
+    req.body.taxable + (req.body.taxable * data.tax) / 100;
 
   let userRef = await firestore.collection("users").doc(req.body.user_id).get();
   let user = userRef.data();
@@ -256,8 +266,11 @@ exports.checkout = async (req, res, next) => {
         .collection("restaurants")
         .doc(cookie.rest_id)
         .set(data, { merge: true });
-      
-     downloadInvoicePdf(res, req.body, user, data);
+      if (req.body.isInvoice) {
+        downloadInvoicePdf(res, req.body, user, data);
+      } else {
+        return res.status(200).json({ success: true });
+      }
     })
     .catch((err) => {
       return res.status(500).json({ success: false, err: status.SERVER_ERROR });
@@ -275,11 +288,15 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
       invoice: invoice,
       user: user,
       rest: rest_details,
-      invoice_date: moment(invoice.invoice_date, 'YYYY-MM-DD').format("DD/MM/YYYY"),
+      invoice_date: moment(invoice.invoice_date, "YYYY-MM-DD").format(
+        "DD/MM/YYYY"
+      ),
     },
     (err, data) => {
       if (err) {
-        return res.status(500).json({success: false, err: status.SERVER_ERROR})
+        return res
+          .status(500)
+          .json({ success: false, err: status.SERVER_ERROR });
       } else {
         let options = {
           format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
@@ -290,10 +307,12 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
 
         pdf.create(data, options).toFile(output_path, function (err, data) {
           if (err) {
-           return res.status(500).json({success: false, err: status.SERVER_ERROR})
+            return res
+              .status(500)
+              .json({ success: false, err: status.SERVER_ERROR });
           } else {
             fs.readFile(output_path, function (err, data) {
-              fs.unlinkSync(output_path)
+              fs.unlinkSync(output_path);
               res.contentType("application/pdf");
               return res.status(200).send(data);
             });
