@@ -111,7 +111,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   data.customers = data.customers.filter((ele) => {
     return (
       ele.user_id != user_id &&
-      ele.table != Number(table_no)
+      ele.table != table_no
     );
   });
 

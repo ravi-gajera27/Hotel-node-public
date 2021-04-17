@@ -49,7 +49,7 @@ exports.addOrder = async (req, res, next) => {
 
   let send_data;
   req.body.date = Date.now();
-  req.body.table = Number(cookie.table);
+  req.body.table = cookie.table
 
   if (orderData.length == 0) {
     send_data = {
@@ -154,7 +154,7 @@ exports.checkout = async (req, res, next) => {
   let index = data.customers.findIndex(
     (ele) =>
       ele.user_id == req.user.id &&
-      ele.table == Number(cookie.table) &&
+      ele.table == cookie.table &&
       ele.customer_name == req.user.name
   );
   data.customers[index].checkout = true;
@@ -244,13 +244,14 @@ exports.checkout = async (req, res, next) => {
 
   req.body.user_id = req.user.id;
   req.body.cust_name = req.user.name;
-  req.body.table = Number(`${cookie.table}`);
+  req.body.table = cookie.table;
   req.body.invoice_no = set_invoice_no;
   delete req.body.date;
+  delete req.body.qty;
   req.body.invoice_date = moment().format("YYYY-MM-DD");
-  req.body.tax = 5;
+  req.body.tax = data.tax.toString();
   req.body.total_amt =
-    req.body.total_taxable + (req.body.total_taxable * req.body.tax) / 100;
+    req.body.taxable + (req.body.taxable * data.tax) / 100;
 
   let userRef = await firestore.collection("users").doc(req.body.user_id).get();
   let user = userRef.data();
@@ -265,8 +266,11 @@ exports.checkout = async (req, res, next) => {
         .collection("restaurants")
         .doc(cookie.rest_id)
         .set(data, { merge: true });
-
-      downloadInvoicePdf(res, req.body, user, data);
+      if (req.body.isInvoice) {
+        downloadInvoicePdf(res, req.body, user, data);
+      } else {
+        return res.status(200).json({ success: true });
+      }
     })
     .catch((err) => {
       return res.status(500).json({ success: false, err: status.SERVER_ERROR });
