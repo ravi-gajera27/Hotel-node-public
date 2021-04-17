@@ -28,7 +28,7 @@ exports.addOrder = async (req, res, next) => {
   let customers = data.data().customers;
   let valid = false;
   for (let cust of customers) {
-    if (cust.table == cookie.table && cust.user_id == req.user.id) {
+    if (cust.table == cookie.table && cust.cid == req.user.id) {
       valid = true;
     }
   }
@@ -42,7 +42,7 @@ exports.addOrder = async (req, res, next) => {
   if (order.exists) {
     let data = order.data();
     orderData = data.order;
-    if (data.user_id && data.user_id != req.user.id) {
+    if (data.cid && data.cid != req.user.id) {
       res.status(401).json({ success: false, err: status.SESSION_EXIST });
     }
   }
@@ -53,7 +53,7 @@ exports.addOrder = async (req, res, next) => {
 
   if (orderData.length == 0) {
     send_data = {
-      user_id: req.user.id,
+      cid: req.user.id,
       order: [{ ...req.body }],
     };
 
@@ -63,21 +63,20 @@ exports.addOrder = async (req, res, next) => {
     let user = await userRef.get();
     if (user.exists) {
       user = user.data();
-      console.log(user);
       await userRef.set({
-        name: req.user.name,
+        cname: req.user.name,
         mobile_no: req.user.mobile_no,
         email: req.user.email,
         last_visit: moment().format("YYYY-MM-DD"),
-        count: user.count + 1,
+        count: (Number(user.count) + 1).toString(),
       });
     } else {
       await userRef.set({
-        name: req.user.name,
+        cname: req.user.name,
         mobile_no: req.user.mobile_no,
         email: req.user.email,
         last_visit: moment().format("YYYY-MM-DD"),
-        count: 1,
+        count: '1',
       });
       send_data.unique = true;
     }
@@ -116,7 +115,7 @@ exports.getOrder = async (req, res, next) => {
   if (order.exists) {
     let data = order.data();
     orderData = data.order;
-    if (data.user_id && data.user_id != req.user.id) {
+    if (data.cid && data.cid != req.user.id) {
       res.status(401).json({ success: false, err: status.SESSION_EXIST });
     } else {
       return res.status(200).json({ success: true, data: orderData });
@@ -125,7 +124,8 @@ exports.getOrder = async (req, res, next) => {
 };
 
 exports.checkout = async (req, res, next) => {
-  console.log(req.body);
+let isInvoice = req.body.isInvoice
+delete req.body.isInvoice
   let cookie = await extractCookie(req, res);
 
   if (!cookie) {
@@ -140,7 +140,7 @@ exports.checkout = async (req, res, next) => {
 
   if (!orderExist.exists) {
     res.status(400).json({ success: false, err: status.BAD_REQUEST });
-  } else if (orderExist.data().user_id != req.user.id) {
+  } else if (orderExist.data().cid != req.user.id) {
     res.status(400).json({ success: false, err: status.BAD_REQUEST });
   }
 
@@ -153,9 +153,9 @@ exports.checkout = async (req, res, next) => {
 
   let index = data.customers.findIndex(
     (ele) =>
-      ele.user_id == req.user.id &&
+      ele.cid == req.user.id &&
       ele.table == cookie.table &&
-      ele.customer_name == req.user.name
+      ele.cname == req.user.name
   );
   data.customers[index].checkout = true;
 
@@ -234,7 +234,7 @@ exports.checkout = async (req, res, next) => {
     set_invoice_no = set_invoice_no ? set_invoice_no : data.invoice_no;
   }
   /*   await firestore.collection('restaurants').doc(cookie.rest_id).update({
-    customers: admin.firestore.FieldValue.arrayRemove({ user_id: req.user.id, table: Number(cookie.table), customer_name: req.user.name })
+    customers: admin.firestore.FieldValue.arrayRemove({ cid: req.user.id, table: Number(cookie.table), customer_name: req.user.name })
   }).catch(err => {
     console.log(err)
     return
@@ -242,8 +242,8 @@ exports.checkout = async (req, res, next) => {
 
   let order = await orderRef.delete();
 
-  req.body.user_id = req.user.id;
-  req.body.cust_name = req.user.name;
+  req.body.cid = req.user.id;
+  req.body.cname = req.user.name;
   req.body.table = cookie.table;
   req.body.invoice_no = set_invoice_no;
   delete req.body.date;
@@ -253,7 +253,7 @@ exports.checkout = async (req, res, next) => {
   req.body.total_amt =
     req.body.taxable + (req.body.taxable * data.tax) / 100;
 
-  let userRef = await firestore.collection("users").doc(req.body.user_id).get();
+  let userRef = await firestore.collection("users").doc(req.body.cid).get();
   let user = userRef.data();
 
   await firestore
@@ -266,7 +266,7 @@ exports.checkout = async (req, res, next) => {
         .collection("restaurants")
         .doc(cookie.rest_id)
         .set(data, { merge: true });
-      if (req.body.isInvoice) {
+      if (isInvoice) {
         downloadInvoicePdf(res, req.body, user, data);
       } else {
         return res.status(200).json({ success: true });
@@ -278,7 +278,7 @@ exports.checkout = async (req, res, next) => {
 };
 
 const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
-  var fileName = `invoice-${invoice.user_id}.pdf`;
+  var fileName = `invoice-${invoice.cid}.pdf`;
 
   var output_path = process.env.INVOICE_PATH + fileName;
 

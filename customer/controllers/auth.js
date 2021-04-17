@@ -122,7 +122,7 @@ exports.verifySession = async (req, res, next) => {
     }
 
     for (ele of customers) {
-      if (ele.user_id == req.user.id) {
+      if (ele.cid == req.user.id) {
         if (Number(ele.table) == Number(cookie.table) && ele.checkout == false) {
           return res.status(200).json({ success: true })
         }
@@ -135,8 +135,8 @@ exports.verifySession = async (req, res, next) => {
       }
     }
 
-    customers.push({ table: cookie.table, user_id: req.user.id,
-       customer_name: req.user.name, checkout: false})
+    customers.push({ table: cookie.table, cid: req.user.id,
+       cname: req.user.name, checkout: false})
 
     await customersRef.set({ customers: [...customers] }, { merge: true });
 
@@ -145,8 +145,8 @@ exports.verifySession = async (req, res, next) => {
   } else {
     let obj = {
       table: cookie.table,
-      user_id: req.user.id,
-      customer_name: req.user.name,
+      cid: req.user.id,
+      cname: req.user.name,
       checkout: false
     }
 
