@@ -117,7 +117,7 @@ exports.verifySession = async (req, res, next) => {
 
     let customers = data.customers
 
-    if (Number(cookie.table) > Number(data.total_tables)) {
+    if (Number(cookie.table) > Number(data.tables)) {
       return res.status(403).json({ success: false, err: status.UNAUTHORIZED });
     }
 
@@ -135,7 +135,7 @@ exports.verifySession = async (req, res, next) => {
       }
     }
 
-    customers.push({ table: Number(cookie.table), user_id: req.user.id,
+    customers.push({ table: cookie.table, user_id: req.user.id,
        customer_name: req.user.name, checkout: false})
 
     await customersRef.set({ customers: [...customers] }, { merge: true });
@@ -144,7 +144,7 @@ exports.verifySession = async (req, res, next) => {
 
   } else {
     let obj = {
-      table: Number(cookie.table),
+      table: cookie.table,
       user_id: req.user.id,
       customer_name: req.user.name,
       checkout: false
