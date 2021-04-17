@@ -48,10 +48,10 @@ exports.downloadInvoicePdf = async (req, res) => {
 
   let data = rest_details.data();
 
-  let userRef = await firestore.collection("users").doc(invoice.user_id).get();
+  let userRef = await firestore.collection("users").doc(invoice.cid).get();
   let user = userRef.data();
 
-  var fileName = `invoice-${invoice.user_id}.pdf`;
+  var fileName = `invoice-${invoice.cid}.pdf`;
 
   var output_path = process.env.INVOICE_PATH + fileName;
   await ejs.renderFile(

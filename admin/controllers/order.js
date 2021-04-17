@@ -95,9 +95,9 @@ exports.terminateSession = async (req, res, next) => {
 
 exports.checkoutCustomer = async (req, res, next) => {
   let table_no = req.params.table_no;
-  let user_id = req.params.user_id;
+  let cid = req.params.cid;
 
-  if (!table_no || !user_id) {
+  if (!table_no || !cid) {
     return res.status(400).json({ status: false, err: status.BAD_REQUEST });
   }
 
@@ -110,7 +110,7 @@ exports.checkoutCustomer = async (req, res, next) => {
 
   data.customers = data.customers.filter((ele) => {
     return (
-      ele.user_id != user_id &&
+      ele.cid != cid &&
       ele.table != table_no
     );
   });
