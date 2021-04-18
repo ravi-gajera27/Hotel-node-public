@@ -51,9 +51,11 @@ exports.terminateSession = async (req, res, next) => {
     return res.status(400).json({ status: false, err: status.BAD_REQUEST });
   }
 
-  let orderRef = firstore
+  let orderRef = await firstore
     .collection(`restaurants/${req.user.rest_id}/order`)
-    .doc(`table-${table_no}`);
+    .doc(`table-${table_no}`)
+
+    let order = await orderRef.get()
 
   let customersRef = await firstore
     .collection(`restaurants`)
@@ -71,7 +73,7 @@ exports.terminateSession = async (req, res, next) => {
     { merge: true }
   );
 
-  if (orderRef.exists) {
+  if (order.exists) {
     await orderRef
       .delete()
       .then((ord) => {
