@@ -125,7 +125,7 @@ exports.getInvoicesByInterval = async (req, res, next) => {
   }
 
   let start_date = interval[0];
-  let end_date = interval[0];
+  let end_date = interval[1];
 
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
