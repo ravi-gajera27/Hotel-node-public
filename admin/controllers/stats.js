@@ -117,6 +117,13 @@ exports.downloadInvoicePdf = async (req, res) => {
   );
 };
 
+exports.getCreated_date= async (req, res, next) => {
+  let rest_details = await firestore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .get
+}
+
 exports.getInvoicesByInterval = async (req, res, next) => {
   let interval = req.params.interval;
   
