@@ -45,7 +45,6 @@ exports.downloadInvoicePdf = async (req, res) => {
     .get();
 
   let invoice = invoiceRef.data();
-
   let data = rest_details.data();
 
   let userRef = await firestore.collection("users").doc(invoice.cid).get();
@@ -113,12 +112,19 @@ exports.downloadInvoicePdf = async (req, res) => {
 
 exports.getInvoicesByInterval = async (req, res, next) => {
   let interval = req.params.interval;
-
+  
   if (!interval) {
     return res.status(400).json({ status: false, err: status.BAD_REQUEST });
   }
 
-  let { start_date, end_date } = await getDateBetweenInterval(interval);
+  interval = interval.split('_')
+
+  if(interval.length != 2){
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
+
+  let start_date = interval[0];
+  let end_date = interval[1];
 
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
@@ -128,7 +134,9 @@ exports.getInvoicesByInterval = async (req, res, next) => {
     .then((data) => {
       let invoices = [];
       for (let invoice of data.docs) {
-        invoices.push(invoice.data());
+        let i = invoice.data()
+        i.id = invoice.id
+        invoices.push(i);
       }
       res.status(200).json({ success: true, data: invoices });
     })

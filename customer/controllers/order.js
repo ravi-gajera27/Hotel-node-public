@@ -49,7 +49,7 @@ exports.addOrder = async (req, res, next) => {
 
   let send_data;
   req.body.date = Date.now();
-  req.body.table = cookie.table
+  req.body.table = cookie.table;
 
   if (orderData.length == 0) {
     send_data = {
@@ -76,7 +76,7 @@ exports.addOrder = async (req, res, next) => {
         mobile_no: req.user.mobile_no,
         email: req.user.email,
         last_visit: moment().format("YYYY-MM-DD"),
-        count: '1',
+        count: "1",
       });
       send_data.unique = true;
     }
@@ -87,7 +87,7 @@ exports.addOrder = async (req, res, next) => {
   }
   orderRef
     .set(send_data, { merge: true })
-    .then((order) => {
+    .then(async (order) => {
       return res
         .status(200)
         .json({ success: true, message: "Order is successfully placed !" });
@@ -124,8 +124,8 @@ exports.getOrder = async (req, res, next) => {
 };
 
 exports.checkout = async (req, res, next) => {
-let isInvoice = req.body.isInvoice
-delete req.body.isInvoice
+  let isInvoice = req.body.isInvoice;
+  delete req.body.isInvoice;
   let cookie = await extractCookie(req, res);
 
   if (!cookie) {
@@ -164,81 +164,68 @@ delete req.body.isInvoice
   let new_invoice_no = "";
   let set_invoice_no = "";
   let arr = [];
-  if (invoice_format.middle_symbol) {
-    arr = data.invoice_no.split(invoice_format.middle_symbol);
-    if (arr.length == 3) {
-      invoice_start_number = arr[2];
-      if (
-        moment().format("MM-DD") == "04-01" &&
-        invoice_start_number != invoice_format.start_num
-      ) {
-        set_invoice_no =
-          invoice_format.start_text +
-          invoice_format.middle_symbol +
-          new Date().getFullYear().toString().substr(-2) +
-          invoice_format.start_num;
-      } else if (new Date().getFullYear().toString().substr(-2) != arr[1]) {
-        data.invoice_format.year = new Date()
-          .getFullYear()
-          .toString()
-          .substr(-2);
-        new_invoice_no =
-          invoice_format.start_text +
-          invoice_format.middle_symbol +
-          new Date().getFullYear().toString().substr(-2) +
-          invoice_format.middle_symbol;
-      } else {
-        new_invoice_no =
-          invoice_format.start_text +
-          invoice_format.middle_symbol +
-          new Date().getFullYear().toString().substr(-2) +
-          invoice_format.middle_symbol;
-      }
-    } else if (arr.length == 2) {
-      invoice_start_number = arr[1];
-      if (
-        moment().format("MM-DD") == "04-01" &&
-        invoice_start_number != invoice_format.start_num
-      ) {
-        set_invoice_no =
-          invoice_format.start_text +
-          invoice_format.middle_symbol +
-          invoice_format.start_num;
-      } else {
-        new_invoice_no =
-          invoice_format.start_text + invoice_format.middle_symbol;
-      }
+  if (!invoice_format.curr_num) {
+    set_invoice_no =
+      invoice_format.start_text +
+      invoice_format.middle_symbol +
+      (invoice_format.year
+        ? new Date().getFullYear().toString().substr(-2) +
+          invoice_format.middle_symbol
+        : "") +
+      invoice_format.start_num;
+    data.invoice_format.curr_num = invoice_format.start_num;
+  } else {
+    let current_month = moment().month();
+    let fan_year;
+    if (current_month < 3) {
+      fan_year =
+        moment().subtract(1, "year").format("YYYY").substr(-2) +
+        "-" +
+        moment().format("YYYY").substr(-2);
     } else {
-      invoice_start_number = arr[0];
-      if (
-        moment().format("MM-DD") == "04-01" &&
-        invoice_start_number != invoice_format.start_num
-      ) {
-        set_invoice_no = invoice_format.start_num;
-      }
+      fan_year =
+        moment().format("YYYY").substr(-2) +
+        "-" +
+        moment().add(1, "year").format("YYYY").substr(-2);
+    }
+    if (fan_year != invoice_format.fan_year) {
+      invoice_format.fan_year =
+        moment().format("YYYY").substr(-2) +
+        "-" +
+        moment().add(1, "year").format("YYYY").substr(-2);
+      data.invoice_format.curr_num = invoice_format.start_num;
+      set_invoice_no =
+        invoice_format.start_text +
+        invoice_format.middle_symbol +
+        (invoice_format.year
+          ? new Date().getFullYear().toString().substr(-2) +
+            invoice_format.middle_symbol
+          : "") +
+        invoice_format.start_num;
     }
   }
 
-  if (!set_invoice_no && invoice_start_number != invoice_format.start_num) {
-    let n1 = invoice_start_number.toString();
-    let n2 = (parseInt(invoice_start_number) + 1).toString();
+  let curr_num = invoice_format.curr_num;
+  if (!set_invoice_no) {
+    let n1 = curr_num.toString();
+    let n2 = (parseInt(curr_num) + 1).toString();
     let l1 = n1.length;
     let l2 = n2.length;
     if (l1 > l2) {
       n2 = n1.substr(0, l1 - l2) + n2;
     }
 
-    new_invoice_no = new_invoice_no + n2;
-    set_invoice_no = new_invoice_no;
-  } else if (invoice_start_number == invoice_format.start_num) {
-    set_invoice_no = set_invoice_no ? set_invoice_no : data.invoice_no;
+    set_invoice_no =
+      invoice_format.start_text +
+      invoice_format.middle_symbol +
+      (invoice_format.year
+        ? new Date().getFullYear().toString().substr(-2) +
+          invoice_format.middle_symbol
+        : "") +
+      n2;
+
+    data.invoice_format.curr_num = n2;
   }
-  /*   await firestore.collection('restaurants').doc(cookie.rest_id).update({
-    customers: admin.firestore.FieldValue.arrayRemove({ cid: req.user.id, table: Number(cookie.table), customer_name: req.user.name })
-  }).catch(err => {
-    console.log(err)
-    return
-  }) */
 
   let order = await orderRef.delete();
 
@@ -250,8 +237,7 @@ delete req.body.isInvoice
   delete req.body.qty;
   req.body.invoice_date = moment().format("YYYY-MM-DD");
   req.body.tax = data.tax.toString();
-  req.body.total_amt =
-    req.body.taxable + (req.body.taxable * data.tax) / 100;
+  req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
 
   let userRef = await firestore.collection("users").doc(req.body.cid).get();
   let user = userRef.data();
@@ -260,13 +246,14 @@ delete req.body.isInvoice
     .collection(`orders/${cookie.rest_id}/invoices`)
     .add(req.body)
     .then(async (order) => {
-      data.invoice_no = set_invoice_no;
       data.customers[index].invoice_id = order.id;
       await firestore
         .collection("restaurants")
         .doc(cookie.rest_id)
         .set(data, { merge: true });
+
       if (isInvoice) {
+        data.invoice_no = set_invoice_no;
         downloadInvoicePdf(res, req.body, user, data);
       } else {
         return res.status(200).json({ success: true });

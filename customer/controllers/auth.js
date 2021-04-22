@@ -102,6 +102,11 @@ exports.verifySession = async (req, res, next) => {
     return res.status(403).json({ success: false, err: status.UNAUTHORIZED });
   }
 
+  
+  if (req.user.join && req.user.join != cookie.rest_id) {
+    return res.status(401).json({ success: false, err: status.SESSION_EXIST_REST });
+  }
+
   let customersRef = await firstore
     .collection(`restaurants`).doc(cookie.rest_id)
 
@@ -151,6 +156,8 @@ exports.verifySession = async (req, res, next) => {
     }
 
     await customersRef.set({ customers: [{ ...obj }] }, { merge: true })
+    await firestore.collection('users').doc(`${req.user.id}`).set({join: cookie.rest_id},{merge: true})
+    
     return res.status(200).json({ success: true });
   }
 
