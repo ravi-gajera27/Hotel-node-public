@@ -45,7 +45,6 @@ exports.downloadInvoicePdf = async (req, res) => {
     .get();
 
   let invoice = invoiceRef.data();
-
   let data = rest_details.data();
 
   let userRef = await firestore.collection("users").doc(invoice.cid).get();
@@ -135,7 +134,9 @@ exports.getInvoicesByInterval = async (req, res, next) => {
     .then((data) => {
       let invoices = [];
       for (let invoice of data.docs) {
-        invoices.push(invoice.data());
+        let i = invoice.data()
+        i.id = invoice.id
+        invoices.push(i);
       }
       res.status(200).json({ success: true, data: invoices });
     })

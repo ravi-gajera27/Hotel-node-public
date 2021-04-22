@@ -46,6 +46,7 @@ exports.cancelOrder = async (req, res, next) => {
 
 exports.terminateSession = async (req, res, next) => {
   let table_no = req.params.table_no;
+  let cid = req.params.cid;
 
   if (!table_no) {
     return res.status(400).json({ status: false, err: status.BAD_REQUEST });
@@ -76,7 +77,13 @@ exports.terminateSession = async (req, res, next) => {
   if (order.exists) {
     await orderRef
       .delete()
-      .then((ord) => {
+      .then(async(ord) => {
+        
+      await firestore
+      .collection("users")
+      .doc(`${cid}`)
+      .set({ join: '' }, { merge: true });
+
         return res.status(200).json({
           success: true,
           message: `Sessoin from table-${table_no} is successfully terminated`,
@@ -88,6 +95,12 @@ exports.terminateSession = async (req, res, next) => {
           .json({ status: false, err: status.SERVER_ERROR });
       });
   }else{
+    
+    await firestore
+    .collection("users")
+    .doc(`${cid}`)
+    .set({ join: '' }, { merge: true });
+
     return res.status(200).json({
       success: true,
       message: `Sessoin from table-${table_no} is successfully terminated`,
@@ -121,7 +134,13 @@ exports.checkoutCustomer = async (req, res, next) => {
     .collection("restaurants")
     .doc(req.user.rest_id)
     .set(data, { merge: true })
-    .then((result) => {
+    .then(async(result) => {
+
+      await firestore
+      .collection("users")
+      .doc(`${cid}`)
+      .set({ join: '' }, { merge: true });
+
       res.status(200).json({ success: true });
     })
     .catch((err) => {
