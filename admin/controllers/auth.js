@@ -6,6 +6,7 @@ const TOKEN = require('../../utils/token');
 
 exports.login = async (req, res, next) => {
   let data = req.body;
+console.log(req.body)
 
   if (!data.email || !data.password) {
     return res.status(400).json({ success: false, err: status.BAD_REQUEST });

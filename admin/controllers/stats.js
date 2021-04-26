@@ -111,57 +111,127 @@ res.status(200).send(data);
 };
 
 exports.getInvoicesByInterval = async (req, res, next) => {
-let interval = req.params.interval;
+  let interval = req.params.interval;
 
-if (!interval) {
-return res.status(400).json({ status: false, err: status.BAD_REQUEST });
-}
+  if (!interval) {
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
 
-interval = interval.split('_')
+  interval = interval.split("_");
 
-if(interval.length != 2){
-return res.status(400).json({ status: false, err: status.BAD_REQUEST });
-}
+  if (interval.length != 2) {
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
 
-let start_date = interval[0];
-let end_date = interval[1];
+  let start_date = interval[0];
+  let end_date = interval[1];
 
-await firestore
-.collection(`orders/${req.user.rest_id}/invoices`)
-.where("invoice_date", ">=", start_date)
-.where("invoice_date", "<=", end_date)
-.get()
-.then((data) => {
-let invoices = [];
-for (let invoice of data.docs) {
-let i = invoice.data()
-i.id = invoice.id
-invoices.push(i);
-}
-res.status(200).json({ success: true, data: invoices });
-})
-.catch((err) => {
-res.status(500).json({ success: false, err: status.SERVER_ERROR });
-});
+  await firestore
+    .collection(`orders/${req.user.rest_id}/invoices`)
+    .where("invoice_date", ">=", start_date)
+    .where("invoice_date", "<=", end_date)
+    .get()
+    .then((data) => {
+      let invoices = [];
+      for (let invoice of data.docs) {
+        let i = invoice.data();
+        i.id = invoice.id;
+        invoices.push(i);
+      }
+      res.status(200).json({ success: true, data: invoices });
+    })
+    .catch((err) => {
+      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+    });
+};
+
+exports.getCategoriesStats = async (req, res, next) => {
+  let interval = req.params.interval;
+
+  if (!interval) {
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
+
+  interval = interval.split("_");
+
+  if (interval.length != 2) {
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
+
+  let cat = await firestore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .collection("categories")
+    .get();
+  let categories = {};
+  let items = {};
+
+  if (!cat.empty) {
+    cat.docs.map((e) => {
+      let data = e.data().cat;
+      for (let e of data) {
+        categories[`${e.name}`] = 0;
+        items[`${e.name}`] = {};
+      }
+    });
+  }
+
+  let start_date = interval[0];
+  let end_date = interval[1];
+
+  let data = await firestore
+    .collection(`orders/${req.user.rest_id}/invoices`)
+    .where("invoice_date", ">=", start_date)
+    .where("invoice_date", "<=", end_date)
+    .get();
+
+  let invoices = [];
+  for (let invoice of data.docs) {
+    let i = invoice.data();
+    i.id = invoice.id;
+    invoices.push(i);
+    for (let ele of i.data) {
+      if (categories[`${ele.category}`] == "undefined") {
+        categories[`${ele.category}`] = 0;
+        items[`${ele.category}`] = {};
+      }
+      if (!items[`${ele.category}`][`${ele.name}`]) {
+        items[`${ele.category}`][`${ele.name}`] = { qty: 0, price: 0 };
+      }
+      categories[`${ele.category}`] += ele.qty;
+      let q = items[`${ele.category}`][`${ele.name}`].qty;
+      let p = items[`${ele.category}`][`${ele.name}`].price;
+      items[`${ele.category}`][`${ele.name}`] = {
+        qty: q + ele.qty,
+        price: p + ele.price,
+      };
+    }
+  }
+
+  res
+    .status(200)
+    .json({ success: true, data: { categories: categories, items: items } });
 };
 
 function getDateBetweenInterval(interval) {
-let start_date, end_date;
-switch (interval) {
-case "today":
-start_date = moment().format("YYYY-MM-DD");
-end_date = start_date;
-break;
+  let start_date, end_date;
+  switch (interval) {
+    case "today":
+      start_date = moment().format("YYYY-MM-DD");
+      end_date = start_date;
+      break;
 
-case "1-week":
-start_date = moment().subtract(7, "days").format('YYYY-MM-DD')
-end_date = moment().format('YYYY-MM-DD')
-break;
+    case "1-week":
+      start_date = moment().subtract(7, "days").format("YYYY-MM-DD");
+      end_date = moment().format("YYYY-MM-DD");
+      break;
 
-case "1-month":
-start_date = moment().date(1).format("YYYY-MM-DD");
-end_date = moment().format("YYYY-MM-DD");
-break;
+    case "1-month":
+      start_date = moment().date(1).format("YYYY-MM-DD");
+      end_date = moment().format("YYYY-MM-DD");
+      break;
+  }
+  return { start_date, end_date };
 }
 return { start_date, end_date };
 }
