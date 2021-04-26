@@ -234,4 +234,3 @@ function getDateBetweenInterval(interval) {
   return { start_date, end_date };
 }
 return { start_date, end_date };
-}
