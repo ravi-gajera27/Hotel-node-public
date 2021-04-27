@@ -1,4 +1,4 @@
-const firstore = require('../../config/db').firestore()
+const firestore = require('../../config/db').firestore()
 const status = require('../../utils/status');
 const HASH = require('../../utils/encryption');
 const TOKEN = require('../../utils/token');
@@ -11,7 +11,7 @@ exports.login = async (req, res, next) => {
     return res.status(400).json({ success: false, err: status.BAD_REQUEST });
   }
 
-  let usersRef = firstore.collection('users');
+  let usersRef = firestore.collection('users');
   let user = await usersRef.where('email', '==', data.email).limit(1).get();
 
   if (user.empty) {
@@ -46,7 +46,7 @@ exports.signup = async (req, res, next) => {
     return res.status(400).json({ success: false, err: status.BAD_REQUEST });
   }
 
-  let usersRef = firstore.collection('users');
+  let usersRef = firestore.collection('users');
   let user = await usersRef.where('email', '==', data.email).limit(1).get();
 
   if (!user.empty) {
@@ -62,12 +62,12 @@ exports.signup = async (req, res, next) => {
   data.password = await HASH.generateHash(data.password, 10);
   data.created_at = new Date();
   delete data.repassword;
-  user = await firstore.collection('users').add({ ...data });
+  user = await firestore.collection('users').add({ ...data });
   await sendToken({ user_id: user.id }, res);
 };
 
 exports.getUser = async (req, res, next) => {
-  firstore
+  firestore
     .collection('admin')
     .doc(req.user.id)
     .get()
@@ -82,7 +82,7 @@ exports.getUser = async (req, res, next) => {
 };
 
 exports.verifyOtp = async (req, res, next) => {
-  await firstore
+  await firestore
     .collection('users')
     .doc(req.user.id)
     .set({ verify_otp: true }, { merge: true })
@@ -107,7 +107,7 @@ exports.verifySession = async (req, res, next) => {
     return res.status(401).json({ success: false, err: status.SESSION_EXIST_REST });
   }
 
-  let customersRef = await firstore
+  let customersRef = await firestore
     .collection(`restaurants`).doc(cookie.rest_id)
 
 
