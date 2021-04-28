@@ -1,4 +1,4 @@
-const firstore = require("../../config/db").firestore();
+const firestore = require("../../config/db").firestore();
 const status = require("../../utils/status");
 const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
@@ -13,7 +13,7 @@ exports.cancelOrder = async (req, res, next) => {
     }
   }
 
-  let orderRef = firstore
+  let orderRef = firestore
     .collection(`restaurants/${req.user.rest_id}/order`)
     .doc(`table-${table_no}`);
 
@@ -52,13 +52,13 @@ exports.terminateSession = async (req, res, next) => {
     return res.status(400).json({ status: false, err: status.BAD_REQUEST });
   }
 
-  let orderRef = await firstore
+  let orderRef = await firestore
     .collection(`restaurants/${req.user.rest_id}/order`)
     .doc(`table-${table_no}`)
 
     let order = await orderRef.get()
 
-  let customersRef = await firstore
+  let customersRef = await firestore
     .collection(`restaurants`)
     .doc(req.user.rest_id);
 
@@ -90,11 +90,13 @@ exports.terminateSession = async (req, res, next) => {
         });
       })
       .catch((err) => {
+        console.log('catchh')
         return res
           .status(500)
           .json({ status: false, err: status.SERVER_ERROR });
       });
   }else{
+    
     
     await firestore
     .collection("users")
@@ -150,14 +152,14 @@ exports.checkoutCustomer = async (req, res, next) => {
 
 exports.generateInvoice = async(req, res, next) => {
 
-  let invoiceRef = await firstore.collection('orders').doc(req.user.rest_id)
+  let invoiceRef = await firestore.collection('orders').doc(req.user.rest_id)
   .collection('invoices').doc(req.params.invoice_id).get()
 
   if(!invoiceRef.exists){
     return res.status(400).json({ status: false, err: status.BAD_REQUEST });
   }
 
-  let rest_ref = await firstore.collection('restaurants').doc(req.user.rest_id).get()
+  let rest_ref = await firestore.collection('restaurants').doc(req.user.rest_id).get()
 
   rest_ref = rest_ref.data()
 
