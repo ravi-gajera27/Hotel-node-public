@@ -1,4 +1,4 @@
-const firstore = require('../../config/db').firestore()
+const firestore = require('../../config/db').firestore()
 const status = require('../../utils/status');
 const HASH = require('../../utils/encryption');
 const TOKEN = require('../../utils/token');
@@ -6,12 +6,13 @@ const TOKEN = require('../../utils/token');
 
 exports.login = async (req, res, next) => {
   let data = req.body;
+console.log(req.body)
 
   if (!data.email || !data.password) {
     return res.status(400).json({ success: false, err: status.BAD_REQUEST });
   }
 
-  let usersRef = firstore.collection('admin');
+  let usersRef = firestore.collection('admin');
   let user = await usersRef.where('email', '==', data.email).limit(1).get();
 
   if (user.empty) {
@@ -53,7 +54,7 @@ exports.signup = async (req, res, next) => {
     return res.status(400).json({ success: false, err: status.BAD_REQUEST });
   }
 
-  let usersRef = firstore.collection('admin');
+  let usersRef = firestore.collection('admin');
   let user = await usersRef.where('email', '==', data.email).limit(1).get();
 
   if (!user.empty) {
@@ -69,18 +70,18 @@ exports.signup = async (req, res, next) => {
   data.password = await HASH.generateHash(data.password, 10);
   data.created_at = new Date();
   delete data.repassword;
-  user = await firstore.collection('admin').add({ ...data });
+  user = await firestore.collection('admin').add({ ...data });
   await sendToken({ user_id: user.id }, res);
 };
 
 exports.restaurantRegister = async (req, res, next) => {
   req.body.created_at = new Date();
   req.body.user_id = req.user.id;
-  firstore
+  firestore
     .collection('restaurants')
     .add({ ...req.body })
     .then(async (profile) => {
-      await firstore
+      await firestore
         .collection('admin')
         .doc(req.user.id)
         .set({ rest_id: profile.id }, { merge: true });
@@ -96,7 +97,7 @@ exports.restaurantRegister = async (req, res, next) => {
 };
 
 exports.getUser = async (req, res, next) => {
-  firstore
+  firestore
     .collection('admin')
     .doc(req.user.id)
     .get()
@@ -111,7 +112,7 @@ exports.getUser = async (req, res, next) => {
 };
 
 exports.verifyOtp = async (req, res, next) => {
-  await firstore
+  await firestore
     .collection('admin')
     .doc(req.user.id)
     .set({ verify_otp: true }, { merge: true })
