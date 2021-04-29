@@ -236,6 +236,7 @@ exports.checkout = async (req, res, next) => {
   delete req.body.date;
   delete req.body.qty;
   req.body.invoice_date = moment().format("YYYY-MM-DD");
+  req.body.time = moment().format('HH:mm')
   req.body.tax = data.tax.toString();
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
 

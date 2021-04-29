@@ -6,5 +6,5 @@ router.get('/invoices', protect, stats.getInvoices)
 router.get('/invoices/:interval', protect, stats.getInvoicesByInterval)
 router.get('/download-invoice/:id', protect, stats.downloadInvoicePdf)
 router.get('/category/:interval', protect, stats.getCategoriesStats)
-
+router.get('/advance/:slot/:interval', protect, stats.getAdvanceStats)
 module.exports = router 
