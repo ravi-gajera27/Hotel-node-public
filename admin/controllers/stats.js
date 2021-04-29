@@ -213,17 +213,57 @@ exports.getCategoriesStats = async (req, res, next) => {
     .json({ success: true, data: { categories: categories, items: items } });
 };
 
-function getDateBetweenInterval(interval) {
-  let start_date, end_date;
+exports.getAdvanceStats = async (req, res, next) => {
+  let interval = req.params.interval;
+  let slot = req.params.slot;
+
+  if (!interval || !slot) {
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
+
+  interval = interval.split("_");
+
+  if (interval.length != 2) {
+    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+  }
+
+  let start_date = interval[0];
+  let end_date = interval[1];
+
+  let intervalData;
+  if (slot == "1-week") {
+    intervalData = await getSlotBetweenInterval(slot);
+  
+  }
+
+  await firestore
+    .collection(`orders/${req.user.rest_id}/invoices`)
+    .where("invoice_date", ">=", start_date)
+    .where("invoice_date", "<=", end_date)
+    .get()
+    .then((data) => {
+      let invoices = [];
+      for (let invoice of data.docs) {
+        let i = invoice.data();
+        let day = moment(i.invoice_date).format("dddd");
+        intervalData[`${day}`] += i.total_amt;
+      }
+      res.status(200).json({ success: true, data: intervalData });
+    });
+};
+
+function getSlotBetweenInterval(interval, open, close) {
+  let data = {}
   switch (interval) {
     case "today":
-      start_date = moment().format("YYYY-MM-DD");
-      end_date = start_date;
       break;
 
     case "1-week":
-      start_date = moment().subtract(7, "days").format("YYYY-MM-DD");
-      end_date = moment().format("YYYY-MM-DD");
+      for (let i = 1; i < 7; i++) {
+        let day = moment().weekday(i).format("dddd");
+        data[`${day}`] = 0;
+      }
+      data[`Sunday`] = 0;
       break;
 
     case "1-month":
@@ -231,6 +271,6 @@ function getDateBetweenInterval(interval) {
       end_date = moment().format("YYYY-MM-DD");
       break;
   }
-  return { start_date, end_date };
+  return data;
 }
 return { start_date, end_date };
