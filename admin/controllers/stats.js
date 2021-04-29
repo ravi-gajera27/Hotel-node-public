@@ -271,6 +271,6 @@ function getSlotBetweenInterval(interval, open, close) {
       end_date = moment().format("YYYY-MM-DD");
       break;
   }
-  return data;
+  return { start_date, end_date };
 }
-return { start_date, end_date };
+
