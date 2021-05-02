@@ -233,7 +233,30 @@ exports.getAdvanceStats = async (req, res, next) => {
   let intervalData;
   if (slot == "1-week") {
     intervalData = await getSlotBetweenInterval(slot);
-  
+    let data = await firestore
+    .collection(`orders/${req.user.rest_id}/invoices`)
+    .where("invoice_date", ">=", start_date)
+    .where("invoice_date", "<=", end_date)
+    .get();
+
+  for (let invoice of data.docs) {
+    let i = invoice.data();
+    index = moment(i.invoice_date).weekday();
+    intervalData[index].value += i.total_amt;
+  }
+  } else if (slot == "1-month") {
+    intervalData = await getSlotBetweenInterval(slot);
+    let data = await firestore
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where("invoice_date", ">=", start_date)
+      .where("invoice_date", "<=", end_date)
+      .get();
+
+    for (let invoice of data.docs) {
+      let i = invoice.data();
+      index = moment(i.invoice_date).format("D");
+      intervalData[index - 1].value += i.total_amt;
+    }
   }
 
   await firestore
@@ -253,22 +276,24 @@ exports.getAdvanceStats = async (req, res, next) => {
 };
 
 function getSlotBetweenInterval(interval, open, close) {
-  let data = {}
+  let data = [];
   switch (interval) {
     case "today":
       break;
 
     case "1-week":
-      for (let i = 1; i < 7; i++) {
+      for (let i = 0; i < 7; i++) {
         let day = moment().weekday(i).format("dddd");
-        data[`${day}`] = 0;
+        data.push({ name: day, value: 0 });
       }
-      data[`Sunday`] = 0;
       break;
 
     case "1-month":
-      start_date = moment().date(1).format("YYYY-MM-DD");
-      end_date = moment().format("YYYY-MM-DD");
+      days = moment().daysInMonth();
+      month = moment(moment().month() + 1, "MM").format("MMM");
+      for (let i = 1; i <= days; i++) {
+        data.push({ name: i + " " + month, value: 0 });
+      }
       break;
   }
   return data;
