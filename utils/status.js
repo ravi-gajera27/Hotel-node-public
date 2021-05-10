@@ -8,5 +8,8 @@ module.exports = {
   INVALID_PASS: 'Please provide valid password',
   SESSION_EXIST: 'Someone is already using this table',
   FORBIDDEN: 'You have already occupied another table',
-  SESSION_EXIST_REST: 'You have already join other restaurant'
+  SESSION_EXIST_REST: 'You have already join other restaurant',
+  PASSWORD_MISMATCH: 'You have entered wrong current Password',
+  PASSWORD_NOT_EQUAL: 'New Password and Re-entered Password does not match', 
+
 };
