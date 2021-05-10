@@ -95,7 +95,7 @@ exports.verifyOtp = async (req, res, next) => {
 };
 
 exports.verifySession = async (req, res, next) => {
-  console.log(req.body);
+
   let cookie = await extractCookie(req, res);
 
   if (!cookie) {

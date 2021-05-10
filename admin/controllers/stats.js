@@ -207,7 +207,6 @@ exports.getCategoriesStats = async (req, res, next) => {
       };
     }
   }
-
   res
     .status(200)
     .json({ success: true, data: { categories: categories, items: items } });
@@ -232,20 +231,20 @@ exports.getAdvanceStats = async (req, res, next) => {
 
   let intervalData;
   if (slot == "1-week") {
-    intervalData = await getSlotBetweenInterval(slot);
+    intervalData = await getSlotBetweenInterval(slot, "", "");
     let data = await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("invoice_date", ">=", start_date)
-    .where("invoice_date", "<=", end_date)
-    .get();
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where("invoice_date", ">=", start_date)
+      .where("invoice_date", "<=", end_date)
+      .get();
 
-  for (let invoice of data.docs) {
-    let i = invoice.data();
-    index = moment(i.invoice_date).weekday();
-    intervalData[index].value += i.total_amt;
-  }
+    for (let invoice of data.docs) {
+      let i = invoice.data();
+      index = moment(i.invoice_date).weekday();
+      intervalData[index].value += i.total_amt;
+    }
   } else if (slot == "1-month") {
-    intervalData = await getSlotBetweenInterval(slot);
+    intervalData = await getSlotBetweenInterval(slot, "", "");
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
       .where("invoice_date", ">=", start_date)
@@ -257,28 +256,103 @@ exports.getAdvanceStats = async (req, res, next) => {
       index = moment(i.invoice_date).format("D");
       intervalData[index - 1].value += i.total_amt;
     }
+  } else if (slot == "today") {
+    let rest_ref = await firestore
+      .collection("restaurants")
+      .doc(req.user.rest_id)
+      .get();
+    let rest_details = rest_ref.data();
+    intervalData = await getSlotBetweenInterval(
+      slot,
+      rest_details.open_time,
+      rest_details.close_time
+    );
+
+    let data = await firestore
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where("invoice_date", ">=", start_date)
+      .where("invoice_date", "<=", end_date)
+      .get();
+
+    for (let invoice of data.docs) {
+      let i = invoice.data();
+      if (i.time) {
+        index = intervalData.findIndex(
+          (e) => i.time >= e.open_t && i.time < e.close_t
+        );
+        if (index == -1 && i.time > rest_details.close_time) {
+          index = intervalData.length - 1;
+        }
+        intervalData[index].value += i.total_amt;
+      }
+    }
   }
 
-  await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("invoice_date", ">=", start_date)
-    .where("invoice_date", "<=", end_date)
-    .get()
-    .then((data) => {
-      let invoices = [];
-      for (let invoice of data.docs) {
-        let i = invoice.data();
-        let day = moment(i.invoice_date).format("dddd");
-        intervalData[`${day}`] += i.total_amt;
-      }
-      res.status(200).json({ success: true, data: intervalData });
-    });
+  res.status(200).json({ success: true, data: intervalData });
 };
 
 function getSlotBetweenInterval(interval, open, close) {
   let data = [];
   switch (interval) {
     case "today":
+      let o = open.split(":");
+      let c = close.split(":");
+      if (o[1] != "00") {
+        if (Number(o[0]) + 2 <= Number(c[0])) {
+          let name = `${moment(open, "HH:mm").format("h:mm A")}-${moment(
+            `${Number(o[0]) + 2}:00`,
+            "HH:mm"
+          ).format("h A")}`;
+          o[0] = Number(o[0]) + 2;
+          o[1] = ":00";
+          let temp = {
+            name: name,
+            open_t: open,
+            close_t: Number(o[0]) + 2 + ":00",
+            value: 0,
+          };
+          data.push(temp);
+        }
+      }
+
+      while (Number(o[0]) + 2 < Number(c[0])) {
+        let name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
+          `${Number(o[0]) + 2}:00`,
+          "HH:mm"
+        ).format("h A")}`;
+        let temp = {
+          name: name,
+          open_t: `${o[0]}:00`,
+          close_t: `${Number(o[0]) + 2}:00`,
+          value: 0,
+        };
+        o[0] = Number(o[0]) + 2;
+        data.push(temp);
+      }
+
+      if (Number(o[0]) != Number(c[0])) {
+        let name;
+        if (c[1] != "00") {
+          name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
+            `${c[0]}:${c[1]}`,
+            "HH:mm"
+          ).format("hh:mm A")}`;
+        } else {
+          name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
+            `${c[0]}:${c[1]}`,
+            "HH:mm"
+          ).format("h A")}`;
+        }
+
+        let temp = {
+          name: name,
+          open_t: `${o[0]}:00`,
+          close_t: `${close}`,
+          value: 0,
+        };
+        data.push(temp);
+      }
+
       break;
 
     case "1-week":
