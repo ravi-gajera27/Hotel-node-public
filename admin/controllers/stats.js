@@ -267,7 +267,7 @@ exports.getAdvanceStats = async (req, res, next) => {
       rest_details.open_time,
       rest_details.close_time
     );
-
+    
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
       .where("invoice_date", ">=", start_date)
@@ -280,37 +280,53 @@ exports.getAdvanceStats = async (req, res, next) => {
         index = intervalData.findIndex(
           (e) => i.time >= e.open_t && i.time < e.close_t
         );
-        if (index == -1 && i.time > rest_details.close_time) {
-          index = intervalData.length - 1;
+        console.log(index);
+        if (index == -1) {
+          if (i.time > rest_details.close_time) index = intervalData.length - 1;
+          else if (i.time < rest_details.open_time) index = 0;
         }
         intervalData[index].value += i.total_amt;
       }
+    }
+  } else if (slot == "last-year" || slot == "this-year") {
+    intervalData = await getSlotBetweenInterval(slot, "", "");
+    let data = await firestore
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where("invoice_date", ">=", start_date)
+      .where("invoice_date", "<=", end_date)
+      .get();
+
+    for (let invoice of data.docs) {
+      let i = invoice.data();
+      index = moment(i.invoice_date).month();
+      index = index < 3 ? index + 9 : index - 3;
+      intervalData[index].value += i.total_amt;
     }
   }
 
   res.status(200).json({ success: true, data: intervalData });
 };
 
-function getSlotBetweenInterval(interval, open, close) {
+function getSlotBetweenInterval(interval, start, end) {
   let data = [];
   switch (interval) {
     case "today":
-      let o = open.split(":");
-      let c = close.split(":");
+      let o = start.split(":");
+      let c = end.split(":");
       if (o[1] != "00") {
         if (Number(o[0]) + 2 <= Number(c[0])) {
-          let name = `${moment(open, "HH:mm").format("h:mm A")}-${moment(
+          let name = `${moment(start, "HH:mm").format("h:mm A")}-${moment(
             `${Number(o[0]) + 2}:00`,
             "HH:mm"
           ).format("h A")}`;
-          o[0] = Number(o[0]) + 2;
           o[1] = ":00";
           let temp = {
             name: name,
-            open_t: open,
+            open_t: start,
             close_t: Number(o[0]) + 2 + ":00",
             value: 0,
           };
+          o[0] = Number(o[0]) + 2;
           data.push(temp);
         }
       }
@@ -347,7 +363,7 @@ function getSlotBetweenInterval(interval, open, close) {
         let temp = {
           name: name,
           open_t: `${o[0]}:00`,
-          close_t: `${close}`,
+          close_t: `${end}`,
           value: 0,
         };
         data.push(temp);
@@ -369,6 +385,90 @@ function getSlotBetweenInterval(interval, open, close) {
         data.push({ name: i + " " + month, value: 0 });
       }
       break;
+
+    case "this-year":
+      current_month = moment().month();
+      if (current_month >= 3) {
+        for (let i = 3; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().add(1, "year").year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+      } else {
+        for (let i = 3; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().subtract(1, "year").year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+      }
+      break;
+    case "last-year":
+      current_month = moment().month();
+      if (current_month >= 3) {
+        for (let i = 3; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().subtract(1, "year").year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+      } else {
+        for (let i = 3; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().subtract(2, "year").year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().subtract(1, "year").year();
+          dataa.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+      }
   }
   return data;
 }
