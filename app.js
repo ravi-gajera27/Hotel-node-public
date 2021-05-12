@@ -67,5 +67,5 @@ app.use("/api/user/order", order);
 
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
-  console.log("app is running", moment().format("DD-MM-YYYY"), moment().utcOffset('+05:30').format('hh:mm A'));
+  console.log("app is running", moment().format("DD-MM-YYYY"), moment().utcOffset(process.env.UTC_OFFSET).format('hh:mm A'));
 });
