@@ -230,7 +230,7 @@ exports.getAdvanceStats = async (req, res, next) => {
   let end_date = interval[1];
 
   let intervalData;
-  if (slot == "1-week") {
+  if (slot == "this-week") {
     intervalData = await getSlotBetweenInterval(slot, "", "");
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
@@ -243,7 +243,7 @@ exports.getAdvanceStats = async (req, res, next) => {
       index = moment(i.invoice_date).weekday();
       intervalData[index].value += i.total_amt;
     }
-  } else if (slot == "1-month") {
+  } else if (slot == "this-month") {
     intervalData = await getSlotBetweenInterval(slot, "", "");
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
@@ -371,23 +371,23 @@ function getSlotBetweenInterval(interval, start, end) {
 
       break;
 
-    case "1-week":
+    case "this-week":
       for (let i = 0; i < 7; i++) {
         let day = moment().weekday(i).format("dddd");
         data.push({ name: day, value: 0 });
       }
       break;
 
-    case "1-month":
-      days = moment().daysInMonth();
-      month = moment(moment().month() + 1, "MM").format("MMM");
+    case "this-month":
+      days = moment().utcOffset(process.env.UTC_OFFSET).daysInMonth();
+      month = moment(moment().utcOffset(process.env.UTC_OFFSET).month() + 1, "MM").utcOffset(process.env.UTC_OFFSET).format("MMM");
       for (let i = 1; i <= days; i++) {
         data.push({ name: i + " " + month, value: 0 });
       }
       break;
 
     case "this-year":
-      current_month = moment().month();
+      current_month = moment().utcOffset(process.env.UTC_OFFSET).month();
       if (current_month >= 3) {
         for (let i = 3; i <= 11; i++) {
           month = moment(i + 1, "MM").format("MMM");
@@ -429,7 +429,7 @@ function getSlotBetweenInterval(interval, start, end) {
       }
       break;
     case "last-year":
-      current_month = moment().month();
+      current_month = moment().utcOffset(process.env.UTC_OFFSET).month();
       if (current_month >= 3) {
         for (let i = 3; i <= 11; i++) {
           month = moment(i + 1, "MM").format("MMM");
