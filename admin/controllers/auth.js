@@ -40,7 +40,34 @@ console.log(req.body)
     
   }
 };
+exports.resetPassword= async(req,res,next) =>{
+  let data = req.body;
+  
 
+  if (
+    !data.cur_password ||
+    !data.new_password ||
+    !data.re_password 
+  ) {
+    return res.status(400).json({ success: false, err: status.BAD_REQUEST });
+  }
+
+
+  if(data.new_password != data.re_password){
+    return res.status(400).json({ success: false, err: status.PASSWORD_NOT_EQUAL });
+   }
+  
+  let admin = await firestore.collection('admin').doc(req.user.id).get();
+  let pass =  await HASH.verifyHash(data.cur_password,admin.data().password);
+  if(!pass){
+    return res.status(400).json({ success: false, err: status.PASSWORD_MISMATCH });
+  }
+  let new_pass = await HASH.generateHash(data.new_password, 10);
+  
+  await firestore.collection('admin').doc(req.user.id).set({password:new_pass},{merge:true});
+  res.status(200).json({success: true});
+
+};
 exports.signup = async (req, res, next) => {
   let data = req.body;
 

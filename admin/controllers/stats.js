@@ -70,27 +70,27 @@ exports.downloadInvoicePdf = async (req, res) => {
           orientation: "portrait", // portrait or landscape
           border: "0",
           type: "pdf",
-          /*          header: {
-            height: "1400px",
-            width: "100px",
-            contents: `<div style="position: absolute;top: 0;left: 0; bottom: 0; height: 1400px;width: 100px;background: url("https://drive.google.com/thumbnail?id=1hgGQNIMxQIgEA72UlUU8eF0crWFnsKVL") center bottom no-repeat, url("https://drive.google.com/thumbnail?id=1RnQX_4yl-cSc9rhXtC3BC_AoJnL4d0IE") repeat">
-            <div style=" -moz-border-radius: 50%;
-            -webkit-border-radius: 50%;
-            border-radius: 50%;
-            background: #415472;
-            width: 30px;
-            height: 30px;
-            position: absolute;
-            left: 33%;  top: 440px;"></div>
-        <div style="  -moz-border-radius: 50%;
-        -webkit-border-radius: 50%;
-        border-radius: 50%;
-        background: #415472;
-        width: 30px;
-        height: 30px;
-        position: absolute;
-        left: 33%;top: 690px;></div>
-            </div>`,
+          /* header: {
+          height: "1400px",
+          width: "100px",
+          contents: `<div style="position: absolute;top: 0;left: 0; bottom: 0; height: 1400px;width: 100px;background: url("https://drive.google.com/thumbnail?id=1hgGQNIMxQIgEA72UlUU8eF0crWFnsKVL") center bottom no-repeat, url("https://drive.google.com/thumbnail?id=1RnQX_4yl-cSc9rhXtC3BC_AoJnL4d0IE") repeat">
+          <div style=" -moz-border-radius: 50%;
+          -webkit-border-radius: 50%;
+          border-radius: 50%;
+          background: #415472;
+          width: 30px;
+          height: 30px;
+          position: absolute;
+          left: 33%; top: 440px;"></div>
+          <div style=" -moz-border-radius: 50%;
+          -webkit-border-radius: 50%;
+          border-radius: 50%;
+          background: #415472;
+          width: 30px;
+          height: 30px;
+          position: absolute;
+          left: 33%;top: 690px;></div>
+          </div>`,
           }, */
         };
 
@@ -207,7 +207,6 @@ exports.getCategoriesStats = async (req, res, next) => {
       };
     }
   }
-
   res
     .status(200)
     .json({ success: true, data: { categories: categories, items: items } });
@@ -231,21 +230,21 @@ exports.getAdvanceStats = async (req, res, next) => {
   let end_date = interval[1];
 
   let intervalData;
-  if (slot == "1-week") {
-    intervalData = await getSlotBetweenInterval(slot);
+  if (slot == "this-week") {
+    intervalData = await getSlotBetweenInterval(slot, "", "");
     let data = await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("invoice_date", ">=", start_date)
-    .where("invoice_date", "<=", end_date)
-    .get();
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where("invoice_date", ">=", start_date)
+      .where("invoice_date", "<=", end_date)
+      .get();
 
-  for (let invoice of data.docs) {
-    let i = invoice.data();
-    index = moment(i.invoice_date).weekday();
-    intervalData[index].value += i.total_amt;
-  }
-  } else if (slot == "1-month") {
-    intervalData = await getSlotBetweenInterval(slot);
+    for (let invoice of data.docs) {
+      let i = invoice.data();
+      index = moment(i.invoice_date).weekday();
+      intervalData[index].value += i.total_amt;
+    }
+  } else if (slot == "this-month") {
+    intervalData = await getSlotBetweenInterval(slot, "", "");
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
       .where("invoice_date", ">=", start_date)
@@ -257,44 +256,219 @@ exports.getAdvanceStats = async (req, res, next) => {
       index = moment(i.invoice_date).format("D");
       intervalData[index - 1].value += i.total_amt;
     }
+  } else if (slot == "today") {
+    let rest_ref = await firestore
+      .collection("restaurants")
+      .doc(req.user.rest_id)
+      .get();
+    let rest_details = rest_ref.data();
+    intervalData = await getSlotBetweenInterval(
+      slot,
+      rest_details.open_time,
+      rest_details.close_time
+    );
+    
+    let data = await firestore
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where("invoice_date", ">=", start_date)
+      .where("invoice_date", "<=", end_date)
+      .get();
+
+    for (let invoice of data.docs) {
+      let i = invoice.data();
+      if (i.time) {
+        index = intervalData.findIndex(
+          (e) => i.time >= e.open_t && i.time < e.close_t
+        );
+        console.log(index);
+        if (index == -1) {
+          if (i.time > rest_details.close_time) index = intervalData.length - 1;
+          else if (i.time < rest_details.open_time) index = 0;
+        }
+        intervalData[index].value += i.total_amt;
+      }
+    }
+  } else if (slot == "last-year" || slot == "this-year") {
+    intervalData = await getSlotBetweenInterval(slot, "", "");
+    let data = await firestore
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where("invoice_date", ">=", start_date)
+      .where("invoice_date", "<=", end_date)
+      .get();
+
+    for (let invoice of data.docs) {
+      let i = invoice.data();
+      index = moment(i.invoice_date).month();
+      index = index < 3 ? index + 9 : index - 3;
+      intervalData[index].value += i.total_amt;
+    }
   }
 
-  await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("invoice_date", ">=", start_date)
-    .where("invoice_date", "<=", end_date)
-    .get()
-    .then((data) => {
-      let invoices = [];
-      for (let invoice of data.docs) {
-        let i = invoice.data();
-        let day = moment(i.invoice_date).format("dddd");
-        intervalData[`${day}`] += i.total_amt;
-      }
-      res.status(200).json({ success: true, data: intervalData });
-    });
+  res.status(200).json({ success: true, data: intervalData });
 };
 
-function getSlotBetweenInterval(interval, open, close) {
+function getSlotBetweenInterval(interval, start, end) {
   let data = [];
   switch (interval) {
     case "today":
+      let o = start.split(":");
+      let c = end.split(":");
+      if (o[1] != "00") {
+        if (Number(o[0]) + 2 <= Number(c[0])) {
+          let name = `${moment(start, "HH:mm").format("h:mm A")}-${moment(
+            `${Number(o[0]) + 2}:00`,
+            "HH:mm"
+          ).format("h A")}`;
+          o[1] = ":00";
+          let temp = {
+            name: name,
+            open_t: start,
+            close_t: Number(o[0]) + 2 + ":00",
+            value: 0,
+          };
+          o[0] = Number(o[0]) + 2;
+          data.push(temp);
+        }
+      }
+
+      while (Number(o[0]) + 2 < Number(c[0])) {
+        let name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
+          `${Number(o[0]) + 2}:00`,
+          "HH:mm"
+        ).format("h A")}`;
+        let temp = {
+          name: name,
+          open_t: `${o[0]}:00`,
+          close_t: `${Number(o[0]) + 2}:00`,
+          value: 0,
+        };
+        o[0] = Number(o[0]) + 2;
+        data.push(temp);
+      }
+
+      if (Number(o[0]) != Number(c[0])) {
+        let name;
+        if (c[1] != "00") {
+          name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
+            `${c[0]}:${c[1]}`,
+            "HH:mm"
+          ).format("hh:mm A")}`;
+        } else {
+          name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
+            `${c[0]}:${c[1]}`,
+            "HH:mm"
+          ).format("h A")}`;
+        }
+
+        let temp = {
+          name: name,
+          open_t: `${o[0]}:00`,
+          close_t: `${end}`,
+          value: 0,
+        };
+        data.push(temp);
+      }
+
       break;
 
-    case "1-week":
+    case "this-week":
       for (let i = 0; i < 7; i++) {
         let day = moment().weekday(i).format("dddd");
         data.push({ name: day, value: 0 });
       }
       break;
 
-    case "1-month":
-      days = moment().daysInMonth();
-      month = moment(moment().month() + 1, "MM").format("MMM");
+    case "this-month":
+      days = moment().utcOffset(process.env.UTC_OFFSET).daysInMonth();
+      month = moment(moment().utcOffset(process.env.UTC_OFFSET).month() + 1, "MM").utcOffset(process.env.UTC_OFFSET).format("MMM");
       for (let i = 1; i <= days; i++) {
         data.push({ name: i + " " + month, value: 0 });
       }
       break;
+
+    case "this-year":
+      current_month = moment().utcOffset(process.env.UTC_OFFSET).month();
+      if (current_month >= 3) {
+        for (let i = 3; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().add(1, "year").year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+      } else {
+        for (let i = 3; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().subtract(1, "year").year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+      }
+      break;
+    case "last-year":
+      current_month = moment().utcOffset(process.env.UTC_OFFSET).month();
+      if (current_month >= 3) {
+        for (let i = 3; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().subtract(1, "year").year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+      } else {
+        for (let i = 3; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().subtract(2, "year").year();
+          data.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          year = moment().subtract(1, "year").year();
+          dataa.push({
+            name: month,
+            year: year,
+            value: 0,
+          });
+        }
+      }
   }
   return data;
 }

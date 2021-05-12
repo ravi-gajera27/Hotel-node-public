@@ -48,7 +48,7 @@ exports.addOrder = async (req, res, next) => {
   }
 
   let send_data;
-  req.body.date = Date.now();
+  req.body.date = moment().utcOffset(process.env.UTC_OFFSET).unix();
   req.body.table = cookie.table;
 
   if (orderData.length == 0) {
@@ -67,7 +67,7 @@ exports.addOrder = async (req, res, next) => {
         cname: req.user.name,
         mobile_no: req.user.mobile_no,
         email: req.user.email,
-        last_visit: moment().format("YYYY-MM-DD"),
+        last_visit: moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD"),
         count: (Number(user.count) + 1).toString(),
       });
     } else {
@@ -75,7 +75,7 @@ exports.addOrder = async (req, res, next) => {
         cname: req.user.name,
         mobile_no: req.user.mobile_no,
         email: req.user.email,
-        last_visit: moment().format("YYYY-MM-DD"),
+        last_visit: moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD"),
         count: "1",
       });
       send_data.unique = true;
@@ -160,45 +160,43 @@ exports.checkout = async (req, res, next) => {
   data.customers[index].checkout = true;
 
   let invoice_format = data.invoice_format;
-  let invoice_start_number = "";
-  let new_invoice_no = "";
   let set_invoice_no = "";
-  let arr = [];
+  
   if (!invoice_format.curr_num) {
     set_invoice_no =
       invoice_format.start_text +
       invoice_format.middle_symbol +
       (invoice_format.year
-        ? new Date().getFullYear().toString().substr(-2) +
+        ? moment().utcOffset(process.env.UTC_OFFSET).year().toString().substr(-2)+
           invoice_format.middle_symbol
         : "") +
       invoice_format.start_num;
     data.invoice_format.curr_num = invoice_format.start_num;
   } else {
-    let current_month = moment().month();
+    let current_month = moment().utcOffset(process.env.UTC_OFFSET).month();
     let fan_year;
     if (current_month < 3) {
       fan_year =
-        moment().subtract(1, "year").format("YYYY").substr(-2) +
+        moment().utcOffset(process.env.UTC_OFFSET).subtract(1, "year").format("YYYY").substr(-2) +
         "-" +
-        moment().format("YYYY").substr(-2);
+        moment().utcOffset(process.env.UTC_OFFSET).format("YYYY").substr(-2);
     } else {
       fan_year =
-        moment().format("YYYY").substr(-2) +
+        moment().utcOffset(process.env.UTC_OFFSET).format("YYYY").substr(-2) +
         "-" +
-        moment().add(1, "year").format("YYYY").substr(-2);
+        moment().utcOffset(process.env.UTC_OFFSET).add(1, "year").format("YYYY").substr(-2);
     }
     if (fan_year != invoice_format.fan_year) {
       invoice_format.fan_year =
-        moment().format("YYYY").substr(-2) +
+        moment().utcOffset(process.env.UTC_OFFSET).format("YYYY").substr(-2) +
         "-" +
-        moment().add(1, "year").format("YYYY").substr(-2);
+        moment().utcOffset(process.env.UTC_OFFSET).add(1, "year").format("YYYY").substr(-2);
       data.invoice_format.curr_num = invoice_format.start_num;
       set_invoice_no =
         invoice_format.start_text +
         invoice_format.middle_symbol +
         (invoice_format.year
-          ? new Date().getFullYear().toString().substr(-2) +
+          ? moment().utcOffset(process.env.UTC_OFFSET).year().toString().substr(-2)+
             invoice_format.middle_symbol
           : "") +
         invoice_format.start_num;
@@ -219,7 +217,7 @@ exports.checkout = async (req, res, next) => {
       invoice_format.start_text +
       invoice_format.middle_symbol +
       (invoice_format.year
-        ? new Date().getFullYear().toString().substr(-2) +
+        ? moment().utcOffset(process.env.UTC_OFFSET).year().toString().substr(-2)+
           invoice_format.middle_symbol
         : "") +
       n2;
@@ -235,8 +233,8 @@ exports.checkout = async (req, res, next) => {
   req.body.invoice_no = set_invoice_no;
   delete req.body.date;
   delete req.body.qty;
-  req.body.invoice_date = moment().format("YYYY-MM-DD");
-  req.body.time = moment().format('HH:mm')
+  req.body.invoice_date = moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD");
+  req.body.time = moment().utcOffset(process.env.UTC_OFFSET).format('HH:mm')
   req.body.tax = data.tax.toString();
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
 

@@ -2,8 +2,10 @@ const crypto = require('crypto-js')
 
 exports.extractCookie = async (req, res) =>
   new Promise(async (resolve) => {
-    let cookie = req.cookies['firestep_access'];
-    console.log('cookie',req.cookies)
+    let cookie
+    if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')){
+      cookie = req.headers.authorization.split(' ')[2];
+    }
     if(!cookie){
       resolve(false)
     }
