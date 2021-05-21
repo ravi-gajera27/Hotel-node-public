@@ -13,7 +13,7 @@ exports.addOrder = async (req, res, next) => {
   let cookie = await extractCookie(req, res);
 
   if (!cookie) {
-    res.status(401).json({ success: false, err: status.UNAUTHORIZED });
+    res.status(401).json({ success: false, message: status.UNAUTHORIZED });
   }
 
   let orderRef = await firestore
@@ -33,7 +33,7 @@ exports.addOrder = async (req, res, next) => {
     }
   }
   if (!valid) {
-    return res.status(401).json({ success: false, err: status.UNAUTHORIZED });
+    return res.status(401).json({ success: false, message: status.UNAUTHORIZED });
   }
 
   let order = await orderRef.get();
@@ -43,7 +43,7 @@ exports.addOrder = async (req, res, next) => {
     let data = order.data();
     orderData = data.order;
     if (data.cid && data.cid != req.user.id) {
-      res.status(401).json({ success: false, err: status.SESSION_EXIST });
+      res.status(401).json({ success: false, message: status.SESSION_EXIST });
     }
   }
 
@@ -90,10 +90,10 @@ exports.addOrder = async (req, res, next) => {
     .then(async (order) => {
       return res
         .status(200)
-        .json({ success: true, message: "Order is successfully placed !" });
+        .json({ success: true, message: "Your order is successfully placed" });
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -102,7 +102,7 @@ exports.getOrder = async (req, res, next) => {
   let cookie = await extractCookie(req, res);
 
   if (!cookie) {
-    res.status(401).json({ success: false, err: status.UNAUTHORIZED });
+    res.status(401).json({ success: false, message: status.UNAUTHORIZED });
   }
 
   let orderRef = await firestore
@@ -116,7 +116,7 @@ exports.getOrder = async (req, res, next) => {
     let data = order.data();
     orderData = data.order;
     if (data.cid && data.cid != req.user.id) {
-      res.status(401).json({ success: false, err: status.SESSION_EXIST });
+      res.status(401).json({ success: false, message: status.SESSION_EXIST });
     } else {
       return res.status(200).json({ success: true, data: orderData });
     }
@@ -129,7 +129,7 @@ exports.checkout = async (req, res, next) => {
   let cookie = await extractCookie(req, res);
 
   if (!cookie) {
-    res.status(401).json({ success: false, err: status.UNAUTHORIZED });
+    res.status(401).json({ success: false, message: status.UNAUTHORIZED });
   }
 
   let orderRef = await firestore
@@ -139,9 +139,9 @@ exports.checkout = async (req, res, next) => {
   let orderExist = await orderRef.get();
 
   if (!orderExist.exists) {
-    res.status(400).json({ success: false, err: status.BAD_REQUEST });
+    res.status(400).json({ success: false, message: status.BAD_REQUEST });
   } else if (orderExist.data().cid != req.user.id) {
-    res.status(400).json({ success: false, err: status.BAD_REQUEST });
+    res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
   let rest_details = await firestore
@@ -259,7 +259,7 @@ exports.checkout = async (req, res, next) => {
       }
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -282,7 +282,7 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
       if (err) {
         return res
           .status(500)
-          .json({ success: false, err: status.SERVER_ERROR });
+          .json({ success: false, message: status.SERVER_ERROR });
       } else {
         let options = {
           format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
@@ -295,7 +295,7 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
           if (err) {
             return res
               .status(500)
-              .json({ success: false, err: status.SERVER_ERROR });
+              .json({ success: false, message: status.SERVER_ERROR });
           } else {
             fs.readFile(output_path, function (err, data) {
               fs.unlinkSync(output_path);

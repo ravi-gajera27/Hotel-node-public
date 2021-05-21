@@ -22,6 +22,6 @@ exports.getUsers = (req, res) => {
         res.status(200).json({ data: data, success: true });
       })
       .catch((err) => {
-        res.status(500).json({ success: false, err: status.SERVER_ERROR });
+        res.status(500).json({ success: false, message: status.SERVER_ERROR });
       });
   };

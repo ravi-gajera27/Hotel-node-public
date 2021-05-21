@@ -11,5 +11,8 @@ module.exports = {
   SESSION_EXIST_REST: 'You have already join other restaurant',
   PASSWORD_MISMATCH: 'You have entered wrong current Password',
   PASSWORD_NOT_EQUAL: 'New Password and Re-entered Password does not match', 
-
+  SUCCESS_UPDATED: 'Successfully updated',
+  SUCCESS_ADDED: 'Successfully added',
+  SUCCESS_REMOVED: 'Successfully removed',
+  SUCCESS_CHANGED: 'Successfully changed',
 };
