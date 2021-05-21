@@ -243,7 +243,7 @@ exports.getAdvanceStats = async (req, res, next) => {
       index = moment(i.invoice_date).weekday();
       intervalData[index].value += i.total_amt;
     }
-  } else if (slot == "this-month") {
+  } else if (slot.includes("month")) {
     intervalData = await getSlotBetweenInterval(slot, "", "");
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
@@ -267,7 +267,7 @@ exports.getAdvanceStats = async (req, res, next) => {
       rest_details.open_time,
       rest_details.close_time
     );
-    
+
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
       .where("invoice_date", ">=", start_date)
@@ -288,14 +288,30 @@ exports.getAdvanceStats = async (req, res, next) => {
         intervalData[index].value += i.total_amt;
       }
     }
-  } else if (slot == "last-year" || slot == "this-year") {
-    intervalData = await getSlotBetweenInterval(slot, "", "");
+  } else if (slot.includes("quarter")) {
+    let slotData = await getMonthsOfQuarter(slot);
+    intervalData = slotData[0];
+    let starting_month = slotData[1];
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
       .where("invoice_date", ">=", start_date)
       .where("invoice_date", "<=", end_date)
       .get();
 
+    for (let invoice of data.docs) {
+      let i = invoice.data();
+      index = moment(i.invoice_date).month();
+      intervalData[index - starting_month].value += i.total_amt;
+    }
+    
+  } else if (slot == "last-year" || slot == "this-year") {
+    intervalData = await getMonthsOfYear(slot);
+    let data = await firestore
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where("invoice_date", ">=", start_date)
+      .where("invoice_date", "<=", end_date)
+      .get();
+console.log(intervalData)
     for (let invoice of data.docs) {
       let i = invoice.data();
       index = moment(i.invoice_date).month();
@@ -380,12 +396,127 @@ function getSlotBetweenInterval(interval, start, end) {
 
     case "this-month":
       days = moment().utcOffset(process.env.UTC_OFFSET).daysInMonth();
-      month = moment(moment().utcOffset(process.env.UTC_OFFSET).month() + 1, "MM").utcOffset(process.env.UTC_OFFSET).format("MMM");
+      month = moment(
+        moment().utcOffset(process.env.UTC_OFFSET).month() + 1,
+        "MM"
+      )
+        .utcOffset(process.env.UTC_OFFSET)
+        .format("MMM");
       for (let i = 1; i <= days; i++) {
         data.push({ name: i + " " + month, value: 0 });
       }
       break;
 
+      case "last-month":
+        days = moment().utcOffset(process.env.UTC_OFFSET).subtract(1, 'months').daysInMonth();
+        month = moment(
+          moment().utcOffset(process.env.UTC_OFFSET).subtract(1, 'months').month() + 1,
+          "MM"
+        )
+          .utcOffset(process.env.UTC_OFFSET)
+          .format("MMM");
+        for (let i = 1; i <= days; i++) {
+          data.push({ name: i + " " + month, value: 0 });
+        }
+  }
+  return data;
+}
+
+function getMonthsOfQuarter(quarter) {
+  let months = [];
+  let starting_month;
+  switch (quarter) {
+    case "quarter-1":
+      current_month = moment().month();
+      starting_month = 3;
+      if (current_month < 3) {
+        for (let i = 3; i <= 5; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          months.push({
+            name: month,
+            value: 0,
+          });
+        }
+      } else {
+        for (let i = 3; i <= 5; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          months.push({
+            name: month,
+            value: 0,
+          });
+        }
+      }
+      break;
+    case "quarter-2":
+      starting_month = 6;
+      current_month = moment().month();
+      if (current_month < 3) {
+        for (let i = 6; i <= 8; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          months.push({
+            name: month,
+            value: 0,
+          });
+        }
+      } else {
+        for (let i = 6; i <= 8; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          months.push({
+            name: month,
+            value: 0,
+          });
+        }
+      }
+      break;
+    case "quarter-3":
+      starting_month = 9;
+      current_month = moment().month();
+      if (current_month < 3) {
+        for (let i = 9; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          months.push({
+            name: month,
+            value: 0,
+          });
+        }
+      } else {
+        for (let i = 9; i <= 11; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          months.push({
+            name: month,
+            value: 0,
+          });
+        }
+      }
+      break;
+    case "quarter-4":
+      starting_month = 0;
+      current_month = moment().month();
+      if (current_month >= 3) {
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          months.push({
+            name: month,
+            value: 0,
+          });
+        }
+      } else {
+        for (let i = 0; i <= 2; i++) {
+          month = moment(i + 1, "MM").format("MMM");
+          months.push({
+            name: month,
+            value: 0,
+          });
+        }
+      }
+      break;
+  }
+  return [months, starting_month];
+}
+
+function getMonthsOfYear(slot) {
+  let data = [];
+  switch (slot) {
     case "this-year":
       current_month = moment().utcOffset(process.env.UTC_OFFSET).month();
       if (current_month >= 3) {
@@ -470,5 +601,5 @@ function getSlotBetweenInterval(interval, start, end) {
         }
       }
   }
-  return data;
+  return data
 }
