@@ -2,7 +2,7 @@ const firestore = require("../../config/db").firestore();
 const status = require("../../utils/status");
 const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
-const moment = require('moment');
+const moment = require("moment");
 
 exports.login = async (req, res, next) => {
   let data = req.body;
@@ -95,7 +95,7 @@ exports.signup = async (req, res, next) => {
   }
 
   data.password = await HASH.generateHash(data.password, 10);
-  data.created_at = moment().format('YYYY-MM-DD');
+  data.created_at = moment().format("YYYY-MM-DD");
   delete data.repassword;
   data.role = "owner";
   user = await firestore.collection("admin").add({ ...data });
@@ -131,7 +131,7 @@ exports.addAdmin = async (req, res, next) => {
   }
 
   data.password = await HASH.generateHash(data.password, 10);
-  data.created_at = moment().format('YYYY-MM-DD');
+  data.created_at = moment().format("YYYY-MM-DD");
   delete data.confirm_password;
   data.rest_id = req.user.rest_id;
   data.role = "admin";
@@ -139,11 +139,44 @@ exports.addAdmin = async (req, res, next) => {
   res.status(200).json({ success: true });
 };
 
-exports.removeAdmin = async(req, res) =>{
-  if(req.user.role != 'admin'){
-
+exports.getAdminList = async(req, res) =>{
+  if (req.user.role != "owner") {
+    return res.status(401).json({ success: false, err: status.UNAUTHORIZED });
   }
+
+  
+  let adminRef = await firestore.collection("admin");
+  let admin = await adminRef.where("rest_id", "==", req.user.rest_id).where('role','==','admin').get();
+
+  let adminList = []
+
+  admin.forEach(async (doc) => {
+    let data = doc.data()
+    adminList.push(data)
+  });
+
+  res.status(200).json({success: true, data: adminList})
 }
+
+exports.removeAdmin = async (req, res) => {
+  let email = req.body;
+  if (req.user.role != "owner") {
+    return res.status(401).json({ success: false, err: status.UNAUTHORIZED });
+  }
+
+  let adminRef = await firestore.collection("admin");
+  let admin = await adminRef.where("email", "==", email).limit(1).get();
+
+  if (!adminRef.empty) {
+    return res.status(403).json({ success: false, err: status.FORBIDDEN });
+  }
+
+  admin.forEach(async (doc) => {
+    await doc.ref.delete();
+  });
+
+  res.status(200).json({ success: true });
+};
 
 exports.restaurantRegister = async (req, res, next) => {
   req.body.created_at = new Date();
