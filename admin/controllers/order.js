@@ -9,7 +9,7 @@ exports.cancelOrder = async (req, res, next) => {
 
   if (!table_no || !order_no) {
     if (order_no != 0) {
-      return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+      return res.status(400).json({ status: false, message: status.BAD_REQUEST });
     }
   }
 
@@ -28,19 +28,19 @@ exports.cancelOrder = async (req, res, next) => {
         .then((order) => {
           return res.status(200).json({
             success: true,
-            message: `Table-${table_no} Order-${order_no} is successfully canceled`,
+            message: `Order-${order_no} from Table-${table_no} is successfully canceled`,
           });
         })
         .catch((err) => {
           return res
             .status(500)
-            .json({ success: false, err: status.SERVER_ERROR });
+            .json({ success: false, message: status.SERVER_ERROR });
         });
     } else {
-      return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+      return res.status(400).json({ status: false, message: status.BAD_REQUEST });
     }
   } else {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 };
 
@@ -49,7 +49,7 @@ exports.terminateSession = async (req, res, next) => {
   let cid = req.params.cid;
 
   if (!table_no) {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
   let orderRef = await firestore
@@ -93,7 +93,7 @@ exports.terminateSession = async (req, res, next) => {
         console.log('catchh')
         return res
           .status(500)
-          .json({ status: false, err: status.SERVER_ERROR });
+          .json({ status: false, message: status.SERVER_ERROR });
       });
   }else{
     
@@ -115,7 +115,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   let cid = req.params.cid;
 
   if (!table_no || !cid) {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
   let rest_details = await firestore
@@ -156,7 +156,7 @@ exports.generateInvoice = async(req, res, next) => {
   .collection('invoices').doc(req.params.invoice_id).get()
 
   if(!invoiceRef.exists){
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
   let rest_ref = await firestore.collection('restaurants').doc(req.user.rest_id).get()

@@ -50,7 +50,7 @@ exports.getCategory = async (req, res, next) => {
       }
     })
     .catch((err) => {
-      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -63,10 +63,10 @@ exports.addCategory = async (req, res, next) => {
     .then((cat) => {
       res
         .status(200)
-        .json({ success: true, data: { cat: req.body, id: cat.id } });
+        .json({ success: true, data: { cat: req.body, id: cat.id }, message: status.SUCCESS_ADDED });
     })
     .catch((err) => {
-      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -80,10 +80,10 @@ exports.setCategory = async (req, res, next) => {
     .then((cat) => {
       res
         .status(200)
-        .json({ success: true, data: { cat: req.body, id: req.params.id } });
+        .json({ success: true, data: { cat: req.body, id: req.params.id }, message: status.SUCCESS_ADDED });
     })
     .catch((err) => {
-      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -103,7 +103,7 @@ exports.getMenu = async (req, res, next) => {
       res.status(200).json({ success: true, data: data });
     })
     .catch((err) => {
-      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -114,7 +114,7 @@ exports.addMenu = async (req, res, next) => {
     if (success) {
       data.img_url = id;
     } else {
-      return res.status(500).json({ success: false, err: err });
+      return res.status(500).json({ success: false, message: err });
     }
   }
   await firstore
@@ -123,11 +123,11 @@ exports.addMenu = async (req, res, next) => {
     .collection("menu")
     .add(data)
     .then((menu) => {
-      res.status(200).json({ success: true, data: data });
+      res.status(200).json({ success: true, data: data, message: status.SUCCESS_ADDED });
     })
     .catch((err) => {
       console.log(err);
-      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -141,9 +141,9 @@ exports.addMenuFile = async (req, res, next) => {
         .add(data);
     }
   } catch (e) {
-    res.status(500).json({ success: false, err: status.SERVER_ERROR });
+    res.status(500).json({ success: false, message: status.SERVER_ERROR });
   }
-  res.status(200).json({ success: true, msg: "Successfully Saved" });
+  res.status(200).json({ success: true, mssage: status.SUCCESS_ADDED });
 };
 
 exports.updateMenu = async (req, res, next) => {
@@ -155,7 +155,7 @@ exports.updateMenu = async (req, res, next) => {
       data.img_url = id;
     } else {
       console.log(err);
-      return res.status(500).json({ success: false, err: err });
+      return res.status(500).json({ success: false, message: err });
     }
   }
   delete data.id;
@@ -166,11 +166,11 @@ exports.updateMenu = async (req, res, next) => {
     .doc(req.params.id)
     .set(data, { merge: true })
     .then((d) => {
-      res.status(200).json({ success: true, data: data });
+      res.status(200).json({ success: true, data: data, message: status.SUCCESS_UPDATED });
     })
     .catch((err) => {
       console.log(err);
-      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -185,10 +185,10 @@ exports.deleteMenu = async (req, res, next) => {
     .doc(req.params.id)
     .delete()
     .then((menu) => {
-      res.status(200).json({ success: true, data: menu });
+      res.status(200).json({ success: true, data: menu, message: status.SUCCESS_REMOVED });
     })
     .catch((err) => {
-      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -197,7 +197,7 @@ extractImage = async (req, res) => {
     photo = req.files.menu_pic;
 
     if (!photo.mimetype.startsWith("image")) {
-      resolve({ success: false, err: "Please upload an valid image file" });
+      resolve({ success: false, message: "Please upload an valid image file" });
     }
 
     photo.name = `Img-${Date.now()}${path.parse(photo.name).ext}`;
@@ -207,7 +207,7 @@ extractImage = async (req, res) => {
     await photo.mv(path_name, async (err) => {
       if (err) {
         console.log(err);
-        resolve({ success: false, err: "Problem With image upload" });
+        resolve({ success: false, message: "Problem With image upload" });
       } else {
         let img = await compressImage(path_name);
         console.log("img", img);
@@ -230,7 +230,7 @@ extractImage = async (req, res) => {
               console.log(err);
               fs.unlinkSync(path_name);
               fs.unlinkSync(output_path);
-              resolve({ success: false, err: "Problem With image upload" });
+              resolve({ success: false, message: "Problem With image upload" });
             } else {
               console.log(file);
               fs.unlinkSync(path_name);
@@ -259,7 +259,6 @@ removeImage = async (id) => {
 
 compressImage = async (path) => {
   return new Promise(async (resolve, reject) => {
-    console.log("comprexsss");
     await compress_images(
       path,
       `${process.env.FILE_BUILD_PATH}/`,

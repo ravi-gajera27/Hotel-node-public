@@ -8,7 +8,7 @@ exports.login = async (req, res, next) => {
   let data = req.body;
   if (!data.provider) {
     if (!data.email || !data.password) {
-      return res.status(400).json({ success: false, err: status.BAD_REQUEST });
+      return res.status(400).json({ success: false, message: status.BAD_REQUEST });
     }
 
     let usersRef = firestore.collection("users");
@@ -17,7 +17,7 @@ exports.login = async (req, res, next) => {
     if (user.empty) {
       return res
         .status(401)
-        .json({ success: false, err: status.INVALID_EMAIL });
+        .json({ success: false, message: status.INVALID_EMAIL });
     }
 
     let password, id;
@@ -30,13 +30,13 @@ exports.login = async (req, res, next) => {
     let verifyPassword = await HASH.verifyHash(data.password, password);
 
     if (!verifyPassword) {
-      return res.status(401).json({ success: false, err: status.INVALID_PASS });
+      return res.status(401).json({ success: false, message: status.INVALID_PASS });
     } else {
       await sendToken({ user_id: id }, res);
     }
   } else {
     if (!data.provider || !data.email) {
-      return res.status(400).json({ success: false, err: status.BAD_REQUEST });
+      return res.status(400).json({ success: false, message: status.BAD_REQUEST });
     }
 
     let usersRef = firestore.collection("users");
@@ -45,7 +45,7 @@ exports.login = async (req, res, next) => {
     if (user.empty) {
       return res
         .status(401)
-        .json({ success: false, err: status.INVALID_EMAIL });
+        .json({ success: false, message: status.INVALID_EMAIL });
     }
 
     let id;
@@ -62,14 +62,14 @@ exports.signup = async (req, res, next) => {
 
   if (!data.provider) {
     if (!data.email || !data.password || !data.name || !data.mobile_no) {
-      return res.status(400).json({ success: false, err: status.BAD_REQUEST });
+      return res.status(400).json({ success: false, message: status.BAD_REQUEST });
     }
 
     let usersRef = firestore.collection("users");
     let user = await usersRef.where("email", "==", data.email).limit(1).get();
 
     if (!user.empty) {
-      return res.status(403).json({ success: false, err: status.EMAIL_USED });
+      return res.status(403).json({ success: false, message: status.EMAIL_USED });
     }
 
     user = await usersRef
@@ -78,7 +78,7 @@ exports.signup = async (req, res, next) => {
       .get();
 
     if (!user.empty) {
-      return res.status(403).json({ success: false, err: status.MOBILE_USED });
+      return res.status(403).json({ success: false, message: status.MOBILE_USED });
     }
 
     data.password = await HASH.generateHash(data.password, 10);
@@ -86,14 +86,14 @@ exports.signup = async (req, res, next) => {
     delete data.repassword;
   } else {
     if (!data.email || !data.provider) {
-      return res.status(400).json({ success: false, err: status.BAD_REQUEST });
+      return res.status(400).json({ success: false, message: status.BAD_REQUEST });
     }
 
     let usersRef = firestore.collection("users");
     let user = await usersRef.where("email", "==", data.email).limit(1).get();
 
     if (!user.empty) {
-      return res.status(403).json({ success: false, err: status.EMAIL_USED });
+      return res.status(403).json({ success: false, message: status.EMAIL_USED });
     }
   }
 
@@ -112,7 +112,7 @@ exports.getUser = async (req, res, next) => {
       }
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -125,7 +125,7 @@ exports.verifyOtp = async (req, res, next) => {
       res.status(200).json({ success: true });
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -133,13 +133,13 @@ exports.verifySession = async (req, res, next) => {
   let cookie = await extractCookie(req, res);
 
   if (!cookie) {
-    return res.status(403).json({ success: false, err: status.UNAUTHORIZED });
+    return res.status(403).json({ success: false, message: status.UNAUTHORIZED });
   }
 
   if (req.user.join && req.user.join != cookie.rest_id) {
     return res
       .status(401)
-      .json({ success: false, err: status.SESSION_EXIST_REST });
+      .json({ success: false, message: status.SESSION_EXIST_REST });
   }
 
   let customersRef = await firestore
@@ -148,7 +148,7 @@ exports.verifySession = async (req, res, next) => {
 
   let data = await customersRef.get();
   if (!data.exists) {
-    return res.status(403).json({ success: false, err: status.UNAUTHORIZED });
+    return res.status(403).json({ success: false, message: status.UNAUTHORIZED });
   }
   data = data.data();
 
@@ -156,7 +156,7 @@ exports.verifySession = async (req, res, next) => {
     let customers = data.customers;
 
     if (Number(cookie.table) > Number(data.tables)) {
-      return res.status(403).json({ success: false, err: status.UNAUTHORIZED });
+      return res.status(403).json({ success: false, message: status.UNAUTHORIZED });
     }
 
     for (ele of customers) {
@@ -169,12 +169,12 @@ exports.verifySession = async (req, res, next) => {
         } else {
           return res
             .status(403)
-            .json({ success: false, err: status.FORBIDDEN });
+            .json({ success: false, message: status.FORBIDDEN });
         }
       } else if (Number(ele.table) == Number(cookie.table)) {
         return res
           .status(403)
-          .json({ success: false, err: status.SESSION_EXIST });
+          .json({ success: false, message: status.SESSION_EXIST });
       }
     }
 

@@ -27,7 +27,7 @@ exports.getInvoices = (req, res) => {
       res.status(200).json({ data: data, success: true });
     })
     .catch((err) => {
-      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -114,13 +114,13 @@ exports.getInvoicesByInterval = async (req, res, next) => {
   let interval = req.params.interval;
 
   if (!interval) {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
   interval = interval.split("_");
 
   if (interval.length != 2) {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
   let start_date = interval[0];
@@ -141,7 +141,7 @@ exports.getInvoicesByInterval = async (req, res, next) => {
       res.status(200).json({ success: true, data: invoices });
     })
     .catch((err) => {
-      res.status(500).json({ success: false, err: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -149,13 +149,13 @@ exports.getCategoriesStats = async (req, res, next) => {
   let interval = req.params.interval;
 
   if (!interval) {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
   interval = interval.split("_");
 
   if (interval.length != 2) {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
   let cat = await firestore
@@ -217,13 +217,13 @@ exports.getAdvanceStats = async (req, res, next) => {
   let slot = req.params.slot;
 
   if (!interval || !slot) {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
   interval = interval.split("_");
 
   if (interval.length != 2) {
-    return res.status(400).json({ status: false, err: status.BAD_REQUEST });
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
   let start_date = interval[0];
