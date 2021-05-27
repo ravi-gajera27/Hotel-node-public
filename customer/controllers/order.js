@@ -225,6 +225,8 @@ exports.checkout = async (req, res, next) => {
     data.invoice_format.curr_num = n2;
   }
 
+  data.inv_no = set_invoice_no
+
   let order = await orderRef.delete();
 
   req.body.cid = req.user.id;
@@ -240,7 +242,7 @@ exports.checkout = async (req, res, next) => {
 
   let userRef = await firestore.collection("users").doc(req.body.cid).get();
   let user = userRef.data();
-
+  
   await firestore
     .collection(`orders/${cookie.rest_id}/invoices`)
     .add(req.body)
