@@ -10,9 +10,9 @@ new Promise(async (resolve) => {
   ) {
     cookie = req.headers.authorization.split(" ")[2];
   } */
-  if (!cookie) {
+/*   if (!cookie) {
     resolve(false);
-  }
+  } */
   try {
     let decrypt = await crypto.AES.decrypt(cookie, process.env.RES_SECRET);
     let decryptData = await JSON.parse(decrypt.toString(crypto.enc.Utf8));
