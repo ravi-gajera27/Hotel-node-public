@@ -28,21 +28,26 @@ const menuAdmin = require("./admin/routes/menu");
 const statsAdmin = require("./admin/routes/stats");
 const userAdmin = require("./admin/routes/user");
 
-let whitelist = ["http://localhost:4300", "http://localhost:8100", "https://peraket-rms.web.app"];
+let whitelist = [
+  "http://localhost:4300",
+  "http://localhost:4200",
+  "http://localhost:8100",
+  "https://peraket-rms.web.app",
+];
 const corsConfig = {
   credentials: true,
-/*   origin: function (origin, callback) {
+  origin: function (origin, callback) {
     // allow requests with no origin
     if (!origin) return callback(null, true);
+    whitelist.includes(origin)
     console.log(whitelist.indexOf(origin), origin);
-    if (whitelist.indexOf(origin) === -1) {
+    if (whitelist.indexOf(origin) == -1) {
       var message = `The CORS policy for this origin doesn't 
                 allow access from the particular origin.`;
       return callback(new Error(message), false);
     }
-    return callback(null, true);
-  }, */
-  origin: true
+    return callback(null,true);
+  },
 };
 
 //set server configuration
@@ -67,5 +72,9 @@ app.use("/api/user/order", order);
 
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
-  console.log("app is running", moment().format("DD-MM-YYYY"), moment().utcOffset(process.env.UTC_OFFSET).format('hh:mm A'));
+  console.log(
+    "app is running",
+    moment().format("DD-MM-YYYY"),
+    moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A")
+  );
 });
