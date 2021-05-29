@@ -138,7 +138,7 @@ exports.addMenuFile = async (req, res, next) => {
         .collection("restaurants")
         .doc(req.user.rest_id)
         .collection("menu")
-        .add(data);
+        .add(ele);
     }
   } catch (e) {
     res.status(500).json({ success: false, message: status.SERVER_ERROR });
