@@ -15,4 +15,9 @@ module.exports = {
   SUCCESS_ADDED: 'Successfully added',
   SUCCESS_REMOVED: 'Successfully removed',
   SUCCESS_CHANGED: 'Successfully changed',
+  REQUEST_SENT_ALLREADAY: 'Your request is already sent to the restaurants' ,
+  REJECT_REQUEST: 'Your request is rejected by restaurants',
+  BLOCK: 'Your are temporary blocked, you will be unlocked within 2 days of blocked',
+  ACCEPT_REQUEST_ADMIN: 'Request is successfully accepted',
+  REJECT_REQUEST_ADMIN: 'Request is successfully rejected'
 };

@@ -228,6 +228,7 @@ exports.getUser = async (req, res, next) => {
     });
 };
 
+
 exports.verifyOtp = async (req, res, next) => {
   await firestore
     .collection("admin")

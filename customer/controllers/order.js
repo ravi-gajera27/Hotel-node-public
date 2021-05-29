@@ -16,14 +16,25 @@ exports.addOrder = async (req, res, next) => {
     res.status(401).json({ success: false, message: status.UNAUTHORIZED });
   }
 
-  let orderRef = await firestore
-    .collection(`restaurants/${cookie.rest_id}/order/`)
-    .doc(`table-${cookie.table}`);
+  let orderRef;
+  let data;
+  if (cookie.table == "takeaway") {
+    orderRef = await firestore
+      .collection(`restaurants/${cookie.rest_id}/torder/`)
+      .doc(`${cookie.table}`);
 
-  let data = await firestore
-    .collection("restaurants")
-    .doc(cookie.rest_id)
-    .get();
+    data = await firestore
+      .collection("restaurants")
+      .doc(cookie.rest_id)
+      .collection("takeaway")
+      .doc("users");
+  } else {
+    orderRef = await firestore
+      .collection(`restaurants/${cookie.rest_id}/order/`)
+      .doc(`table-${cookie.table}`);
+
+    data = await firestore.collection("restaurants").doc(cookie.rest_id).get();
+  }
 
   let customers = data.data().customers;
   let valid = false;
@@ -33,7 +44,9 @@ exports.addOrder = async (req, res, next) => {
     }
   }
   if (!valid) {
-    return res.status(401).json({ success: false, message: status.UNAUTHORIZED });
+    return res
+      .status(401)
+      .json({ success: false, message: status.UNAUTHORIZED });
   }
 
   let order = await orderRef.get();
@@ -67,7 +80,9 @@ exports.addOrder = async (req, res, next) => {
         cname: req.user.name,
         mobile_no: req.user.mobile_no,
         email: req.user.email,
-        last_visit: moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD"),
+        last_visit: moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .format("YYYY-MM-DD"),
         count: (Number(user.count) + 1).toString(),
       });
     } else {
@@ -75,7 +90,9 @@ exports.addOrder = async (req, res, next) => {
         cname: req.user.name,
         mobile_no: req.user.mobile_no,
         email: req.user.email,
-        last_visit: moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD"),
+        last_visit: moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .format("YYYY-MM-DD"),
         count: "1",
       });
       send_data.unique = true;
@@ -93,7 +110,9 @@ exports.addOrder = async (req, res, next) => {
         .json({ success: true, message: "Your order is successfully placed" });
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -105,9 +124,17 @@ exports.getOrder = async (req, res, next) => {
     res.status(401).json({ success: false, message: status.UNAUTHORIZED });
   }
 
-  let orderRef = await firestore
-    .collection(`restaurants/${cookie.rest_id}/order/`)
-    .doc(`table-${cookie.table}`);
+  let orderRef;
+
+  if (cookie.table == "takeaway") {
+    orderRef = await firestore
+      .collection(`restaurants/${cookie.rest_id}/torder/`)
+      .doc(`${cookie.table}`);
+  } else {
+    orderRef = await firestore
+      .collection(`restaurants/${cookie.rest_id}/order/`)
+      .doc(`table-${cookie.table}`);
+  }
 
   let order = await orderRef.get();
 
@@ -132,9 +159,18 @@ exports.checkout = async (req, res, next) => {
     res.status(401).json({ success: false, message: status.UNAUTHORIZED });
   }
 
-  let orderRef = await firestore
+  let orderRef;
+
+  if(cookie.table == 'takeaway'){
+    orderRef = await firestore
+    .collection(`restaurants/${cookie.rest_id}/torder/`)
+    .doc(`${cookie.table}`);
+  }
+  else{
+    orderRef = await firestore
     .collection(`restaurants/${cookie.rest_id}/order/`)
     .doc(`table-${cookie.table}`);
+  }
 
   let orderExist = await orderRef.get();
 
@@ -151,24 +187,47 @@ exports.checkout = async (req, res, next) => {
 
   let data = rest_details.data();
 
-  let index = data.customers.findIndex(
-    (ele) =>
-      ele.cid == req.user.id &&
-      ele.table == cookie.table &&
-      ele.cname == req.user.name
-  );
-  data.customers[index].checkout = true;
+  let takeawayRef = await firestore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .collection("takeaway")
+    .doc("users");
+
+  let takeawayUser;
+  let index;
+
+  if (cookie.table == "takeaway") {
+    takeawayUser = await takeawayRef.get().data();
+    index = takeawayUser.customers.findIndex(
+      (ele) =>
+        ele.cid == req.user.id &&
+        ele.table == cookie.table &&
+        ele.cname == req.user.name
+    );
+    takeawayUser.customers[index].checkout = true;
+  } else {
+    index = data.customers.findIndex(
+      (ele) =>
+        ele.cid == req.user.id &&
+        ele.table == cookie.table &&
+        ele.cname == req.user.name
+    );
+    data.customers[index].checkout = true;
+  }
 
   let invoice_format = data.invoice_format;
   let set_invoice_no = "";
-  
+
   if (!invoice_format.curr_num) {
     set_invoice_no =
       invoice_format.start_text +
       invoice_format.middle_symbol +
       (invoice_format.year
-        ? moment().utcOffset(process.env.UTC_OFFSET).year().toString().substr(-2)+
-          invoice_format.middle_symbol
+        ? moment()
+            .utcOffset(process.env.UTC_OFFSET)
+            .year()
+            .toString()
+            .substr(-2) + invoice_format.middle_symbol
         : "") +
       invoice_format.start_num;
     data.invoice_format.curr_num = invoice_format.start_num;
@@ -177,27 +236,42 @@ exports.checkout = async (req, res, next) => {
     let fan_year;
     if (current_month < 3) {
       fan_year =
-        moment().utcOffset(process.env.UTC_OFFSET).subtract(1, "year").format("YYYY").substr(-2) +
+        moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .subtract(1, "year")
+          .format("YYYY")
+          .substr(-2) +
         "-" +
         moment().utcOffset(process.env.UTC_OFFSET).format("YYYY").substr(-2);
     } else {
       fan_year =
         moment().utcOffset(process.env.UTC_OFFSET).format("YYYY").substr(-2) +
         "-" +
-        moment().utcOffset(process.env.UTC_OFFSET).add(1, "year").format("YYYY").substr(-2);
+        moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .add(1, "year")
+          .format("YYYY")
+          .substr(-2);
     }
     if (fan_year != invoice_format.fan_year) {
       invoice_format.fan_year =
         moment().utcOffset(process.env.UTC_OFFSET).format("YYYY").substr(-2) +
         "-" +
-        moment().utcOffset(process.env.UTC_OFFSET).add(1, "year").format("YYYY").substr(-2);
+        moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .add(1, "year")
+          .format("YYYY")
+          .substr(-2);
       data.invoice_format.curr_num = invoice_format.start_num;
       set_invoice_no =
         invoice_format.start_text +
         invoice_format.middle_symbol +
         (invoice_format.year
-          ? moment().utcOffset(process.env.UTC_OFFSET).year().toString().substr(-2)+
-            invoice_format.middle_symbol
+          ? moment()
+              .utcOffset(process.env.UTC_OFFSET)
+              .year()
+              .toString()
+              .substr(-2) + invoice_format.middle_symbol
           : "") +
         invoice_format.start_num;
     }
@@ -217,17 +291,20 @@ exports.checkout = async (req, res, next) => {
       invoice_format.start_text +
       invoice_format.middle_symbol +
       (invoice_format.year
-        ? moment().utcOffset(process.env.UTC_OFFSET).year().toString().substr(-2)+
-          invoice_format.middle_symbol
+        ? moment()
+            .utcOffset(process.env.UTC_OFFSET)
+            .year()
+            .toString()
+            .substr(-2) + invoice_format.middle_symbol
         : "") +
       n2;
 
     data.invoice_format.curr_num = n2;
   }
 
-  data.inv_no = set_invoice_no
+  data.inv_no = set_invoice_no;
 
-  let order = await orderRef.delete();
+  await orderRef.delete();
 
   req.body.cid = req.user.id;
   req.body.cname = req.user.name;
@@ -235,19 +312,26 @@ exports.checkout = async (req, res, next) => {
   req.body.invoice_no = set_invoice_no;
   delete req.body.date;
   delete req.body.qty;
-  req.body.invoice_date = moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD");
-  req.body.time = moment().utcOffset(process.env.UTC_OFFSET).format('HH:mm')
+  req.body.invoice_date = moment()
+    .utcOffset(process.env.UTC_OFFSET)
+    .format("YYYY-MM-DD");
+  req.body.time = moment().utcOffset(process.env.UTC_OFFSET).format("HH:mm");
   req.body.tax = data.tax.toString();
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
 
   let userRef = await firestore.collection("users").doc(req.body.cid).get();
   let user = userRef.data();
-  
+
   await firestore
     .collection(`orders/${cookie.rest_id}/invoices`)
     .add(req.body)
     .then(async (order) => {
-      data.customers[index].invoice_id = order.id;
+      if (cookie.table == "takeaway") {
+        takeawayUser.customers[index].invoice_id = order.id;
+        await takeawayRef.set({ customers: [...takeawayUser] });
+      } else {
+        data.customers[index].invoice_id = order.id;
+      }
       await firestore
         .collection("restaurants")
         .doc(cookie.rest_id)
@@ -261,7 +345,9 @@ exports.checkout = async (req, res, next) => {
       }
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
