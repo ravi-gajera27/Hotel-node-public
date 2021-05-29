@@ -27,6 +27,7 @@ const orderAdmin = require("./admin/routes/order");
 const menuAdmin = require("./admin/routes/menu");
 const statsAdmin = require("./admin/routes/stats");
 const userAdmin = require("./admin/routes/user");
+const custAdmin = require("./admin/routes/custAuth");
 
 let whitelist = [
   "http://localhost:4300",
@@ -39,14 +40,14 @@ const corsConfig = {
   origin: function (origin, callback) {
     // allow requests with no origin
     if (!origin) return callback(null, true);
-    whitelist.includes(origin)
+    whitelist.includes(origin);
     console.log(whitelist.indexOf(origin), origin);
     if (whitelist.indexOf(origin) == -1) {
       var message = `The CORS policy for this origin doesn't 
                 allow access from the particular origin.`;
       return callback(new Error(message), false);
     }
-    return callback(null,true);
+    return callback(null, true);
   },
 };
 
@@ -65,6 +66,7 @@ app.use("/api/admin/order", orderAdmin);
 app.use("/api/admin/menu", menuAdmin);
 app.use("/api/admin/stats", statsAdmin);
 app.use("/api/admin/user", userAdmin);
+app.use("/api/admin/customer", custAdmin);
 
 //process routes of customer
 app.use("/api/user/auth", authUsers);
