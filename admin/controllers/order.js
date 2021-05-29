@@ -17,7 +17,7 @@ exports.cancelOrder = async (req, res, next) => {
   if(table_no == 'takeaway'){
     orderRef = firestore
     .collection(`restaurants/${req.user.rest_id}/torder`)
-    .doc(`${table_no}`);
+    .doc(`${cid}`);
 
   }else{
     orderRef = firestore
@@ -64,7 +64,7 @@ exports.terminateSession = async (req, res, next) => {
   if(table_no == 'takeaway'){
     orderRef = firestore
     .collection(`restaurants/${req.user.rest_id}/torder`)
-    .doc(`${table_no}`);
+    .doc(`${cid}`);
 
   }else{
     orderRef = firestore

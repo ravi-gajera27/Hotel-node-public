@@ -210,9 +210,14 @@ let user = req.user
               success: false,
               message: status.REJECT_REQUEST,
             });
-          }
+          }else if(ele.checkout){ 
+            return res.status(401).json({
+            success: false,
+            message: status.UNAUTHORIZED,
+          })}
           return res.status(200).json({
             success: true,
+            request: true,
             message: status.REQUEST_SENT_ALLREADAY,
           });
         }

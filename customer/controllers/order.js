@@ -21,13 +21,14 @@ exports.addOrder = async (req, res, next) => {
   if (cookie.table == "takeaway") {
     orderRef = await firestore
       .collection(`restaurants/${cookie.rest_id}/torder/`)
-      .doc(`${cookie.table}`);
+      .doc(`${req.user.id}`);
 
     data = await firestore
       .collection("restaurants")
       .doc(cookie.rest_id)
       .collection("takeaway")
-      .doc("users");
+      .doc("users")
+      .get();
   } else {
     orderRef = await firestore
       .collection(`restaurants/${cookie.rest_id}/order/`)
@@ -67,6 +68,7 @@ exports.addOrder = async (req, res, next) => {
   if (orderData.length == 0) {
     send_data = {
       cid: req.user.id,
+      cname: req.user.name,
       order: [{ ...req.body }],
     };
 
@@ -129,7 +131,7 @@ exports.getOrder = async (req, res, next) => {
   if (cookie.table == "takeaway") {
     orderRef = await firestore
       .collection(`restaurants/${cookie.rest_id}/torder/`)
-      .doc(`${cookie.table}`);
+      .doc(`${req.user.id}`);
   } else {
     orderRef = await firestore
       .collection(`restaurants/${cookie.rest_id}/order/`)
@@ -161,15 +163,14 @@ exports.checkout = async (req, res, next) => {
 
   let orderRef;
 
-  if(cookie.table == 'takeaway'){
+  if (cookie.table == "takeaway") {
     orderRef = await firestore
-    .collection(`restaurants/${cookie.rest_id}/torder/`)
-    .doc(`${cookie.table}`);
-  }
-  else{
+      .collection(`restaurants/${cookie.rest_id}/torder/`)
+      .doc(`${req.user.id}`);
+  } else {
     orderRef = await firestore
-    .collection(`restaurants/${cookie.rest_id}/order/`)
-    .doc(`table-${cookie.table}`);
+      .collection(`restaurants/${cookie.rest_id}/order/`)
+      .doc(`table-${cookie.table}`);
   }
 
   let orderExist = await orderRef.get();
@@ -189,7 +190,7 @@ exports.checkout = async (req, res, next) => {
 
   let takeawayRef = await firestore
     .collection("restaurants")
-    .doc(req.user.rest_id)
+    .doc(cookie.rest_id)
     .collection("takeaway")
     .doc("users");
 
@@ -197,14 +198,19 @@ exports.checkout = async (req, res, next) => {
   let index;
 
   if (cookie.table == "takeaway") {
-    takeawayUser = await takeawayRef.get().data();
+    takeawayUser = (await takeawayRef.get()).data();
     index = takeawayUser.customers.findIndex(
       (ele) =>
         ele.cid == req.user.id &&
         ele.table == cookie.table &&
         ele.cname == req.user.name
     );
-    takeawayUser.customers[index].checkout = true;
+    let obj = { ...takeawayUser.customers[index] };
+
+    obj.checkout = true;
+    delete obj.req;
+
+    takeawayUser.customers[index] = obj;
   } else {
     index = data.customers.findIndex(
       (ele) =>
@@ -328,7 +334,7 @@ exports.checkout = async (req, res, next) => {
     .then(async (order) => {
       if (cookie.table == "takeaway") {
         takeawayUser.customers[index].invoice_id = order.id;
-        await takeawayRef.set({ customers: [...takeawayUser] });
+        await takeawayRef.set({ customers: [...takeawayUser.customers] });
       } else {
         data.customers[index].invoice_id = order.id;
       }
@@ -345,6 +351,7 @@ exports.checkout = async (req, res, next) => {
       }
     })
     .catch((err) => {
+      console.log(err);
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR });
@@ -368,6 +375,7 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
     },
     (err, data) => {
       if (err) {
+        console.log(err);
         return res
           .status(500)
           .json({ success: false, message: status.SERVER_ERROR });
@@ -381,6 +389,7 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
 
         pdf.create(data, options).toFile(output_path, function (err, data) {
           if (err) {
+            console.log(err);
             return res
               .status(500)
               .json({ success: false, message: status.SERVER_ERROR });
