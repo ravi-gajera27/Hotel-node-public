@@ -1,21 +1,29 @@
 const firestore = require("../../config/db").firestore();
 const status = require("../../utils/status");
-const HASH = require("../../utils/encryption");
-const TOKEN = require("../../utils/token");
+
 
 exports.cancelOrder = async (req, res, next) => {
   let table_no = req.params.table_no;
   let order_no = req.params.order_no;
+  let cid = req.params.cid;
 
-  if (!table_no || !order_no) {
+  if (!table_no || !order_no || !cid) {
     if (order_no != 0) {
       return res.status(400).json({ status: false, message: status.BAD_REQUEST });
     }
   }
 
-  let orderRef = firestore
+  let orderRef;
+  if(table_no == 'takeaway'){
+    orderRef = firestore
+    .collection(`restaurants/${req.user.rest_id}/torder`)
+    .doc(`${cid}`);
+
+  }else{
+    orderRef = firestore
     .collection(`restaurants/${req.user.rest_id}/order`)
     .doc(`table-${table_no}`);
+  }
 
   let orderData = await orderRef.get();
   if (orderData.exists) {
@@ -48,13 +56,22 @@ exports.terminateSession = async (req, res, next) => {
   let table_no = req.params.table_no;
   let cid = req.params.cid;
 
-  if (!table_no) {
+  if (!table_no || !cid) {
     return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
-  let orderRef = await firestore
+  let orderRef;
+  if(table_no == 'takeaway'){
+    orderRef = firestore
+    .collection(`restaurants/${req.user.rest_id}/torder`)
+    .doc(`${cid}`);
+
+  }else{
+    orderRef = firestore
     .collection(`restaurants/${req.user.rest_id}/order`)
-    .doc(`table-${table_no}`)
+    .doc(`table-${table_no}`);
+  }
+
 
     let order = await orderRef.get()
 
@@ -118,12 +135,18 @@ exports.checkoutCustomer = async (req, res, next) => {
     return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 
-  let rest_details = await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .get();
+  let customerRef;
+  if(table_no == 'takeaway'){
+    customerRef = firestore
+    .collection(`restaurants/${req.user.rest_id}/takeaway`)
+    .doc(`${cid}`);
 
-  let data = rest_details.data();
+  }else{
+    customerRef = firestore
+    .collection(`restaurants`).doc(`${req.user.rest_id}`)
+  }
+
+  let data = (await customerRef.get()).data()
 
   data.customers = data.customers.filter((ele) => {
     return (
