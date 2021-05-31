@@ -10,7 +10,7 @@ exports.acceptRequest = async (req, res, next) => {
     .collection("takeaway")
     .doc("users");
 
-  let customers = (await takeawayRef.get()).data();
+  let customers = (await takeawayRef.get()).data().customers;
 
   customers.map((cust) => {
     if (cust.cid == req.params.cid) {
@@ -31,7 +31,7 @@ exports.rejectRequest = async (req, res, next) => {
     .collection("takeaway")
     .doc("users");
 
-  let customers = (await takeawayRef.get()).data();
+  let customers = (await takeawayRef.get()).data().customers;
 
   customers.map((cust) => {
     if (cust.cid == req.params.cid) {
