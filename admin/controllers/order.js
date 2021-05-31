@@ -36,7 +36,7 @@ exports.cancelOrder = async (req, res, next) => {
         .then((order) => {
           return res.status(200).json({
             success: true,
-            message: `Order-${order_no} from Table-${table_no} is successfully canceled`,
+            message: `Order-${Number(order_no + 1)} from Table-${table_no} is successfully canceled`,
           });
         })
         .catch((err) => {
