@@ -160,7 +160,7 @@ exports.verifySession = async (req, res, next) => {
       .status(403)
       .json({ success: false, message: status.UNAUTHORIZED });
   }
-
+let user = req.user
   if (user.blocked) {
     let bl = moment(user.blocked.split("-"));
     let curr = moment()
@@ -210,9 +210,14 @@ exports.verifySession = async (req, res, next) => {
               success: false,
               message: status.REJECT_REQUEST,
             });
-          }
+          }else if(ele.checkout){ 
+            return res.status(401).json({
+            success: false,
+            message: status.UNAUTHORIZED,
+          })}
           return res.status(200).json({
             success: true,
+            request: true,
             message: status.REQUEST_SENT_ALLREADAY,
           });
         }
@@ -297,7 +302,12 @@ exports.verifySession = async (req, res, next) => {
     .doc(`${req.user.id}`)
     .set(user, { merge: true });
 
-  return res.status(200).json({ success: true });
+    if(cookie.table == 'takeaway'){
+      return res.status(200).json({ success: true, request: true, message: status.REQUEST_SENT });
+    }
+
+    return res.status(200).json({ success: true });
+ 
 };
 
 sendToken = async (data, res) => {
