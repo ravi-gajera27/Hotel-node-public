@@ -61,23 +61,31 @@ exports.terminateSession = async (req, res, next) => {
   }
 
   let orderRef;
+  let customerRef;
+
   if(table_no == 'takeaway'){
     orderRef = firestore
     .collection(`restaurants/${req.user.rest_id}/torder`)
     .doc(`${cid}`);
 
+    customersRef = await firestore
+    .collection(`restaurants`)
+    .doc(req.user.rest_id).collection('takeaway').doc('users');
+
   }else{
     orderRef = firestore
     .collection(`restaurants/${req.user.rest_id}/order`)
     .doc(`table-${table_no}`);
+
+    customersRef = await firestore
+    .collection(`restaurants`)
+    .doc(req.user.rest_id);
   }
 
 
     let order = await orderRef.get()
 
-  let customersRef = await firestore
-    .collection(`restaurants`)
-    .doc(req.user.rest_id);
+
 
   let data = await customersRef.get();
   customers = data.data().customers;
