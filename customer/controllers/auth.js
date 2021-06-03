@@ -160,7 +160,7 @@ exports.verifySession = async (req, res, next) => {
       .status(403)
       .json({ success: false, message: status.UNAUTHORIZED });
   }
-let user = req.user
+  let user = req.user;
   if (user.blocked) {
     let bl = moment(user.blocked.split("-"));
     let curr = moment()
@@ -187,15 +187,34 @@ let user = req.user
     .collection(`restaurants`)
     .doc(cookie.rest_id);
 
-  if (cookie.table == "takeaway") {
-    let takeawayRef = await firestore
-      .collection("restaurants")
-      .doc(cookie.rest_id)
-      .collection("takeaway")
-      .doc("users");
-    let takeawayUsers = await takeawayRef.get();
+  let takeawayRef = await firestore
+    .collection("restaurants")
+    .doc(cookie.rest_id)
+    .collection("takeaway")
+    .doc("users");
 
+  let takeawayUsers = await takeawayRef.get();
+
+  let data = await customersRef.get();
+
+  if (!data.exists) {
+    return res
+      .status(403)
+      .json({ success: false, message: status.UNAUTHORIZED });
+  }
+
+  if (cookie.table == "takeaway") {
     let dataCust = takeawayUsers.data();
+
+    let users = data.data();
+
+    for (let user of users?.customers) {
+      if (user.cid == req.user.id) {
+        return res
+          .status(401)
+          .json({ success: false, message: status.FORBIDDEN });
+      }
+    }
 
     if (dataCust?.customers && dataCust?.customers.length != 0) {
       let customers = dataCust.customers;
@@ -204,21 +223,22 @@ let user = req.user
           if (ele.req) {
             return res.status(200).json({
               success: true,
+              request: true,
+              message: status.REQUEST_SENT,
             });
           } else if (ele.req == false) {
             return res.status(403).json({
               success: false,
               message: status.REJECT_REQUEST,
             });
-          }else if(ele.checkout){ 
+          } else if (ele.checkout) {
             return res.status(401).json({
-            success: false,
-            message: status.UNAUTHORIZED,
-          })}
+              success: false,
+              message: status.UNAUTHORIZED,
+            });
+          }
           return res.status(200).json({
             success: true,
-            request: true,
-            message: status.REQUEST_SENT_ALLREADAY,
           });
         }
       }
@@ -240,12 +260,16 @@ let user = req.user
       await takeawayRef.set({ customers: [{ ...obj }] }, { merge: true });
     }
   } else {
-    let data = await customersRef.get();
-    if (!data.exists) {
-      return res
-        .status(403)
-        .json({ success: false, message: status.UNAUTHORIZED });
+    let dataCust = takeawayUsers.data();
+
+    for (let user of dataCust?.customers) {
+      if (user.cid == req.user.id) {
+        return res
+          .status(401)
+          .json({ success: false, message: status.ALREADY_SCAN_TAKEAWAY });
+      }
     }
+
     data = data.data();
 
     if (data.customers && data.customers.length != 0) {
@@ -302,12 +326,13 @@ let user = req.user
     .doc(`${req.user.id}`)
     .set(user, { merge: true });
 
-    if(cookie.table == 'takeaway'){
-      return res.status(200).json({ success: true, request: true, message: status.REQUEST_SENT });
-    }
+  if (cookie.table == "takeaway") {
+    return res
+      .status(200)
+      .json({ success: true, request: true, message: status.REQUEST_SENT });
+  }
 
-    return res.status(200).json({ success: true });
- 
+  return res.status(200).json({ success: true });
 };
 
 sendToken = async (data, res) => {
