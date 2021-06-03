@@ -55,7 +55,7 @@ exports.blockCustomer = async (req, res, next) => {
 
   let userRef = await firestore.collection("users").doc(req.params.cid);
 
-  let blocked = moment().utcOffset(process.env.UTC_OFFSET).format("yyyy-mm-dd");
+  let blocked = moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD");
 
   await takeawayRef.set({ customers: [...customers] }, { merge: true });
 
