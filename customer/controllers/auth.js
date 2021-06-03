@@ -165,7 +165,7 @@ exports.verifySession = async (req, res, next) => {
     let bl = moment(user.blocked.split("-"));
     let curr = moment()
       .utcOffset(process.env.UTC_OFFSET)
-      .format("yyyy-mm-dd")
+      .format("YYYY-MM-DD")
       .split("-");
     let diff = curr.diff(bl, "days");
 
