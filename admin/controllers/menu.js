@@ -7,6 +7,7 @@ const oauth = require("../../config/googleDrive");
 const compress_images = require("compress-images");
 const fs = require("fs");
 const path = require("path");
+const randomstring = require("randomstring");
 
 var credentials = require("../../peraket-rms-google-drive.json");
 let scopes = ["https://www.googleapis.com/auth/drive"];
@@ -61,9 +62,11 @@ exports.addCategory = async (req, res, next) => {
     .collection("categories")
     .add({ cat: req.body })
     .then((cat) => {
-      res
-        .status(200)
-        .json({ success: true, data: { cat: req.body, id: cat.id }, message: status.SUCCESS_ADDED });
+      res.status(200).json({
+        success: true,
+        data: { cat: req.body, id: cat.id },
+        message: status.SUCCESS_ADDED,
+      });
     })
     .catch((err) => {
       res.status(500).json({ success: false, message: status.SERVER_ERROR });
@@ -78,9 +81,11 @@ exports.setCategory = async (req, res, next) => {
     .doc(req.params.id)
     .set({ cat: [...req.body] })
     .then((cat) => {
-      res
-        .status(200)
-        .json({ success: true, data: { cat: req.body, id: req.params.id }, message: status.SUCCESS_ADDED });
+      res.status(200).json({
+        success: true,
+        data: { cat: req.body, id: req.params.id },
+        message: status.SUCCESS_ADDED,
+      });
     })
     .catch((err) => {
       res.status(500).json({ success: false, message: status.SERVER_ERROR });
@@ -88,23 +93,19 @@ exports.setCategory = async (req, res, next) => {
 };
 
 exports.getMenu = async (req, res, next) => {
-  await firstore
+  let menuDoc = await firstore
     .collection("restaurants")
     .doc(req.user.rest_id)
     .collection("menu")
-    .get()
-    .then((menu) => {
-      let data = [];
-      menu.docs.map((ele) => {
-        let temp = ele.data();
-        temp.id = ele.id;
-        data.push(temp);
-      });
-      res.status(200).json({ success: true, data: data });
-    })
-    .catch((err) => {
-      res.status(500).json({ success: false, message: status.SERVER_ERROR });
-    });
+    .doc("menu")
+    .get();
+
+  let menu = [];
+  if (menuDoc.exists) {
+    menu = menuDoc.data().menu;
+  }
+
+  res.status(200).json({ success: true, data: menu });
 };
 
 exports.addMenu = async (req, res, next) => {
@@ -117,7 +118,55 @@ exports.addMenu = async (req, res, next) => {
       return res.status(500).json({ success: false, message: err });
     }
   }
-  await firstore
+
+  let menuRef = await firstore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .collection("menu")
+    .doc("menu");
+
+  let menuData = await menuRef.get();
+
+  let menu = [];
+
+  if (!menuData.exists) {
+    let id = await generateRandomString();
+    data.id = id;
+    data.push(data);
+  } else {
+    let tempMenu = menuData.data().menu;
+
+    valid = false;
+    let id;
+    do {
+      id = await generateRandomString();
+      valid = false;
+      for (let menu of tempMenu) {
+        if (menu.id == id) {
+          valid = true;
+          break;
+        }
+      }
+    } while (valid);
+
+    data.id = id;
+    tempMenu.push(data);
+
+    menu = [...tempMenu];
+  }
+
+  await menuRef
+    .set({ menu: [...menu] })
+    .then((menu) => {
+      res
+        .status(200)
+        .json({ success: true, data: data, message: status.SUCCESS_ADDED });
+    })
+    .catch((err) => {
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
+    });
+
+  /*   await firstore
     .collection("restaurants")
     .doc(req.user.rest_id)
     .collection("menu")
@@ -128,11 +177,11 @@ exports.addMenu = async (req, res, next) => {
     .catch((err) => {
       console.log(err);
       res.status(500).json({ success: false, message: status.SERVER_ERROR });
-    });
+    }); */
 };
 
 exports.addMenuFile = async (req, res, next) => {
-  try {
+  /*   try {
     for (let ele of req.body) {
       await firstore
         .collection("restaurants")
@@ -142,8 +191,48 @@ exports.addMenuFile = async (req, res, next) => {
     }
   } catch (e) {
     res.status(500).json({ success: false, message: status.SERVER_ERROR });
+  } */
+  let menuRef = await firstore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .collection("menu")
+    .doc("menu");
+
+  let menuData = await menuRef.get();
+
+  let menu = [];
+
+  if (!menuData.exists) {
+    menu = [];
+  } else {
+    menu = menuData.data().menu;
   }
-  res.status(200).json({ success: true, mssage: status.SUCCESS_ADDED });
+  for (let ele of req.body) {
+    valid = false;
+    let id;
+    do {
+      id = await generateRandomString();
+      valid = false;
+      for (let m of menu) {
+        if (m.id == id) {
+          valid = true;
+          break;
+        }
+      }
+    } while (valid);
+
+    ele.id = id;
+    menu.push(ele);
+  }
+
+  await menuRef
+    .set({ menu: [...menu] })
+    .then((e) => {
+      res.status(200).json({ success: true, message: status.SUCCESS_ADDED });
+    })
+    .catch((err) => {
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
+    });
 };
 
 exports.updateMenu = async (req, res, next) => {
@@ -158,38 +247,107 @@ exports.updateMenu = async (req, res, next) => {
       return res.status(500).json({ success: false, message: err });
     }
   }
-  delete data.id;
-  await firstore
+
+  let menuRef = await firstore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .collection("menu")
+    .doc("menu");
+
+  let menuData = await menuRef.get();
+
+  let menu = menuData.data().menu;
+
+  let index = menu
+    .map((ele) => {
+      return ele.id;
+    })
+    .indexOf(data.id);
+
+  if (index == -1) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
+  }
+
+  menu[index] = data;
+
+  await menuRef
+    .set({ menu: [...menu] })
+    .then((e) => {
+      res.status(200).json({ success: true, message: status.SUCCESS_UPDATED });
+    })
+    .catch((err) => {
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
+    });
+  /*   await firstore
     .collection("restaurants")
     .doc(req.user.rest_id)
     .collection("menu")
     .doc(req.params.id)
     .set(data, { merge: true })
     .then((d) => {
-      res.status(200).json({ success: true, data: data, message: status.SUCCESS_UPDATED });
+      res
+        .status(200)
+        .json({ success: true, data: data, message: status.SUCCESS_UPDATED });
     })
     .catch((err) => {
       console.log(err);
       res.status(500).json({ success: false, message: status.SERVER_ERROR });
-    });
+    }); */
 };
 
 exports.deleteMenu = async (req, res, next) => {
   if (req.params.img_url) {
     let img = await removeImage(req.params.img_url);
   }
-  await firstore
+
+  let menuRef = await firstore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .collection("menu")
+    .doc("menu");
+
+  let menuData = await menuRef.get();
+
+  let menu = menuData.data().menu;
+
+  let index = menu
+    .map((ele) => {
+      return ele.id;
+    })
+    .indexOf(data.id);
+
+  if (index == -1) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
+  }
+
+  menu.splice(index, 1);
+
+  await menuRef
+    .set({ menu: [...menu] })
+    .then((e) => {
+      res.status(200).json({ success: true, message: status.SUCCESS_REMOVED });
+    })
+    .catch((err) => {
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
+    });
+  /*   await firstore
     .collection("restaurants")
     .doc(req.user.rest_id)
     .collection("menu")
     .doc(req.params.id)
     .delete()
     .then((menu) => {
-      res.status(200).json({ success: true, data: menu, message: status.SUCCESS_REMOVED });
+      res
+        .status(200)
+        .json({ success: true, data: menu, message: status.SUCCESS_REMOVED });
     })
     .catch((err) => {
       res.status(500).json({ success: false, message: status.SERVER_ERROR });
-    });
+    }); */
 };
 
 extractImage = async (req, res) => {
@@ -285,3 +443,10 @@ compressImage = async (path) => {
     );
   });
 };
+
+async function generateRandomString() {
+  return await randomstring.generate({
+    length: 12,
+    charset: "alphabetic",
+  });
+}

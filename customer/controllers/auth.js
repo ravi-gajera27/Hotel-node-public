@@ -4,6 +4,7 @@ const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
 const { extractCookie } = require("../../utils/cookie-parser");
 const moment = require("moment");
+const size = require('firestore-size');
 
 exports.login = async (req, res, next) => {
   let data = req.body;
@@ -197,6 +198,23 @@ exports.verifySession = async (req, res, next) => {
 
   let data = await customersRef.get();
 
+  let menu =  await firestore
+  .collection("restaurants")
+  .doc(
+    '9TGINBM3msBXwBIvWcw1'
+    )
+  .collection("menu").get();
+
+  let s = 0;
+  let count = 0;
+  for(let m of menu.docs){
+    count++;
+    s += size(m.data())
+  }
+
+  console.log(count,s)
+
+
   if (!data.exists) {
     return res
       .status(403)
@@ -331,7 +349,6 @@ exports.verifySession = async (req, res, next) => {
       .status(200)
       .json({ success: true, request: true, message: status.REQUEST_SENT });
   }
-
   return res.status(200).json({ success: true });
 };
 

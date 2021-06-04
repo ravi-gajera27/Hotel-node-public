@@ -18,7 +18,7 @@ module.exports = {
   REQUEST_SENT_ALLREADAY: "Your request is already sent to the restaurants",
   REQUEST_SENT: "Your request is sent to the restaurant, wait for accept",
   REJECT_REQUEST: "Your request is rejected by restaurant",
-  BLOCK: "Your are temporary blocked, you will be unlocked within 2 days of blocked",
+  BLOCK: "Your are temporary blocked, you will be unlocked within 2 days",
   ACCEPT_REQUEST_ADMIN: "Request is successfully accepted",
   REJECT_REQUEST_ADMIN: "Request is successfully rejected",
   ALREADY_SCAN_TAKEAWAY: "Scanning another qrcode is prohibitate"
