@@ -4,7 +4,9 @@ const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
 const { extractCookie } = require("../../utils/cookie-parser");
 const moment = require("moment");
-const size = require('firestore-size');
+const size = require("firestore-size");
+
+
 
 exports.login = async (req, res, next) => {
   let data = req.body;
@@ -164,10 +166,9 @@ exports.verifySession = async (req, res, next) => {
   let user = req.user;
   if (user.blocked) {
     let bl = moment(user.blocked.split("-"));
-    let curr = moment(moment()
-      .utcOffset(process.env.UTC_OFFSET)
-      .format("YYYY-MM-DD")
-      .split("-"));
+    let curr = moment(
+      moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD").split("-")
+    );
     let diff = curr.diff(bl, "days");
 
     if (diff <= 2) {
@@ -197,7 +198,7 @@ exports.verifySession = async (req, res, next) => {
   let takeawayUsers = await takeawayRef.get();
 
   let data = await customersRef.get();
-
+  /* 
   let menu =  await firestore
   .collection("restaurants")
   .doc(
@@ -212,8 +213,7 @@ exports.verifySession = async (req, res, next) => {
     s += size(m.data())
   }
 
-  console.log(count,s)
-
+  console.log(count,s) */
 
   if (!data.exists) {
     return res
@@ -221,24 +221,44 @@ exports.verifySession = async (req, res, next) => {
       .json({ success: false, message: status.UNAUTHORIZED });
   }
 
+  dataCust = {};
+  if (!takeawayUsers.exists) {
+    dataCust = { customers: [] };
+  } else {
+    dataCust = takeawayUsers.data();
+  }
+
   if (cookie.table == "takeaway") {
-    let dataCust = takeawayUsers.data();
-
-    let users = data.data();
-   
-
-    for (let user of users?.customers) {
+    let cust = data.data().users || [];
+    let index = 0;
+    let flag = 0;
+    for (let user of cust) {
       if (user.cid == req.user.id) {
+        if (user.restore) {
+          flag = 1;
+        }
         return res
           .status(401)
           .json({ success: false, message: status.FORBIDDEN });
       }
+      index++;
+    }
+
+    if (flag) {
+      cust.splice(index, 1);
+      await customersRef.set({ customers: [...cust] }, { merge: true });
     }
 
     if (dataCust?.customers && dataCust?.customers.length != 0) {
       let customers = dataCust.customers;
+      index = 0;
+      flag = 0;
       for (ele of customers) {
         if (ele.cid == req.user.id) {
+          if (ele.restore) {
+            flag = 1;
+            break;
+          }
           if (ele.req) {
             return res.status(200).json({
               success: true,
@@ -260,14 +280,20 @@ exports.verifySession = async (req, res, next) => {
             success: true,
           });
         }
+        index++;
       }
 
-      customers.push({
-        table: cookie.table,
-        cid: req.user.id,
-        cname: req.user.name,
-        checkout: false,
-      });
+      if (flag) {
+        delete customers[index].restore;
+      } else {
+        customers.push({
+          table: cookie.table,
+          cid: req.user.id,
+          cname: req.user.name,
+          checkout: false,
+        });
+      }
+
       await takeawayRef.set({ customers: [...customers] }, { merge: true });
     } else {
       let obj = {
@@ -279,16 +305,24 @@ exports.verifySession = async (req, res, next) => {
       await takeawayRef.set({ customers: [{ ...obj }] }, { merge: true });
     }
   } else {
-    let dataCust = takeawayUsers.data()
-
-    console.log(dataCust)
-
-    for (let user of dataCust?.customers) {
+    let index = 0;
+    let flag = 0;
+    let cust = dataCust?.customers || [];
+    for (let user of cust) {
       if (user.cid == req.user.id) {
+        if (ele.restore) {
+          flag = 1;
+        }
         return res
           .status(401)
           .json({ success: false, message: status.ALREADY_SCAN_TAKEAWAY });
       }
+      index++;
+    }
+
+    if (flag) {
+      cust.splice(index, 1);
+      await takeawayRef.set({ customers: [...cust] }, { merge: true });
     }
 
     data = data.data();
@@ -302,8 +336,15 @@ exports.verifySession = async (req, res, next) => {
           .json({ success: false, message: status.UNAUTHORIZED });
       }
 
+      index = 0;
+      flag = 0;
+
       for (ele of customers) {
         if (ele.cid == req.user.id) {
+          if (ele.restore) {
+            flag = 1;
+            break;
+          }
           if (
             Number(ele.table) == Number(cookie.table) &&
             ele.checkout == false
@@ -314,19 +355,24 @@ exports.verifySession = async (req, res, next) => {
               .status(403)
               .json({ success: false, message: status.FORBIDDEN });
           }
-        } else if (Number(ele.table) == Number(cookie.table)) {
+        } else if (Number(ele.table) == Number(cookie.table) && !ele.restore) {
           return res
             .status(403)
             .json({ success: false, message: status.SESSION_EXIST });
         }
+        index++;
       }
-      customers.push({
-        table: cookie.table,
-        cid: req.user.id,
-        cname: req.user.name,
-        checkout: false,
-      });
 
+      if (flag) {
+        delete customers[index].restore
+      } else {
+        customers.push({
+          table: cookie.table,
+          cid: req.user.id,
+          cname: req.user.name,
+          checkout: false,
+        });
+      }
       await customersRef.set({ customers: [...customers] }, { merge: true });
 
       return res.status(200).json({ success: true });
