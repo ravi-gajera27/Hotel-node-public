@@ -225,6 +225,7 @@ exports.verifySession = async (req, res, next) => {
     let dataCust = takeawayUsers.data();
 
     let users = data.data();
+   
 
     for (let user of users?.customers) {
       if (user.cid == req.user.id) {
@@ -278,7 +279,9 @@ exports.verifySession = async (req, res, next) => {
       await takeawayRef.set({ customers: [{ ...obj }] }, { merge: true });
     }
   } else {
-    let dataCust = takeawayUsers.data();
+    let dataCust = takeawayUsers.data()
+
+    console.log(dataCust)
 
     for (let user of dataCust?.customers) {
       if (user.cid == req.user.id) {
