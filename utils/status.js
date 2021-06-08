@@ -22,5 +22,7 @@ module.exports = {
   ACCEPT_REQUEST_ADMIN: "Request is successfully accepted",
   REJECT_REQUEST_ADMIN: "Request is successfully rejected",
   ALREADY_SCAN_TAKEAWAY: "Scanning another qrcode is prohibitate",
-  RESTORED: 'Successfully restored'
+  RESTORED: 'Successfully restored',
+  NOT_REGISTERED: 'Restaurant is not registred yet',
+  FORBIDDEN_REQ: 'Your are not allowed to process this request'
 };

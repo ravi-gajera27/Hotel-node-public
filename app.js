@@ -42,7 +42,6 @@ const corsConfig = {
     // allow requests with no origin
     if (!origin) return callback(null, true);
     whitelist.includes(origin);
-    console.log(whitelist.indexOf(origin), origin);
     if (whitelist.indexOf(origin) == -1) {
       var message = `The CORS policy for this origin doesn't 
                 allow access from the particular origin.`;
