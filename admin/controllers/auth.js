@@ -9,14 +9,18 @@ exports.login = async (req, res, next) => {
   console.log(req.body);
 
   if (!data.email || !data.password) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let usersRef = firestore.collection("admin");
   let user = await usersRef.where("email", "==", data.email).limit(1).get();
 
   if (user.empty) {
-    return res.status(401).json({ success: false, message: status.INVALID_EMAIL });
+    return res
+      .status(401)
+      .json({ success: false, message: status.INVALID_EMAIL });
   }
 
   let password, id, rest_id;
@@ -30,7 +34,9 @@ exports.login = async (req, res, next) => {
   let verifyPassword = await HASH.verifyHash(data.password, password);
 
   if (!verifyPassword) {
-    return res.status(401).json({ success: false, message: status.INVALID_PASS });
+    return res
+      .status(401)
+      .json({ success: false, message: status.INVALID_PASS });
   } else {
     if (rest_id) {
       await sendToken({ user_id: id, rest_id: rest_id }, res);
@@ -43,7 +49,9 @@ exports.resetPassword = async (req, res, next) => {
   let data = req.body;
 
   if (!data.cur_password || !data.new_password || !data.re_password) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   if (data.new_password != data.re_password) {
@@ -65,7 +73,7 @@ exports.resetPassword = async (req, res, next) => {
     .collection("admin")
     .doc(req.user.id)
     .set({ password: new_pass }, { merge: true });
-  res.status(200).json({ success: true,  message: status.SUCCESS_CHANGED});
+  res.status(200).json({ success: true, message: status.SUCCESS_CHANGED });
 };
 
 exports.signup = async (req, res, next) => {
@@ -78,7 +86,9 @@ exports.signup = async (req, res, next) => {
     !data.last_name ||
     !data.mobile_no
   ) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let usersRef = firestore.collection("admin");
@@ -91,7 +101,9 @@ exports.signup = async (req, res, next) => {
   user = await usersRef.where("mobile_no", "==", data.mobile_no).limit(1).get();
 
   if (!user.empty) {
-    return res.status(403).json({ success: false, message: status.MOBILE_USED });
+    return res
+      .status(403)
+      .json({ success: false, message: status.MOBILE_USED });
   }
 
   data.password = await HASH.generateHash(data.password, 10);
@@ -106,7 +118,9 @@ exports.addAdmin = async (req, res, next) => {
   let data = req.body;
 
   if (data.password != data.confirm_password) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   if (
@@ -116,11 +130,15 @@ exports.addAdmin = async (req, res, next) => {
     !data.last_name ||
     !data.confirm_password
   ) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   if (req.user.role != "owner") {
-    return res.status(403).json({ success: false, message: status.FORBIDDEN_REQ });
+    return res
+      .status(403)
+      .json({ success: false, message: status.FORBIDDEN_REQ });
   }
 
   let usersRef = firestore.collection("admin");
@@ -139,29 +157,35 @@ exports.addAdmin = async (req, res, next) => {
   res.status(200).json({ success: true, message: status.SUCCESS_ADDED });
 };
 
-exports.getAdminList = async(req, res) =>{
+exports.getAdminList = async (req, res) => {
   if (req.user.role != "owner") {
-    return res.status(403).json({ success: false, message: status.FORBIDDEN_REQ });
+    return res
+      .status(403)
+      .json({ success: false, message: status.FORBIDDEN_REQ });
   }
 
-  
   let adminRef = await firestore.collection("admin");
-  let admin = await adminRef.where("rest_id", "==", req.user.rest_id).where('role','==','admin').get();
+  let admin = await adminRef
+    .where("rest_id", "==", req.user.rest_id)
+    .where("role", "==", "admin")
+    .get();
 
-  let adminList = []
+  let adminList = [];
 
   admin.forEach(async (doc) => {
-    let data = doc.data()
-    adminList.push(data)
+    let data = doc.data();
+    adminList.push(data);
   });
 
-  res.status(200).json({success: true, data: adminList})
-}
+  res.status(200).json({ success: true, data: adminList });
+};
 
 exports.removeAdmin = async (req, res) => {
   let email = req.body;
   if (req.user.role != "owner") {
-    return res.status(403).json({ success: false, message: status.FORBIDDEN_REQ });
+    return res
+      .status(403)
+      .json({ success: false, message: status.FORBIDDEN_REQ });
   }
 
   let adminRef = await firestore.collection("admin");
@@ -175,12 +199,19 @@ exports.removeAdmin = async (req, res) => {
     await doc.ref.delete();
   });
 
-  res.status(200).json({ success: true, message: status.SUCCESS_REMOVED});
+  res.status(200).json({ success: true, message: status.SUCCESS_REMOVED });
 };
 
 exports.restaurantRegister = async (req, res, next) => {
   req.body.created_at = new Date();
-  req.body.user_id = req.user.id;
+  req.body.owner_id = req.user.id;
+
+  if (req.user.rest_id) {
+    return res
+      .status(403)
+      .json({ success: false, message: status.ALREARY_REGISTRED });
+  }
+
   firestore
     .collection("restaurants")
     .add({ ...req.body })
@@ -196,7 +227,9 @@ exports.restaurantRegister = async (req, res, next) => {
       sendToken(data, res);
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -206,10 +239,14 @@ exports.updateRestaurantDetaials = async (req, res, next) => {
     .doc(req.user.rest_id)
     .set({ ...req.body }, { merge: true })
     .then(async (profile) => {
-      return res.status(200).json({ success: true, message: status.SUCCESS_UPDATED});
+      return res
+        .status(200)
+        .json({ success: true, message: status.SUCCESS_UPDATED });
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -221,24 +258,29 @@ exports.getUser = async (req, res, next) => {
     .then((user) => {
       if (user.exists) {
         res.status(200).json({ success: true, data: user.data() });
+      } else {
+        res.status(401).json({ success: false, redirect: "/login" });
       }
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
     });
 };
-
 
 exports.verifyOtp = async (req, res, next) => {
   await firestore
     .collection("admin")
     .doc(req.user.id)
-    .set({ verify_otp: true }, { merge: true })
+    .set({ verifyOtp: true }, { merge: true })
     .then((user) => {
       res.status(200).json({ success: true });
     })
     .catch((err) => {
-      return res.status(500).json({ success: false, message: status.SERVER_ERROR });
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
