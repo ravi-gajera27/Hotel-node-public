@@ -198,22 +198,6 @@ exports.verifySession = async (req, res, next) => {
   let takeawayUsers = await takeawayRef.get();
 
   let data = await customersRef.get();
-  /* 
-  let menu =  await firestore
-  .collection("restaurants")
-  .doc(
-    '9TGINBM3msBXwBIvWcw1'
-    )
-  .collection("menu").get();
-
-  let s = 0;
-  let count = 0;
-  for(let m of menu.docs){
-    count++;
-    s += size(m.data())
-  }
-
-  console.log(count,s) */
 
   if (!data.exists) {
     return res
