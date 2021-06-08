@@ -9,6 +9,7 @@ let moment = require("moment");
 const db = require("./config/db");
 const path = require("path");
 const HASH = require("./utils/encryption");
+const randomstring = require("randomstring");
 
 //initialize server
 let app = express();
@@ -41,7 +42,6 @@ const corsConfig = {
     // allow requests with no origin
     if (!origin) return callback(null, true);
     whitelist.includes(origin);
-    console.log(whitelist.indexOf(origin), origin);
     if (whitelist.indexOf(origin) == -1) {
       var message = `The CORS policy for this origin doesn't 
                 allow access from the particular origin.`;
@@ -77,6 +77,7 @@ app.listen(process.env.PORT || 5000, () => {
   console.log(
     "app is running",
     moment().format("DD-MM-YYYY"),
-    moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A")
+    moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A"),
+  
   );
 });

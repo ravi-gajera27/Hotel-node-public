@@ -120,7 +120,7 @@ exports.addAdmin = async (req, res, next) => {
   }
 
   if (req.user.role != "owner") {
-    return res.status(401).json({ success: false, message: status.UNAUTHORIZED });
+    return res.status(403).json({ success: false, message: status.FORBIDDEN_REQ });
   }
 
   let usersRef = firestore.collection("admin");
@@ -141,7 +141,7 @@ exports.addAdmin = async (req, res, next) => {
 
 exports.getAdminList = async(req, res) =>{
   if (req.user.role != "owner") {
-    return res.status(401).json({ success: false, message: status.UNAUTHORIZED });
+    return res.status(403).json({ success: false, message: status.FORBIDDEN_REQ });
   }
 
   
@@ -161,7 +161,7 @@ exports.getAdminList = async(req, res) =>{
 exports.removeAdmin = async (req, res) => {
   let email = req.body;
   if (req.user.role != "owner") {
-    return res.status(401).json({ success: false, message: status.UNAUTHORIZED });
+    return res.status(403).json({ success: false, message: status.FORBIDDEN_REQ });
   }
 
   let adminRef = await firestore.collection("admin");
