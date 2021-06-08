@@ -42,8 +42,16 @@ exports.addOrder = async (req, res, next) => {
   for (let cust of customers) {
     if (cust.table == cookie.table && cust.cid == req.user.id) {
       valid = true;
+      if (cookie.table == "takeaway") {
+        if (cust.req == undefined) {
+          return res
+            .status(401)
+            .json({ success: true, message: status.REQUEST_SENT });
+        }
+      }
     }
   }
+  
   if (!valid) {
     return res
       .status(401)
