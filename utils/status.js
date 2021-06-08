@@ -24,5 +24,6 @@ module.exports = {
   ALREADY_SCAN_TAKEAWAY: "Scanning another qrcode is prohibitate",
   RESTORED: 'Successfully restored',
   NOT_REGISTERED: 'Restaurant is not registred yet',
-  FORBIDDEN_REQ: 'Your are not allowed to process this request'
+  FORBIDDEN_REQ: 'Your are not allowed to process this request',
+  ALREARY_REGISTRED: 'You have already registred restaurant'
 };
