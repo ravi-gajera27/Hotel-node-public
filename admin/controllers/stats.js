@@ -329,6 +329,9 @@ function getSlotBetweenInterval(interval, start, end) {
     case "today":
       let o = start.split(":");
       let c = end.split(":");
+      if(c[0] == '00'){
+        c[0] = '24'
+      }
       if (o[1] != "00") {
         if (Number(o[0]) + 2 <= Number(c[0])) {
           let name = `${moment(start, "HH:mm").format("h:mm A")}-${moment(

@@ -174,6 +174,8 @@ exports.getAdminList = async (req, res) => {
 
   admin.forEach(async (doc) => {
     let data = doc.data();
+    delete data.password;
+    delete data.rest_id;
     adminList.push(data);
   });
 
@@ -255,9 +257,33 @@ exports.getUser = async (req, res, next) => {
     .collection("admin")
     .doc(req.user.id)
     .get()
-    .then((user) => {
+    .then(async (user) => {
       if (user.exists) {
-        res.status(200).json({ success: true, data: user.data() });
+        let data = user.data();
+        delete data.password;
+        if (data.role == "owner") {
+          if (data.rest_id) {
+            let restRef = await firestore
+              .collection(`restaurants`)
+              .doc(data.rest_id)
+              .get();
+            restRef = restRef.data();
+            if (restRef.verified) {
+              data.verified = true;
+            } else {
+              data.verified = false;
+            }
+            delete data.rest_id;
+            data.rest = true;
+          }
+        } else if (data.role == "admin") {
+          delete data.rest_id;
+          data.rest = true;
+          data.verified = true;
+          data.verifyOtp = true;
+        }
+
+        res.status(200).json({ success: true, data: data });
       } else {
         res.status(401).json({ success: false, redirect: "/login" });
       }
