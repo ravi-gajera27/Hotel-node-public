@@ -6,8 +6,6 @@ const { extractCookie } = require("../../utils/cookie-parser");
 const moment = require("moment");
 const size = require("firestore-size");
 
-
-
 exports.login = async (req, res, next) => {
   let data = req.body;
   if (!data.provider) {
@@ -213,17 +211,19 @@ exports.verifySession = async (req, res, next) => {
   }
 
   if (cookie.table == "takeaway") {
-    let cust = data.data().users || [];
+    let cust = data.data().customers || [];
     let index = 0;
     let flag = 0;
     for (let user of cust) {
       if (user.cid == req.user.id) {
         if (user.restore) {
           flag = 1;
+          break;
+        } else {
+          return res
+            .status(401)
+            .json({ success: false, message: status.FORBIDDEN });
         }
-        return res
-          .status(401)
-          .json({ success: false, message: status.FORBIDDEN });
       }
       index++;
     }
@@ -296,10 +296,12 @@ exports.verifySession = async (req, res, next) => {
       if (user.cid == req.user.id) {
         if (ele.restore) {
           flag = 1;
+          break;
+        } else {
+          return res
+            .status(401)
+            .json({ success: false, message: status.ALREADY_SCAN_TAKEAWAY });
         }
-        return res
-          .status(401)
-          .json({ success: false, message: status.ALREADY_SCAN_TAKEAWAY });
       }
       index++;
     }
@@ -348,7 +350,7 @@ exports.verifySession = async (req, res, next) => {
       }
 
       if (flag) {
-        delete customers[index].restore
+        delete customers[index].restore;
       } else {
         customers.push({
           table: cookie.table,
