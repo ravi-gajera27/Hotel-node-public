@@ -6,7 +6,6 @@ const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
 
 exports.getUsers = (req, res) => {
-
     firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
