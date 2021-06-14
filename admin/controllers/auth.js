@@ -193,8 +193,8 @@ exports.removeAdmin = async (req, res) => {
   let adminRef = await firestore.collection("admin");
   let admin = await adminRef.where("email", "==", email).limit(1).get();
 
-  if (!adminRef.empty) {
-    return res.status(403).json({ success: false, message: status.FORBIDDEN });
+  if (!admin.empty) {
+    return res.status(403).json({ success: false, message: status.UNAUTHORIZED });
   }
 
   admin.forEach(async (doc) => {
