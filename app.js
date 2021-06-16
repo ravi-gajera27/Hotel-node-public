@@ -35,6 +35,7 @@ let whitelist = [
   "http://localhost:4200",
   "http://localhost:8100",
   "https://peraket-rms.web.app",
+  "https://peraket-admin.web.app"
 ];
 const corsConfig = {
   credentials: true,
