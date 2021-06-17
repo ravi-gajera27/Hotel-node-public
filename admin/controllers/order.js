@@ -29,6 +29,12 @@ exports.cancelOrder = async (req, res, next) => {
   if (orderData.exists) {
     let order = JSON.parse(JSON.stringify(orderData.data().order));
     if (Number(order_no) <= order.length) {
+      order.map(e => {
+        if(e.restore){
+          delete e.restore
+          e.cancel = true;
+        }
+      })
       order[Number(order_no)].restore = true;
 
       orderRef
@@ -38,7 +44,7 @@ exports.cancelOrder = async (req, res, next) => {
             success: true,
             message: `Order-${Number(
               order_no + 1
-            )} from ${ table_no == "takeaway" ? "Takeaway" : "Table-" + table_no +1} is successfully canceled`,
+            )} from ${ table_no == "takeaway" ? "Takeaway" : "Table-" + table_no } is successfully cancelled`,
           });
         })
         .catch((err) => {
@@ -92,7 +98,7 @@ exports.restoreOrder = async (req, res, next) => {
           return res.status(200).json({
             success: true,
             message: `Order-${Number(order_no + 1)} from ${
-              table_no == "takeaway" ? "Takeaway" : "Table-" + table_no +1
+              table_no == "takeaway" ? "Takeaway" : "Table-" + table_no 
             } is successfully restored`,
           });
         })

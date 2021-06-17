@@ -183,23 +183,37 @@ exports.getAdminList = async (req, res) => {
 };
 
 exports.removeAdmin = async (req, res) => {
-  let email = req.body;
+  let email = req.params.email;
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
+  }
+
   if (req.user.role != "owner") {
     return res
       .status(403)
       .json({ success: false, message: status.FORBIDDEN_REQ });
   }
 
-  let adminRef = await firestore.collection("admin");
-  let admin = await adminRef.where("email", "==", email).limit(1).get();
 
-  if (!admin.empty) {
-    return res.status(403).json({ success: false, message: status.UNAUTHORIZED });
+  let adminRef = await firestore.collection("admin");
+  let admin = await adminRef
+    .where("email", "==", email)
+    .where("rest_id", "==", req.user.rest_id)
+    .limit(1)
+    .get();
+
+  if (admin.empty) {
+    return res
+      .status(403)
+      .json({ success: false, message: status.UNAUTHORIZED });
   }
 
-  admin.forEach(async (doc) => {
-    await doc.ref.delete();
-  });
+  for (let doc of admin.docs) {
+    await firestore.collection("admin").doc(doc.id).delete();
+  }
 
   res.status(200).json({ success: true, message: status.SUCCESS_REMOVED });
 };
