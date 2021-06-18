@@ -29,12 +29,14 @@ const menuAdmin = require("./admin/routes/menu");
 const statsAdmin = require("./admin/routes/stats");
 const userAdmin = require("./admin/routes/user");
 const custAdmin = require("./admin/routes/custAuth");
+var CronJob = require('cron').CronJob;
 
 let whitelist = [
   "http://localhost:4300",
   "http://localhost:4200",
   "http://localhost:8100",
   "https://peraket-rms.web.app",
+  "https://peraket-admin.web.app"
 ];
 const corsConfig = {
   credentials: true,
@@ -72,8 +74,14 @@ app.use("/api/admin/customer", custAdmin);
 app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
+var job = new CronJob('0,30 * * * *', function() {
+  console.log('You will see this message every 30 min');
+}, null, true, 'America/Los_Angeles');
+
+
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
+  job.start();
   console.log(
     "app is running",
     moment().format("DD-MM-YYYY"),
