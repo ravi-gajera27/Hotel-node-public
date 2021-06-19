@@ -29,12 +29,12 @@ exports.cancelOrder = async (req, res, next) => {
   if (orderData.exists) {
     let order = JSON.parse(JSON.stringify(orderData.data().order));
     if (Number(order_no) <= order.length) {
-      order.map(e => {
-        if(e.restore){
-          delete e.restore
+      order.map((e) => {
+        if (e.restore) {
+          delete e.restore;
           e.cancel = true;
         }
-      })
+      });
       order[Number(order_no)].restore = true;
 
       orderRef
@@ -42,9 +42,9 @@ exports.cancelOrder = async (req, res, next) => {
         .then((order) => {
           return res.status(200).json({
             success: true,
-            message: `Order-${Number(
-              order_no + 1
-            )} from ${ table_no == "takeaway" ? "Takeaway" : "Table-" + table_no } is successfully cancelled`,
+            message: `Order-${Number(order_no + 1)} from ${
+              table_no == "takeaway" ? "Takeaway" : "Table-" + table_no
+            } is successfully cancelled`,
           });
         })
         .catch((err) => {
@@ -98,7 +98,7 @@ exports.restoreOrder = async (req, res, next) => {
           return res.status(200).json({
             success: true,
             message: `Order-${Number(order_no + 1)} from ${
-              table_no == "takeaway" ? "Takeaway" : "Table-" + table_no 
+              table_no == "takeaway" ? "Takeaway" : "Table-" + table_no
             } is successfully restored`,
           });
         })
@@ -116,7 +116,6 @@ exports.restoreOrder = async (req, res, next) => {
     return res.status(400).json({ status: false, message: status.BAD_REQUEST });
   }
 };
-
 
 exports.checkoutCustomer = async (req, res, next) => {
   let table_no = req.params.table_no;
@@ -189,4 +188,42 @@ exports.generateInvoice = async (req, res, next) => {
     success: true,
     data: { invoice: invoiceRef.data(), rest_details: rest_details },
   });
+};
+
+exports.getOrderByOrderNo = async (req, res, next) => {
+  let table_no = req.params.table_no;
+  let order_no = req.params.order_no;
+  let cid = req.params.cid;
+
+  if (!table_no || !order_no || !cid) {
+    if (order_no != 0 || order_no < 0) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST });
+    }
+  }
+
+  let orderRef;
+  if (table_no == "takeaway") {
+    orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/torder`)
+      .doc(`${cid}`);
+  } else {
+    orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/order`)
+      .doc(`table-${table_no}`);
+  }
+
+  let orderData = await orderRef.get();
+  if (!orderData.exists) {
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+  }
+
+  let order = orderData.data().order;
+
+  if (order.length >= Number(order_no)) {
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+  }
+
+  return res.status(200).json({ status: true, data: order[order_no] });
 };
