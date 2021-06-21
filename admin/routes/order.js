@@ -18,6 +18,11 @@ router.get(
   order.getOrderByOrderNo
 );
 router.put(
+  "/set-order/:table_no/:order_no/:cid",
+  protect,
+  order.setOrderByOrderNo
+);
+router.put(
   "/checkout-customer/:table_no/:cid",
   protect,
   order.checkoutCustomer
