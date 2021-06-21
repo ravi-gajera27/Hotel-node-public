@@ -389,7 +389,7 @@ exports.checkVerificationCodeForForgotPass = async (req, res) => {
   user.docs.forEach((e) => {
     tempuser = e.data();
   });
-  
+
   if (tempuser.ver_code != data.code) {
     return res
       .status(400)
@@ -402,8 +402,8 @@ exports.checkVerificationCodeForForgotPass = async (req, res) => {
 };
 
 exports.changePassword = async (req, res) => {
-  let { email, new_pass, confirm_pass } = req.body;
-  if (!email || !new_pass || !confirm_pass) {
+  let { email, new_pass, confirm_pass, code } = req.body;
+  if (!email || !new_pass || !confirm_pass || !code) {
     return res
       .status(400)
       .json({ success: false, message: status.BAD_REQUEST });
@@ -430,6 +430,12 @@ exports.changePassword = async (req, res) => {
   });
 
   user_id = user.docs[0].id;
+
+  if (tempuser.ver_code != code) {
+    return res
+      .status(404)
+      .json({ success: false, message: status.UNAUTHORIZED });
+  }
 
   tempuser.password = await HASH.generateHash(new_pass, 10);
   delete tempuser.ver_code;
