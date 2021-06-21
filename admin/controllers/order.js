@@ -199,7 +199,7 @@ exports.getOrderByOrderNo = async (req, res, next) => {
     if (order_no != 0 || order_no < 0) {
       return res
         .status(400)
-        .json({ status: false, message: status.BAD_REQUEST });
+        .json({ success: false, message: status.BAD_REQUEST });
     }
   }
 
@@ -216,14 +216,14 @@ exports.getOrderByOrderNo = async (req, res, next) => {
 
   let orderData = await orderRef.get();
   if (!orderData.exists) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
   let order = orderData.data().order;
 
-  if (order.length >= Number(order_no)) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+  if (order.length <= Number(order_no)) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
-  return res.status(200).json({ status: true, data: order[order_no] });
+  return res.status(200).json({ success: true, data: order[order_no] });
 };

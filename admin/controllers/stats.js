@@ -191,13 +191,14 @@ exports.getCategoriesStats = async (req, res, next) => {
     i.id = invoice.id;
     invoices.push(i);
     for (let ele of i.data) {
-      if (categories[`${ele.category}`] == "undefined") {
+      if (!categories[`${ele.category}`]) {
         categories[`${ele.category}`] = 0;
         items[`${ele.category}`] = {};
       }
       if (!items[`${ele.category}`][`${ele.name}`]) {
         items[`${ele.category}`][`${ele.name}`] = { qty: 0, price: 0 };
       }
+
       categories[`${ele.category}`] += ele.qty;
       let q = items[`${ele.category}`][`${ele.name}`].qty;
       let p = items[`${ele.category}`][`${ele.name}`].price;
@@ -303,7 +304,6 @@ exports.getAdvanceStats = async (req, res, next) => {
       index = moment(i.invoice_date).month();
       intervalData[index - starting_month].value += i.total_amt;
     }
-    
   } else if (slot == "last-year" || slot == "this-year") {
     intervalData = await getMonthsOfYear(slot);
     let data = await firestore
@@ -311,7 +311,7 @@ exports.getAdvanceStats = async (req, res, next) => {
       .where("invoice_date", ">=", start_date)
       .where("invoice_date", "<=", end_date)
       .get();
-console.log(intervalData)
+    console.log(intervalData);
     for (let invoice of data.docs) {
       let i = invoice.data();
       index = moment(i.invoice_date).month();
@@ -329,8 +329,8 @@ function getSlotBetweenInterval(interval, start, end) {
     case "today":
       let o = start.split(":");
       let c = end.split(":");
-      if(c[0] == '00'){
-        c[0] = '24'
+      if (c[0] == "00") {
+        c[0] = "24";
       }
       if (o[1] != "00") {
         if (Number(o[0]) + 2 <= Number(c[0])) {
@@ -410,17 +410,23 @@ function getSlotBetweenInterval(interval, start, end) {
       }
       break;
 
-      case "last-month":
-        days = moment().utcOffset(process.env.UTC_OFFSET).subtract(1, 'months').daysInMonth();
-        month = moment(
-          moment().utcOffset(process.env.UTC_OFFSET).subtract(1, 'months').month() + 1,
-          "MM"
-        )
+    case "last-month":
+      days = moment()
+        .utcOffset(process.env.UTC_OFFSET)
+        .subtract(1, "months")
+        .daysInMonth();
+      month = moment(
+        moment()
           .utcOffset(process.env.UTC_OFFSET)
-          .format("MMM");
-        for (let i = 1; i <= days; i++) {
-          data.push({ name: i + " " + month, value: 0 });
-        }
+          .subtract(1, "months")
+          .month() + 1,
+        "MM"
+      )
+        .utcOffset(process.env.UTC_OFFSET)
+        .format("MMM");
+      for (let i = 1; i <= days; i++) {
+        data.push({ name: i + " " + month, value: 0 });
+      }
   }
   return data;
 }
@@ -604,5 +610,5 @@ function getMonthsOfYear(slot) {
         }
       }
   }
-  return data
+  return data;
 }
