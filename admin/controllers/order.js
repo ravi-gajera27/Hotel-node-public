@@ -217,14 +217,73 @@ exports.getOrderByOrderNo = async (req, res, next) => {
 
   let orderData = await orderRef.get();
   if (!orderData.exists) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let order = orderData.data().order;
 
   if (order.length <= Number(order_no)) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   return res.status(200).json({ success: true, data: order[order_no] });
+};
+
+exports.setOrderByOrderNo = async (req, res, next) => {
+  let table_no = req.params.table_no;
+  let order_no = Number(req.params.order_no);
+  let cid = req.params.cid;
+
+  if (!table_no || !order_no || !cid) {
+    if (order_no != 0 || order_no < 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST });
+    }
+  }
+
+  let orderRef;
+  if (table_no == "takeaway") {
+    orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/torder`)
+      .doc(`${cid}`);
+  } else {
+    orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/order`)
+      .doc(`table-${table_no}`);
+  }
+
+  let orderData = await orderRef.get();
+  if (!orderData.exists) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
+  }
+
+  let order = orderData.data().order;
+
+  if (order.length <= Number(order_no)) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
+  }
+
+  order[order_no] = req.body;
+
+  orderRef
+    .set({ order: order }, { merge: true })
+    .then((e) => {
+      return res
+        .status(200)
+        .json({ success: true, message: "Successfully updated" });
+    })
+    .catch((err) => {
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
+    });
 };
