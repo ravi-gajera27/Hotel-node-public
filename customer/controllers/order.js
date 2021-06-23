@@ -333,8 +333,8 @@ exports.checkout = async (req, res, next) => {
   req.body.tax = data.tax.toString();
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
 
-  let userRef = await firestore.collection("users").doc(req.body.cid).get();
-  let user = userRef.data();
+/*   let userRef = await firestore.collection("users").doc(req.body.cid).get();
+  let user = userRef.data(); */
 
   await firestore
     .collection(`orders/${cookie.rest_id}/invoices`)

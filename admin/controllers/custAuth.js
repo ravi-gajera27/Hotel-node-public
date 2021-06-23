@@ -214,3 +214,266 @@ exports.restoreCustomer = async (req, res, next) => {
       res.status(404).json({ status: false, message: status.SERVER_ERROR });
     });
 };
+
+exports.checkoutCustomer = async (req, res, next) => {
+  let table_no = req.params.table_no;
+  let cid = req.params.cid;
+
+  if (!table_no || !cid) {
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+  }
+
+  let customerRef;
+  let orderRef;
+  if (table_no == "takeaway") {
+    customerRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/takeaway`)
+      .doc(`${cid}`);
+
+    orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/torder`)
+      .doc(`${cid}`);
+  } else {
+    customerRef = firestore
+      .collection(`restaurants`)
+      .doc(`${req.user.rest_id}`);
+
+      orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/order`)
+      .doc(`table-${table_no}`);
+  }
+
+  let data = (await customerRef.get()).data();
+
+  let orderDoc = await orderRef.get()
+  let orderData = orderDoc.data();
+
+  if(!orderDoc.exists || !orderData.cid || orderData.order.length == 0){
+    return res.status(403).json({ status: false, message: 'Customer is not ordered yet' });
+  }
+
+  if(orderData.cid != cid){
+    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+  }
+
+  let finalInvoice = { data:[]};
+
+  if(orderData.restore || orderData.cancel){
+    return res.status(403).json({ status: false, message: 'Order of this customer is already canceld' })
+  }
+
+  for (let ele of orderData.order) {
+    if (ele.restore || ele.cancel) {
+      continue;
+    }
+    let order = {...ele};
+  
+    if (finalInvoice.data.length != 0) {
+
+      finalInvoice.taxable += order.taxable;
+      finalInvoice.qty += order.qty;
+      let index = finalInvoice.data.length;
+      for (let i = 0; i < order.data.length; i++) {
+        let flag = true;
+        for (let j = 0; j < index; j++) {
+          if (
+            order.data[i].name == finalInvoice.data[j].name &&
+            order.data[i].type == finalInvoice.data[j].type &&
+            order.data[i].addon.length == finalInvoice.data[j].addon.length
+          ) {
+            let check = order.data[i].addon.every(
+              (el) => finalInvoice.data[j].addon.indexOf(el) >= 0
+            );
+            if (check == true) {
+              finalInvoice.data[j].qty += order.data[i].qty;
+              finalInvoice.data[j].price += order.data[i].price;
+              flag = false;
+              break;
+            }
+          }
+        }
+        if (flag) {
+          finalInvoice.data.push(order.data[i]);
+        }
+      }
+    } else {
+      finalInvoice = JSON.parse(JSON.stringify(order));
+    }
+
+  if (res.unique) {
+    finalInvoice.unique = true;
+  }
+
+}
+
+
+let restRef = await firestore
+.collection("restaurants")
+.doc(req.user.rest_id)
+
+let rest_details = await restRef.get()
+
+let restData = rest_details.data()
+console.log('before')
+ restData = await setInvoiceNumber(restData)
+
+ console.log('after')
+finalInvoice.cid = cid;
+finalInvoice.cname = orderData.cname;
+finalInvoice.table = table_no;
+finalInvoice.invoice_no = restData.inv_no;
+delete finalInvoice.date;
+delete finalInvoice.qty;
+finalInvoice.invoice_date = moment()
+  .utcOffset(process.env.UTC_OFFSET)
+  .format("YYYY-MM-DD");
+  finalInvoice.time = moment().utcOffset(process.env.UTC_OFFSET).format("HH:mm");
+  finalInvoice.tax = restData.tax.toString();
+  finalInvoice.total_amt = finalInvoice.taxable + (finalInvoice.taxable * restData.tax) / 100;
+
+  console.log('final invoice', finalInvoice )
+  let index;
+  if (table_no == "takeaway") {
+    takeawayUser = data
+    index = takeawayUser.customers.findIndex(
+      (ele) =>
+        ele.cid == cid &&
+        ele.table == table_no &&
+        ele.cname == orderData.cname
+    );
+    let obj = { ...takeawayUser.customers[index] };
+
+    obj.checkout = true;
+    delete obj.req;
+
+    takeawayUser.customers[index] = obj;
+  } else {
+    index = data.customers.findIndex(
+      (ele) =>
+        ele.cid == cid &&
+        ele.table == table_no &&
+        ele.cname == orderData.cname
+    );
+    data.customers[index].checkout = true;
+  }
+
+
+  await firestore
+    .collection(`orders/${req.user.rest_id}/invoices`)
+    .add(finalInvoice)
+    .then(async (order) => {
+
+   await orderRef.delete();
+
+      if (table_no == "takeaway") {
+        data.customers[index].invoice_id = order.id;
+        await customerRef.set({ customers: [...data.customers] });
+      } else {
+        data.customers[index].invoice_id = order.id;
+        restData.customers = data.customers;
+      }
+      await restRef.set(restData,{merge: true})
+      return res.status(200).json({ success: true, message: 'Successfully checkout'});
+  })
+  .catch((err) => {
+    console.log(err);
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  });
+};
+
+
+function setInvoiceNumber(data){
+  let invoice_format = data.invoice_format;
+  let set_invoice_no = "";
+
+  if (!invoice_format.curr_num) {
+    set_invoice_no =
+      invoice_format.start_text +
+      invoice_format.middle_symbol +
+      (invoice_format.year
+        ? moment()
+            .utcOffset(process.env.UTC_OFFSET)
+            .year()
+            .toString()
+            .substr(-2) + invoice_format.middle_symbol
+        : "") +
+      invoice_format.start_num;
+    data.invoice_format.curr_num = invoice_format.start_num;
+  } else {
+    let current_month = moment().utcOffset(process.env.UTC_OFFSET).month();
+    let fan_year;
+    if (current_month < 3) {
+      fan_year =
+        moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .subtract(1, "year")
+          .format("YYYY")
+          .substr(-2) +
+        "-" +
+        moment().utcOffset(process.env.UTC_OFFSET).format("YYYY").substr(-2);
+    } else {
+      fan_year =
+        moment().utcOffset(process.env.UTC_OFFSET).format("YYYY").substr(-2) +
+        "-" +
+        moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .add(1, "year")
+          .format("YYYY")
+          .substr(-2);
+    }
+    if (fan_year != invoice_format.fan_year) {
+      invoice_format.fan_year =
+        moment().utcOffset(process.env.UTC_OFFSET).format("YYYY").substr(-2) +
+        "-" +
+        moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .add(1, "year")
+          .format("YYYY")
+          .substr(-2);
+      data.invoice_format.curr_num = invoice_format.start_num;
+      set_invoice_no =
+        invoice_format.start_text +
+        invoice_format.middle_symbol +
+        (invoice_format.year
+          ? moment()
+              .utcOffset(process.env.UTC_OFFSET)
+              .year()
+              .toString()
+              .substr(-2) + invoice_format.middle_symbol
+          : "") +
+        invoice_format.start_num;
+    }
+  }
+
+  let curr_num = invoice_format.curr_num;
+  if (!set_invoice_no) {
+    let n1 = curr_num.toString();
+    let n2 = (parseInt(curr_num) + 1).toString();
+    let l1 = n1.length;
+    let l2 = n2.length;
+    if (l1 > l2) {
+      n2 = n1.substr(0, l1 - l2) + n2;
+    }
+
+    set_invoice_no =
+      invoice_format.start_text +
+      invoice_format.middle_symbol +
+      (invoice_format.year
+        ? moment()
+            .utcOffset(process.env.UTC_OFFSET)
+            .year()
+            .toString()
+            .substr(-2) + invoice_format.middle_symbol
+        : "") +
+      n2;
+
+    data.invoice_format.curr_num = n2;
+  }
+
+  data.inv_no = set_invoice_no;
+ 
+  return data;
+
+}

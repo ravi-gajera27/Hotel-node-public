@@ -22,11 +22,6 @@ router.put(
   protect,
   order.setOrderByOrderNo
 );
-router.put(
-  "/checkout-customer/:table_no/:cid",
-  protect,
-  order.checkoutCustomer
-);
 router.get("/generate-invoice/:invoice_id", protect, order.generateInvoice);
 
 module.exports = router;
