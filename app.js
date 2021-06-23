@@ -60,7 +60,13 @@ app.use(cors(corsConfig));
 app.use(cookieParser());
 app.use(expressFileUpload());
 app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + "/utils"));
 app.set("view engine", "ejs");
+app.set('views', path.join(__dirname, '/utils/templates'));
+
+app.get('/eod1', (req, res)=>{
+  res.render('eod1')
+})
 
 //process routes of admin
 app.use("/api/admin/auth", authAdmin);
