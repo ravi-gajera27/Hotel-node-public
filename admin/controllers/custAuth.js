@@ -236,7 +236,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   if (table_no == "takeaway") {
     customerRef = firestore
       .collection(`restaurants/${req.user.rest_id}/takeaway`)
-      .doc(`${cid}`);
+      .doc('users');
 
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/torder`)
@@ -344,6 +344,7 @@ exports.checkoutCustomer = async (req, res, next) => {
 
   let index;
   if (table_no == "takeaway") {
+    console.log(data)
     takeawayUser = data;
     index = takeawayUser.customers.findIndex(
       (ele) =>
