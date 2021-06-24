@@ -69,7 +69,9 @@ exports.removeCustomer = async (req, res, next) => {
   let cid = req.params.cid;
 
   if (!table_no || !cid) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let orderRef;
@@ -157,7 +159,9 @@ exports.restoreCustomer = async (req, res, next) => {
   let cid = req.params.cid;
 
   if (!table_no || !cid) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let customersRef;
@@ -190,7 +194,9 @@ exports.restoreCustomer = async (req, res, next) => {
   });
 
   if (index == -1) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let order = await orderRef.get();
@@ -220,7 +226,9 @@ exports.checkoutCustomer = async (req, res, next) => {
   let cid = req.params.cid;
 
   if (!table_no || !cid) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let customerRef;
@@ -255,7 +263,9 @@ exports.checkoutCustomer = async (req, res, next) => {
   }
 
   if (orderData.cid != cid) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let finalInvoice = { data: [] };
@@ -384,7 +394,9 @@ exports.updateInvoice = async (req, res) => {
   let invoice_id = req.params.invoice_id;
 
   if (!invoice.cid || !invoice_id) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let customerRef;
@@ -410,7 +422,9 @@ exports.updateInvoice = async (req, res) => {
   }
 
   if (!flag) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   delete invoice.invoice_id;
@@ -432,15 +446,17 @@ exports.updateInvoice = async (req, res) => {
 };
 
 exports.cleanUpCustomers = async (req, res) => {
-  let cid = req.params.cid;
- let table_no = rea.params.table_no;
+  let invoice = req.body;
+  let invoice_id = req.params.invoice_id;
 
-  if (!cid || !table_no) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+  if (!invoice.cid || !invoice.table_no || !invoice_id) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let customerRef;
-  if (table_no == "takeaway") {
+  if (invoice.table == "takeaway") {
     customerRef = firestore
       .collection(`restaurants/${req.user.rest_id}/takeaway`)
       .doc(`${invoice.cid}`);
@@ -453,17 +469,28 @@ exports.cleanUpCustomers = async (req, res) => {
   let custDoc = await customerRef.get();
 
   if (!custDoc.exists) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
 
-  let customers = custDoc.data().customers.filter((ele) => ele.cid == cid && ele.table == table_no);
+  let customers = custDoc
+    .data()
+    .customers.filter(
+      (ele) => ele.cid == invoice.cid && ele.table == invoice.table
+    );
 
-  customerRef
-    .set({ customers: [...customers] }, { merge: true })
-    .then(async (e) => {
+  delete invoice.invoice_id;
+  delete invoice.order_no;
+  await firestore
+    .collection(`orders/${req.user.rest_id}/invoices`)
+    .doc(invoice_id)
+    .set(invoice, { merge: true })
+    .then((e) => {
+      await customerRef.set({ customers: [...customers] }, { merge: true });
       await firestore
         .collection("users")
-        .doc(cid)
+        .doc(invoice.cid)
         .set({ join: "" }, { merge: true });
       return res
         .status(200)
