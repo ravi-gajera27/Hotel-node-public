@@ -449,14 +449,14 @@ exports.cleanUpCustomers = async (req, res) => {
   let invoice = req.body;
   let invoice_id = req.params.invoice_id;
 
-  if (!invoice.cid || !invoice.table_no || invoice_id) {
+  if (!invoice.cid || !invoice.table_no || !invoice_id) {
     return res
       .status(400)
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
   let customerRef;
-  if (table_no == "takeaway") {
+  if (invoice.table == "takeaway") {
     customerRef = firestore
       .collection(`restaurants/${req.user.rest_id}/takeaway`)
       .doc(`${invoice.cid}`);
@@ -477,7 +477,7 @@ exports.cleanUpCustomers = async (req, res) => {
   let customers = custDoc
     .data()
     .customers.filter(
-      (ele) => ele.cid == invoice.cid && ele.table == invoice.table_no
+      (ele) => ele.cid == invoice.cid && ele.table == invoice.table
     );
 
   delete invoice.invoice_id;
@@ -490,7 +490,7 @@ exports.cleanUpCustomers = async (req, res) => {
       await customerRef.set({ customers: [...customers] }, { merge: true });
       await firestore
         .collection("users")
-        .doc(cid)
+        .doc(invoice.cid)
         .set({ join: "" }, { merge: true });
       return res
         .status(200)
