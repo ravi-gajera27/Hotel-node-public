@@ -368,7 +368,9 @@ exports.forgotPasswordCheckMail = async (req, res) => {
 };
 
 exports.checkVerificationCodeForForgotPass = async (req, res) => {
+  
   let data = req.body;
+  console.log(data);
   if (!data.email || !data.code) {
     return res
       .status(400)

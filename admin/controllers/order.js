@@ -117,47 +117,7 @@ exports.restoreOrder = async (req, res, next) => {
   }
 };
 
-exports.checkoutCustomer = async (req, res, next) => {
-  let table_no = req.params.table_no;
-  let cid = req.params.cid;
 
-  if (!table_no || !cid) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
-  }
-
-  let customerRef;
-  if (table_no == "takeaway") {
-    customerRef = firestore
-      .collection(`restaurants/${req.user.rest_id}/takeaway`)
-      .doc(`${cid}`);
-  } else {
-    customerRef = firestore
-      .collection(`restaurants`)
-      .doc(`${req.user.rest_id}`);
-  }
-
-  let data = (await customerRef.get()).data();
-
-  data.customers = data.customers.filter((ele) => {
-    return ele.cid != cid && ele.table != table_no;
-  });
-
-  await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .set(data, { merge: true })
-    .then(async (result) => {
-      await firestore
-        .collection("users")
-        .doc(`${cid}`)
-        .set({ join: "" }, { merge: true });
-
-      res.status(200).json({ success: true });
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-};
 
 exports.generateInvoice = async (req, res, next) => {
   let invoiceRef = await firestore
