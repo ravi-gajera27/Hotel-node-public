@@ -449,7 +449,7 @@ exports.cleanUpCustomers = async (req, res) => {
   let invoice = req.body;
   let invoice_id = req.params.invoice_id;
 
-  if (!invoice.cid || !invoice.table_no || !invoice_id) {
+  if (!invoice.cid || !invoice.table || !invoice_id) {
     return res
       .status(400)
       .json({ success: false, message: status.BAD_REQUEST });
@@ -477,7 +477,7 @@ exports.cleanUpCustomers = async (req, res) => {
   let customers = custDoc
     .data()
     .customers.filter(
-      (ele) => ele.cid == invoice.cid && ele.table == invoice.table
+      (ele) => ele.cid != invoice.cid && ele.table != invoice.table
     );
 
   delete invoice.invoice_id;
