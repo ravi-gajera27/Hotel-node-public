@@ -69,7 +69,7 @@ exports.removeCustomer = async (req, res, next) => {
   let cid = req.params.cid;
 
   if (!table_no || !cid) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
   let orderRef;
@@ -137,7 +137,7 @@ exports.removeCustomer = async (req, res, next) => {
         console.log("catchh");
         return res
           .status(500)
-          .json({ status: false, message: status.SERVER_ERROR });
+          .json({ success: false, message: status.SERVER_ERROR });
       });
   } else {
     await firestore
@@ -157,7 +157,7 @@ exports.restoreCustomer = async (req, res, next) => {
   let cid = req.params.cid;
 
   if (!table_no || !cid) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
   let customersRef;
@@ -190,7 +190,7 @@ exports.restoreCustomer = async (req, res, next) => {
   });
 
   if (index == -1) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
   let order = await orderRef.get();
@@ -208,10 +208,10 @@ exports.restoreCustomer = async (req, res, next) => {
         .doc(`${cid}`)
         .set({ join: req.user.rest_id }, { merge: true });
 
-      res.status(200).json({ status: true, message: status.RESTORED });
+      res.status(200).json({ success: true, message: status.RESTORED });
     })
     .catch((err) => {
-      res.status(404).json({ status: false, message: status.SERVER_ERROR });
+      res.status(404).json({ success: false, message: status.SERVER_ERROR });
     });
 };
 
@@ -220,7 +220,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   let cid = req.params.cid;
 
   if (!table_no || !cid) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
   let customerRef;
@@ -238,38 +238,42 @@ exports.checkoutCustomer = async (req, res, next) => {
       .collection(`restaurants`)
       .doc(`${req.user.rest_id}`);
 
-      orderRef = firestore
+    orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/order`)
       .doc(`table-${table_no}`);
   }
 
   let data = (await customerRef.get()).data();
 
-  let orderDoc = await orderRef.get()
+  let orderDoc = await orderRef.get();
   let orderData = orderDoc.data();
 
-  if(!orderDoc.exists || !orderData.cid || orderData.order.length == 0){
-    return res.status(403).json({ status: false, message: 'Customer is not ordered yet' });
+  if (!orderDoc.exists || !orderData.cid || orderData.order.length == 0) {
+    return res
+      .status(403)
+      .json({ success: false, message: "Customer is not ordered yet" });
   }
 
-  if(orderData.cid != cid){
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
+  if (orderData.cid != cid) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
-  let finalInvoice = { data:[]};
+  let finalInvoice = { data: [] };
 
-  if(orderData.restore || orderData.cancel){
-    return res.status(403).json({ status: false, message: 'Order of this customer is already canceld' })
+  if (orderData.restore || orderData.cancel) {
+    return res.status(403).json({
+      success: false,
+      message: "Order of this customer is already canceld",
+    });
   }
 
   for (let ele of orderData.order) {
     if (ele.restore || ele.cancel) {
       continue;
     }
-    let order = {...ele};
-  
-    if (finalInvoice.data.length != 0) {
+    let order = { ...ele };
 
+    if (finalInvoice.data.length != 0) {
       finalInvoice.taxable += order.taxable;
       finalInvoice.qty += order.qty;
       let index = finalInvoice.data.length;
@@ -300,46 +304,40 @@ exports.checkoutCustomer = async (req, res, next) => {
       finalInvoice = JSON.parse(JSON.stringify(order));
     }
 
-  if (res.unique) {
-    finalInvoice.unique = true;
+    if (res.unique) {
+      finalInvoice.unique = true;
+    }
   }
 
-}
+  let restRef = await firestore.collection("restaurants").doc(req.user.rest_id);
 
+  let rest_details = await restRef.get();
 
-let restRef = await firestore
-.collection("restaurants")
-.doc(req.user.rest_id)
+  let restData = rest_details.data();
+  restData = await setInvoiceNumber(restData);
 
-let rest_details = await restRef.get()
-
-let restData = rest_details.data()
-console.log('before')
- restData = await setInvoiceNumber(restData)
-
- console.log('after')
-finalInvoice.cid = cid;
-finalInvoice.cname = orderData.cname;
-finalInvoice.table = table_no;
-finalInvoice.invoice_no = restData.inv_no;
-delete finalInvoice.date;
-delete finalInvoice.qty;
-finalInvoice.invoice_date = moment()
-  .utcOffset(process.env.UTC_OFFSET)
-  .format("YYYY-MM-DD");
-  finalInvoice.time = moment().utcOffset(process.env.UTC_OFFSET).format("HH:mm");
+  finalInvoice.cid = cid;
+  finalInvoice.cname = orderData.cname;
+  finalInvoice.table = table_no;
+  finalInvoice.invoice_no = restData.inv_no;
+  delete finalInvoice.date;
+  delete finalInvoice.qty;
+  finalInvoice.invoice_date = moment()
+    .utcOffset(process.env.UTC_OFFSET)
+    .format("YYYY-MM-DD");
+  finalInvoice.time = moment()
+    .utcOffset(process.env.UTC_OFFSET)
+    .format("HH:mm");
   finalInvoice.tax = restData.tax.toString();
-  finalInvoice.total_amt = finalInvoice.taxable + (finalInvoice.taxable * restData.tax) / 100;
+  finalInvoice.total_amt =
+    finalInvoice.taxable + (finalInvoice.taxable * restData.tax) / 100;
 
-  console.log('final invoice', finalInvoice )
   let index;
   if (table_no == "takeaway") {
-    takeawayUser = data
+    takeawayUser = data;
     index = takeawayUser.customers.findIndex(
       (ele) =>
-        ele.cid == cid &&
-        ele.table == table_no &&
-        ele.cname == orderData.cname
+        ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
     );
     let obj = { ...takeawayUser.customers[index] };
 
@@ -350,20 +348,16 @@ finalInvoice.invoice_date = moment()
   } else {
     index = data.customers.findIndex(
       (ele) =>
-        ele.cid == cid &&
-        ele.table == table_no &&
-        ele.cname == orderData.cname
+        ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
     );
     data.customers[index].checkout = true;
   }
-
 
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
     .add(finalInvoice)
     .then(async (order) => {
-
-   await orderRef.delete();
+      await orderRef.delete();
 
       if (table_no == "takeaway") {
         data.customers[index].invoice_id = order.id;
@@ -372,19 +366,117 @@ finalInvoice.invoice_date = moment()
         data.customers[index].invoice_id = order.id;
         restData.customers = data.customers;
       }
-      await restRef.set(restData,{merge: true})
-      return res.status(200).json({ success: true, message: 'Successfully checkout'});
-  })
-  .catch((err) => {
-    console.log(err);
-    return res
-      .status(500)
-      .json({ success: false, message: status.SERVER_ERROR });
-  });
+      await restRef.set(restData, { merge: true });
+      return res
+        .status(200)
+        .json({ success: true, message: "Successfully checkout" });
+    })
+    .catch((err) => {
+      console.log(err);
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
+    });
 };
 
+exports.updateInvoice = async (req, res) => {
+  let invoice = req.body;
+  let invoice_id = req.params.invoice_id;
 
-function setInvoiceNumber(data){
+  if (!invoice.cid || !invoice_id) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+  }
+
+  let customerRef;
+  if (invoice.table == "takeaway") {
+    customerRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/takeaway`)
+      .doc(`${invoice.cid}`);
+  } else {
+    customerRef = firestore
+      .collection(`restaurants`)
+      .doc(`${req.user.rest_id}`);
+  }
+
+  let custDoc = (await customerRef.get()).data();
+
+  flag = false;
+
+  for (let cust of custDoc.customers) {
+    if (cust.cid == invoice.cid && cust.invoice_id == invoice_id) {
+      flag = true;
+      break;
+    }
+  }
+
+  if (!flag) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+  }
+
+  delete invoice.invoice_id;
+  delete invoice.order_no;
+  await firestore
+    .collection(`orders/${req.user.rest_id}/invoices`)
+    .doc(invoice_id)
+    .set(invoice, { merge: true })
+    .then((e) => {
+      return res
+        .status(200)
+        .json({ success: true, message: "Successfully Changed" });
+    })
+    .catch((err) => {
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
+    });
+};
+
+exports.cleanUpCustomers = async (req, res) => {
+  let cid = req.params.cid;
+ let table_no = rea.params.table_no;
+
+  if (!cid || !table_no) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+  }
+
+  let customerRef;
+  if (table_no == "takeaway") {
+    customerRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/takeaway`)
+      .doc(`${invoice.cid}`);
+  } else {
+    customerRef = firestore
+      .collection(`restaurants`)
+      .doc(`${req.user.rest_id}`);
+  }
+
+  let custDoc = await customerRef.get();
+
+  if (!custDoc.exists) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST });
+  }
+
+  let customers = custDoc.data().customers.filter((ele) => ele.cid == cid && ele.table == table_no);
+
+  customerRef
+    .set({ customers: [...customers] }, { merge: true })
+    .then(async (e) => {
+      await firestore
+        .collection("users")
+        .doc(cid)
+        .set({ join: "" }, { merge: true });
+      return res
+        .status(200)
+        .json({ success: true, message: "Successfully Cleaned up" });
+    })
+    .catch((err) => {
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
+    });
+};
+
+function setInvoiceNumber(data) {
   let invoice_format = data.invoice_format;
   let set_invoice_no = "";
 
@@ -473,7 +565,6 @@ function setInvoiceNumber(data){
   }
 
   data.inv_no = set_invoice_no;
- 
-  return data;
 
+  return data;
 }
