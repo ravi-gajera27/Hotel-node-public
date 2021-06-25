@@ -294,7 +294,7 @@ exports.verifySession = async (req, res, next) => {
     let cust = dataCust?.customers || [];
     for (let user of cust) {
       if (user.cid == req.user.id) {
-        if (ele.restore) {
+        if (user.restore) {
           flag = 1;
           break;
         } else {
