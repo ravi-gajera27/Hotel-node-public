@@ -382,7 +382,6 @@ exports.verifySession = async (req, res, next) => {
       }
       await customersRef.set({ customers: [...customers] }, { merge: true });
 
-      return res.status(200).json({ success: true });
     } else {
       let obj = {
         table: cookie.table,
