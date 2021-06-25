@@ -361,8 +361,18 @@ exports.verifySession = async (req, res, next) => {
       }
 
       if (flag) {
-        delete customers[index].restore;
-      } else if(!restCust) {
+        let cust = { ...customers[index] };
+        delete cust.restore;
+        customers[index] = cust;
+      } else if (restCust) {
+        let cust = {
+          table: cookie.table,
+          cid: req.user.id,
+          cname: req.user.name,
+          checkout: false,
+        };
+        customers[index] = cust;
+      } else {
         customers.push({
           table: cookie.table,
           cid: req.user.id,
