@@ -368,6 +368,7 @@ exports.checkoutCustomer = async (req, res, next) => {
     .collection(`orders/${req.user.rest_id}/invoices`)
     .add(finalInvoice)
     .then(async (order) => {
+      
       await orderRef.delete();
 
       if (table_no == "takeaway") {
@@ -460,7 +461,7 @@ exports.cleanUpCustomers = async (req, res) => {
   if (invoice.table == "takeaway") {
     customerRef = firestore
       .collection(`restaurants/${req.user.rest_id}/takeaway`)
-      .doc(`${invoice.cid}`);
+      .doc(`users`);
   } else {
     customerRef = firestore
       .collection(`restaurants`)
