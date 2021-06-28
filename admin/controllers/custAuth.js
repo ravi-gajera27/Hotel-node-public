@@ -449,6 +449,7 @@ exports.updateInvoice = async (req, res) => {
 
 exports.cleanUpCustomers = async (req, res) => {
   let invoice = req.body;
+  console.log(invoice)
   let invoice_id = req.params.invoice_id;
 
   if (!invoice.cid || !invoice.table || !invoice_id) {
@@ -484,6 +485,7 @@ exports.cleanUpCustomers = async (req, res) => {
 
   delete invoice.invoice_id;
   delete invoice.order_no;
+  console.log(invoice)
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
     .doc(invoice_id)

@@ -310,13 +310,13 @@ table th, table td {
         <section id="memo">
           <div class="company-info">
            
-            <div>Happy Meal</div>
+            <div><%= rest.rest_name %></div>
             <br>
             <span></span>
             <br>
-            <span>9835426842</span>
+            <span><%= rest.mobile_no %></span>
             <br>
-            <span>happymeal@gmail.com</span>
+            <span><%= rest.email %>/span>
           </div>
          
 
@@ -328,7 +328,7 @@ table th, table td {
         <section id="invoice-title-number">
 
           <div class="title-top">
-            <span>22/10/2028</span> 
+            <span><%= date %></span> 
          </div>
         
           <div id="title">END OF DAY REPORT</div>
@@ -350,7 +350,7 @@ table th, table td {
           
             <tr>
               <th>INVOICE ID</th> <!-- Dummy cell for the row number and row commands -->
-              <th>cUSTOMER</th>
+              <th>CUSTOMER</th>
               <th>GROSS</th>
               <th>DISCOUNT</th>
               <th>NET</th>
@@ -359,20 +359,22 @@ table th, table td {
               <th>ONLINE</th>
               <th>CREDIT</th>
             
-                
+                <% for(let item of invoice_array) { %>
               <tr>
-                <td>HAME/21/0001234</td>
-                <td>SHUBHAMKUMAR PANCHOLI</td>
-                <td>250000</td>
-                <td>50000</td>
-                <td>200000</td>
-                <td>50000</td>
-                <td>50000</td>
-                <td>50000</td>
-                <td>50000</td>
-
-              </tr>
-            
+              <td><%= item.invoice_id %></td>
+              <td><%= item.cust_name %></td>
+              <td><%= item.gross %></td>
+              <td><%= item.discount %></td>
+              <td><%= item.tax %></td>
+              <td><%= item.total_amt %></td>
+              <td><%= item.cash ? item.cash || '-' %></td>
+              <td><%= item.card ? item.card || '-' %></td>
+              <td><%= item.online ? item.online || '-' %></td>
+              <td>
+                <%= item.settle.amount ? item.settle.amount || '-' %>
+              </td>
+            </tr>
+                <% } %>
               <th>TOTAL</th>
               <th>50</th>
               <th>2000000</th>
