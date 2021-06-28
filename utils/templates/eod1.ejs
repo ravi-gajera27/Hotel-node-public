@@ -310,13 +310,13 @@ table th, table td {
         <section id="memo">
           <div class="company-info">
            
-            <div><%= rest.rest_name %></div>
+            <div></div>
             <br>
-            <span></span>
+            <span>My Dhaba</span>
             <br>
-            <span><%= rest.mobile_no %></span>
+            <span>9714723148</span>
             <br>
-            <span><%= rest.email %>/span>
+            <span>ravi42@gmail.com</span>
           </div>
          
 
@@ -328,7 +328,7 @@ table th, table td {
         <section id="invoice-title-number">
 
           <div class="title-top">
-            <span><%= date %></span> 
+            <span>20-8-2022</span> 
          </div>
         
           <div id="title">END OF DAY REPORT</div>
@@ -367,11 +367,11 @@ table th, table td {
               <td><%= item.discount %></td>
               <td><%= item.tax %></td>
               <td><%= item.total_amt %></td>
-              <td><%= item.cash ? item.cash || '-' %></td>
-              <td><%= item.card ? item.card || '-' %></td>
-              <td><%= item.online ? item.online || '-' %></td>
+              <td><%= item.cash ? item.cash : '-' %></td>
+              <td><%= item.card ? item.card : '-' %></td>
+              <td><%= item.online ? item.online : '-' %></td>
               <td>
-                <%= item.settle.amount ? item.settle.amount || '-' %>
+                <%= item.settle.amount ? item.settle.amount : '-' %>
               </td>
             </tr>
                 <% } %>
