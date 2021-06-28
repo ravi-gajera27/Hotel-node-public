@@ -236,7 +236,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   if (table_no == "takeaway") {
     customerRef = firestore
       .collection(`restaurants/${req.user.rest_id}/takeaway`)
-      .doc(`${cid}`);
+      .doc('users');
 
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/torder`)
@@ -344,6 +344,7 @@ exports.checkoutCustomer = async (req, res, next) => {
 
   let index;
   if (table_no == "takeaway") {
+    console.log(data)
     takeawayUser = data;
     index = takeawayUser.customers.findIndex(
       (ele) =>
@@ -367,6 +368,7 @@ exports.checkoutCustomer = async (req, res, next) => {
     .collection(`orders/${req.user.rest_id}/invoices`)
     .add(finalInvoice)
     .then(async (order) => {
+      
       await orderRef.delete();
 
       if (table_no == "takeaway") {
@@ -447,9 +449,10 @@ exports.updateInvoice = async (req, res) => {
 
 exports.cleanUpCustomers = async (req, res) => {
   let invoice = req.body;
+  console.log(invoice)
   let invoice_id = req.params.invoice_id;
 
-  if (!invoice.cid || !invoice.table_no || !invoice_id) {
+  if (!invoice.cid || !invoice.table || !invoice_id) {
     return res
       .status(400)
       .json({ success: false, message: status.BAD_REQUEST });
@@ -459,7 +462,7 @@ exports.cleanUpCustomers = async (req, res) => {
   if (invoice.table == "takeaway") {
     customerRef = firestore
       .collection(`restaurants/${req.user.rest_id}/takeaway`)
-      .doc(`${invoice.cid}`);
+      .doc(`users`);
   } else {
     customerRef = firestore
       .collection(`restaurants`)
@@ -477,11 +480,12 @@ exports.cleanUpCustomers = async (req, res) => {
   let customers = custDoc
     .data()
     .customers.filter(
-      (ele) => ele.cid == invoice.cid && ele.table == invoice.table
+      (ele) => ele.cid != invoice.cid && ele.table != invoice.table
     );
 
   delete invoice.invoice_id;
   delete invoice.order_no;
+  console.log(invoice)
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
     .doc(invoice_id)

@@ -88,7 +88,7 @@ exports.addOrder = async (req, res, next) => {
       user = user.data();
       await userRef.set({
         cname: req.user.name,
-        mobile_no: req.user.mobile_no,
+        mobile_no: req.user.mobile_no || '',
         email: req.user.email,
         last_visit: moment()
           .utcOffset(process.env.UTC_OFFSET)
@@ -98,7 +98,7 @@ exports.addOrder = async (req, res, next) => {
     } else {
       await userRef.set({
         cname: req.user.name,
-        mobile_no: req.user.mobile_no,
+        mobile_no: req.user.mobile_no || '',
         email: req.user.email,
         last_visit: moment()
           .utcOffset(process.env.UTC_OFFSET)

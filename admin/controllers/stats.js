@@ -110,6 +110,111 @@ exports.downloadInvoicePdf = async (req, res) => {
   );
 };
 
+exports.downloadEodPdf = async (req, res) => {
+  let rest_details = await firestore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .get();
+
+  let date = req.params.date;
+
+  let invoiceRef = await firestore
+    .collection("orders")
+    .doc(req.user.rest_id)
+    .collection("invoices")
+    .where("invoice_date", "==", date)
+    .get();
+
+  let data = rest_details.data();
+
+  let total = {
+    total_gross: 0,
+    total_net: 0,
+    total_discount: 0,
+    total_cash: 0,
+    total_card: 0,
+    total_credit: 0,
+    total_online: 0,
+    total_tax: 0,
+    total_cust: 0,
+  };
+  let invoice_array = [];
+  for (let invoice of invoiceRef.docs) {
+    let tempInvoice = invoice.data();
+    console.log(tempInvoice);
+    tempInvoice.gross = tempInvoice.taxable;
+    total.total_gross += tempInvoice.gross;
+    if (tempInvoice.discount) {
+      tempInvoice.dis = tempInvoice.discount.includes("%")
+        ? (tempInvoice.taxable * tempInvoice.discount.split[0]) / 100
+        : tempInvoice.discount;
+    } else {
+      tempInvoice.dis = 0;
+    }
+    tempInvoice.tax = Number(tempInvoice.taxable - tempInvoice.dis) * 0.01;
+    total.total_tax += tempInvoice.tax;
+
+    total.total_discount += tempInvoice.dis || 0;
+    total.total_net += tempInvoice.total_amt;
+    total.total_creditcredit += tempInvoice.settle.amount;
+    total.total_cust++;
+
+    switch (tempInvoice.settle.method) {
+      case "cash":
+        total.total_cash +=  tempInvoice.settle.amount;
+        tempInvoice.cash = tempInvoice.settle.amount;
+        break;
+      case "card":
+        total.total_card += tempInvoice.settle.amount;
+        tempInvoice.card =tempInvoice.settle.amount;
+        break;
+      case "online":
+        total.total_online += tempInvoice.settle.amount;
+        tempInvoice.online = tempInvoice.settle.amount;
+        break;
+    }
+
+    invoice_array.push(tempInvoice);
+  }
+
+  var fileName = `eod-${date}-${rest_details.id}.pdf`;
+
+  var output_path = process.env.EOD_PATH + fileName;
+  await ejs.renderFile(
+    path.join(__dirname + "/../../utils/templates/eod.ejs"),
+    {
+      invoice_array: invoice_array,
+      rest: data,
+      date: date,
+      total: total,
+    },
+    (err, data) => {
+      if (err) {
+        console.log(err);
+      } else {
+        let options = {
+          format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
+          orientation: "portrait", // portrait or landscape
+          border: "0",
+          type: "pdf",
+        };
+
+        pdf.create(data, options).toFile(output_path, function (err, data) {
+          if (err) {
+            console.log(err);
+          } else {
+            fs.readFile(output_path, function (err, data) {
+              fs.unlinkSync(output_path);
+              res.contentType("application/pdf");
+              res.status(200).send(data);
+            });
+          }
+        });
+      }
+    }
+  );
+};
+
 exports.getInvoicesByInterval = async (req, res, next) => {
   let interval = req.params.interval;
 

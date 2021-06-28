@@ -294,7 +294,7 @@ exports.verifySession = async (req, res, next) => {
     let cust = dataCust?.customers || [];
     for (let user of cust) {
       if (user.cid == req.user.id) {
-        if (ele.restore) {
+        if (user.restore) {
           flag = 1;
           break;
         } else {
@@ -324,7 +324,7 @@ exports.verifySession = async (req, res, next) => {
 
       index = 0;
       flag = 0;
-
+      restCust = false;
       for (ele of customers) {
         if (ele.cid == req.user.id) {
           if (ele.restore) {
@@ -341,16 +341,37 @@ exports.verifySession = async (req, res, next) => {
               .status(403)
               .json({ success: false, message: status.FORBIDDEN });
           }
-        } else if (Number(ele.table) == Number(cookie.table) && !ele.restore) {
-          return res
-            .status(403)
-            .json({ success: false, message: status.SESSION_EXIST });
+        } else if (Number(ele.table) == Number(cookie.table)) {
+          if (!ele.restore) {
+            return res
+              .status(403)
+              .json({ success: false, message: status.SESSION_EXIST });
+          } else {
+            restCust = true;
+            ele = {
+              table: cookie.table,
+              cid: req.user.id,
+              cname: req.user.name,
+              checkout: false,
+            };
+            break;
+          }
         }
         index++;
       }
 
       if (flag) {
-        delete customers[index].restore;
+        let cust = { ...customers[index] };
+        delete cust.restore;
+        customers[index] = cust;
+      } else if (restCust) {
+        let cust = {
+          table: cookie.table,
+          cid: req.user.id,
+          cname: req.user.name,
+          checkout: false,
+        };
+        customers[index] = cust;
       } else {
         customers.push({
           table: cookie.table,
@@ -361,7 +382,6 @@ exports.verifySession = async (req, res, next) => {
       }
       await customersRef.set({ customers: [...customers] }, { merge: true });
 
-      return res.status(200).json({ success: true });
     } else {
       let obj = {
         table: cookie.table,
