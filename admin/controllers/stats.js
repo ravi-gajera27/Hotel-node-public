@@ -145,32 +145,34 @@ exports.downloadEodPdf = async (req, res) => {
     tempInvoice.gross = tempInvoice.taxable;
     total.total_gross += tempInvoice.gross;
     if (tempInvoice.discount) {
-      tempInvoice.dis = tempInvoice.discount.includes("%")
-        ? (tempInvoice.taxable * tempInvoice.discount.split[0]) / 100
+      tempInvoice.discount = tempInvoice.discount.includes("%")
+        ? (tempInvoice.taxable * Number(tempInvoice.discount.split('%')[0])) / 100
         : tempInvoice.discount;
     } else {
-      tempInvoice.dis = 0;
+      tempInvoice.discount = 0;
     }
-    tempInvoice.tax = Number(tempInvoice.taxable - tempInvoice.dis) * 0.01;
+    tempInvoice.tax = Number(tempInvoice.taxable - tempInvoice.discount) * (Number(tempInvoice.tax) / 100);
     total.total_tax += tempInvoice.tax;
 
-    total.total_discount += tempInvoice.dis || 0;
+    total.total_discount += tempInvoice.discount || 0;
     total.total_net += tempInvoice.total_amt;
-    total.total_creditcredit += tempInvoice.settle.amount;
+    total.total_creditcredit += tempInvoice.settle.credit;
     total.total_cust++;
 
     switch (tempInvoice.settle.method) {
       case "cash":
-        total.total_cash +=  tempInvoice.settle.amount;
-        tempInvoice.cash = tempInvoice.settle.amount;
+        tempInvoice.cash = tempInvoice.total_amt - tempInvoice.settle.credit;
+        total.total_cash += tempInvoice.cash;
         break;
       case "card":
-        total.total_card += tempInvoice.settle.amount;
-        tempInvoice.card =tempInvoice.settle.amount;
+        tempInvoice.card = tempInvoice.total_amt - tempInvoice.settle.credit;
+        total.total_card += tempInvoice.card;
+
         break;
       case "online":
-        total.total_online += tempInvoice.settle.amount;
-        tempInvoice.online = tempInvoice.settle.amount;
+        tempInvoice.online = tempInvoice.total_amt - tempInvoice.settle.credit;
+        total.total_online += tempInvoice.online;
+
         break;
     }
 

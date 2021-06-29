@@ -455,7 +455,7 @@
               <td><%= item.card ? item.card.toFixed(2) : '-' %></td>
               <td><%= item.online ? item.online.toFixed(2) : '-' %></td>
               <td>
-                <%= item.settle.amount ? (item.total_amt - item.settle.amount).toFixed(2)  : '-' %>
+                <%= item.settle.credit ? (item.settle.credit).toFixed(2)  : '-' %>
               </td>
             </tr>
             <% } %>
