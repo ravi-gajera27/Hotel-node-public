@@ -51,7 +51,7 @@ exports.addOrder = async (req, res, next) => {
       }
     }
   }
-  
+
   if (!valid) {
     return res
       .status(401)
@@ -61,9 +61,15 @@ exports.addOrder = async (req, res, next) => {
   let order = await orderRef.get();
 
   let orderData = [];
+  restorAble = false;
   if (order.exists) {
     let data = order.data();
     orderData = data.order;
+    if (data.restore) {
+      restorAble = true;
+      orderData = [];
+    }
+
     if (data.cid && data.cid != req.user.id) {
       res.status(401).json({ success: false, message: status.SESSION_EXIST });
     }
@@ -74,11 +80,20 @@ exports.addOrder = async (req, res, next) => {
   req.body.table = cookie.table;
 
   if (orderData.length == 0) {
-    send_data = {
-      cid: req.user.id,
-      cname: req.user.name,
-      order: [{ ...req.body }],
-    };
+    if (restorAble) {
+      send_data = {
+        cid: req.user.id,
+        cname: req.user.name,
+        order: [{ ...req.body }],
+        restore: false,
+      };
+    } else {
+      send_data = {
+        cid: req.user.id,
+        cname: req.user.name,
+        order: [{ ...req.body }],
+      };
+    }
 
     let userRef = await firestore
       .collection(`restaurants/${cookie.rest_id}/users/`)
@@ -88,7 +103,7 @@ exports.addOrder = async (req, res, next) => {
       user = user.data();
       await userRef.set({
         cname: req.user.name,
-        mobile_no: req.user.mobile_no || '',
+        mobile_no: req.user.mobile_no || "",
         email: req.user.email,
         last_visit: moment()
           .utcOffset(process.env.UTC_OFFSET)
@@ -98,7 +113,7 @@ exports.addOrder = async (req, res, next) => {
     } else {
       await userRef.set({
         cname: req.user.name,
-        mobile_no: req.user.mobile_no || '',
+        mobile_no: req.user.mobile_no || "",
         email: req.user.email,
         last_visit: moment()
           .utcOffset(process.env.UTC_OFFSET)
@@ -333,7 +348,7 @@ exports.checkout = async (req, res, next) => {
   req.body.tax = data.tax.toString();
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
 
-/*   let userRef = await firestore.collection("users").doc(req.body.cid).get();
+  /*   let userRef = await firestore.collection("users").doc(req.body.cid).get();
   let user = userRef.data(); */
 
   await firestore
