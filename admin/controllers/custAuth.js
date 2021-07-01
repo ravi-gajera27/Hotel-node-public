@@ -493,7 +493,7 @@ exports.cleanUpCustomers = async (req, res) => {
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
     .doc(invoice_id)
-    .set(invoice, { merge: true })
+    .set(invoice)
     .then(async(e) => {
       await customerRef.set({ customers: [...customers] }, { merge: true });
       await firestore
