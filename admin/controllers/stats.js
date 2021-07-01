@@ -309,9 +309,11 @@ exports.getCategoriesStats = async (req, res, next) => {
     .doc(req.user.rest_id)
     .collection("categories")
     .get();
+
+    let menuRef = await firestore.collection('restaurants').doc(req.user.rest_id).collection('menu').doc('menu').get();
+ 
   let categories = {};
   let items = {};
-
   if (!cat.empty) {
     cat.docs.map((e) => {
       let data = e.data().cat;
@@ -320,6 +322,10 @@ exports.getCategoriesStats = async (req, res, next) => {
         items[`${e.name}`] = {};
       }
     });
+  }
+
+  for(let menu of menuRef.data().menu){
+    items[menu.category][menu.name] = { qty: 0, price: 0 }
   }
 
   let start_date = interval[0];
@@ -337,14 +343,9 @@ exports.getCategoriesStats = async (req, res, next) => {
     i.id = invoice.id;
     invoices.push(i);
     for (let ele of i.data) {
-      if (!categories[`${ele.category}`]) {
-        categories[`${ele.category}`] = 0;
-        items[`${ele.category}`] = {};
+      if (categories[`${ele.category}`] == undefined) {
+        continue
       }
-      if (!items[`${ele.category}`][`${ele.name}`]) {
-        items[`${ele.category}`][`${ele.name}`] = { qty: 0, price: 0 };
-      }
-
       categories[`${ele.category}`] += ele.qty;
       let q = items[`${ele.category}`][`${ele.name}`].qty;
       let p = items[`${ele.category}`][`${ele.name}`].price;
