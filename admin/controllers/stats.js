@@ -151,6 +151,9 @@ exports.downloadEodPdf = async (req, res) => {
   for (let invoice of invoiceRef.docs) {
     let tempInvoice = invoice.data();
 
+    if (tempInvoice.clean == false) {
+      continue;
+    }
     for (let itemFromInvoice of tempInvoice.data) {
       var ind = IsIn2D(itemFromInvoice.name, [...topPerformer]);
 
@@ -180,7 +183,9 @@ exports.downloadEodPdf = async (req, res) => {
     }
     total.total_discount += tempInvoice.discount || 0;
 
-    tempInvoice.tax = Number(tempInvoice.taxable - tempInvoice.discount) * (tempInvoice.tax / 100);
+    tempInvoice.tax =
+      Number(tempInvoice.taxable - tempInvoice.discount) *
+      (tempInvoice.tax / 100);
     total.total_tax += tempInvoice.tax;
 
     total.total_net += tempInvoice.total_amt;
@@ -199,17 +204,14 @@ exports.downloadEodPdf = async (req, res) => {
       case "online":
         tempInvoice.online = tempInvoice.total_amt - tempInvoice.settle.credit;
         total.total_online += tempInvoice.online;
-        console.log(
-          tempInvoice.settle.credit,
-          tempInvoice.online,
-          total.total_online
-        );
-
         break;
     }
 
     invoice_array.push(tempInvoice);
   }
+  invoice_array.sort((a, b) =>
+    a.invoice_no > b.invoice_no ? 1 : b.invoice_no > a.invoice_no ? -1 : 0
+  );
 
   var fileName = `eod-${date}-${rest_details.id}.pdf`;
 
@@ -275,6 +277,9 @@ exports.getInvoicesByInterval = async (req, res, next) => {
       let invoices = [];
       for (let invoice of data.docs) {
         let i = invoice.data();
+        if (i.clean == false) {
+          continue;
+        }
         i.id = invoice.id;
         invoices.push(i);
       }
