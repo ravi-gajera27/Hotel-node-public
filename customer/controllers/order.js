@@ -11,7 +11,7 @@ let pdf = require("html-pdf");
 exports.addOrder = async (req, res, next) => {
   console.log(req.body);
   let cookie = await extractCookie(req, res);
-   console.log(cookie)
+
   if (!cookie) {
     res.status(401).json({ success: false, message: status.UNAUTHORIZED });
   }
@@ -40,7 +40,7 @@ exports.addOrder = async (req, res, next) => {
   let customers = data.data().customers;
   let valid = false;
   for (let cust of customers) {
-    if (cust.table == cookie.table && cust.cid == req.user.id) {
+    if (cust.table == cookie.table && cust.cid == req.user.id && !cust.restore) {
       valid = true;
       if (cookie.table == "takeaway") {
         if (cust.req == undefined) {
