@@ -330,6 +330,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   finalInvoice.cname = orderData.cname;
   finalInvoice.table = table_no;
   finalInvoice.invoice_no = restData.inv_no;
+  finalInvoice.clean = false;
   delete finalInvoice.date;
   delete finalInvoice.qty;
   finalInvoice.invoice_date = moment()
@@ -431,6 +432,7 @@ exports.updateInvoice = async (req, res) => {
 
   delete invoice.invoice_id;
   delete invoice.order_no;
+  delete invoice.clean;
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
     .doc(invoice_id)
@@ -485,6 +487,8 @@ exports.cleanUpCustomers = async (req, res) => {
 
   delete invoice.invoice_id;
   delete invoice.order_no;
+  delete invoice.clean;
+
   console.log(invoice)
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
