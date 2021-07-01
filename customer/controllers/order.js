@@ -40,7 +40,10 @@ exports.addOrder = async (req, res, next) => {
   let customers = data.data().customers;
   let valid = false;
   for (let cust of customers) {
-    if (cust.table == cookie.table && cust.cid == req.user.id && cust.restore != true) {
+    if (cust.table == cookie.table && cust.cid == req.user.id) {
+      if(cust.restore){
+        break;
+      }
       valid = true;
       if (cookie.table == "takeaway") {
         if (cust.req == undefined) {
