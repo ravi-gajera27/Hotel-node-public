@@ -208,6 +208,7 @@ exports.downloadEodPdf = async (req, res) => {
     }
 
     invoice_array.push(tempInvoice);
+  
   }
   invoice_array.sort((a, b) =>
     a.invoice_no > b.invoice_no ? 1 : b.invoice_no > a.invoice_no ? -1 : 0
