@@ -114,8 +114,6 @@ function IsIn2D(str, array) {
     if (array[i].name == str) {
       return i;
     }
-
-
   }
   return -1;
 }
@@ -152,51 +150,37 @@ exports.downloadEodPdf = async (req, res) => {
 
   for (let invoice of invoiceRef.docs) {
     let tempInvoice = invoice.data();
-    // console.log(tempInvoice.data);
-
-    /*  for top performer start */
 
     for (let itemFromInvoice of tempInvoice.data) {
-
       var ind = IsIn2D(itemFromInvoice.name, [...topPerformer]);
 
-      if (ind > - 1) {
-
+      if (ind > -1) {
         topPerformer[ind].qty += itemFromInvoice.qty;
       } else {
-        topPerformer.push({ name: itemFromInvoice.name, qty: itemFromInvoice.qty, category: itemFromInvoice.category });
-        console.log('topperformer' + topPerformer);
-
+        topPerformer.push({
+          name: itemFromInvoice.name,
+          qty: itemFromInvoice.qty,
+          category: itemFromInvoice.category,
+        });
       }
-
     }
-    topPerformer.sort((a,b) => (b.qty > a.qty) ? 1 : ((a.qty > b.qty) ? -1 : 0));
-    
-
-    //  console.log('top Performer'+itemFromInvoice.name+ topPerformer);
-
-
-
-    /*
-    
-       for top performer end
-    
-    */
-       console.log('topperformer' + topPerformer[5].name);
+    topPerformer.sort((a, b) => (b.qty > a.qty ? 1 : a.qty > b.qty ? -1 : 0));
 
     tempInvoice.gross = tempInvoice.taxable;
     total.total_gross += tempInvoice.gross;
     if (tempInvoice.discount) {
       tempInvoice.discount = tempInvoice.discount.includes("%")
-        ? Number(tempInvoice.taxable * Number(tempInvoice.discount.split('%')[0]) / 100)
+        ? Number(
+            (tempInvoice.taxable * Number(tempInvoice.discount.split("%")[0])) /
+              100
+          )
         : tempInvoice.discount;
     } else {
       tempInvoice.discount = 0;
     }
     total.total_discount += tempInvoice.discount || 0;
 
-    tempInvoice.tax = Number(tempInvoice.taxable - tempInvoice.discount) * 0.05;
-    console.log(tempInvoice.tax, tempInvoice.discount);
+    tempInvoice.tax = Number(tempInvoice.taxable - tempInvoice.discount) * (tempInvoice.tax / 100);
     total.total_tax += tempInvoice.tax;
 
     total.total_net += tempInvoice.total_amt;
@@ -205,7 +189,6 @@ exports.downloadEodPdf = async (req, res) => {
 
     switch (tempInvoice.settle.method) {
       case "cash":
-
         total.total_cash += tempInvoice.total_amt - tempInvoice.settle.credit;
         tempInvoice.cash = tempInvoice.total_amt - tempInvoice.settle.credit;
         break;
@@ -216,7 +199,11 @@ exports.downloadEodPdf = async (req, res) => {
       case "online":
         tempInvoice.online = tempInvoice.total_amt - tempInvoice.settle.credit;
         total.total_online += tempInvoice.online;
-        console.log(tempInvoice.settle.credit, tempInvoice.online, total.total_online);
+        console.log(
+          tempInvoice.settle.credit,
+          tempInvoice.online,
+          total.total_online
+        );
 
         break;
     }
@@ -235,7 +222,7 @@ exports.downloadEodPdf = async (req, res) => {
       rest: data,
       date: date,
       total: total,
-      topPerformer:  topPerformer,
+      topPerformer: topPerformer,
     },
     (err, data) => {
       if (err) {
