@@ -277,8 +277,6 @@ exports.getBasicsByInterval = async (req, res, next) => {
       let itemsArray=[];
       let total = {
         total_orders: 0,
-        total_gross: 0,
-        totfal_net: 0,
         total_sales:0,
         total_discount: 0,
         total_cash: 0,
@@ -309,8 +307,7 @@ exports.getBasicsByInterval = async (req, res, next) => {
         }
         total.total_item = itemsArray.length;
         
-        tempInvoice.gross = tempInvoice.taxable;
-    total.total_gross += tempInvoice.gross;
+   
     if (tempInvoice.discount) {
       tempInvoice.discount = tempInvoice.discount.includes("%")
         ? Number(
@@ -328,10 +325,9 @@ exports.getBasicsByInterval = async (req, res, next) => {
       (tempInvoice.tax / 100);
     total.total_tax += tempInvoice.tax;
 
-    total.total_net += tempInvoice.total_amt;
     total.total_credit += tempInvoice.settle.credit;
     total.total_cust++;
-    total.total_sales = total.total_gross + total.total_tax - total.total_credit;
+    total.total_sales += tempInvoice.total_amt - tempInvoice.settle.credit;
 
     switch (tempInvoice.settle.method) {
       case "cash":
