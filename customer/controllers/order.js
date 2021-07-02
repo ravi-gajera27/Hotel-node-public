@@ -41,7 +41,7 @@ exports.addOrder = async (req, res, next) => {
   let valid = false;
   for (let cust of customers) {
     if (cust.table == cookie.table && cust.cid == req.user.id) {
-      if(cust.restore){
+      if (cust.restore) {
         break;
       }
       valid = true;
@@ -179,8 +179,6 @@ exports.getOrder = async (req, res, next) => {
 };
 
 exports.checkout = async (req, res, next) => {
-  let isInvoice = req.body.isInvoice;
-  delete req.body.isInvoice;
   let cookie = await extractCookie(req, res);
 
   if (!cookie) {
@@ -349,11 +347,11 @@ exports.checkout = async (req, res, next) => {
     .utcOffset(process.env.UTC_OFFSET)
     .format("YYYY-MM-DD");
   req.body.time = moment().utcOffset(process.env.UTC_OFFSET).format("HH:mm");
-  req.body.tax = data.tax.toString();
+  req.body.tax = Number(data.tax);
+  if (data.taxInc) {
+    req.body.taxable = req.body.taxable - (req.body.taxable * data.tax) / 100;
+  }
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
-
-  /*   let userRef = await firestore.collection("users").doc(req.body.cid).get();
-  let user = userRef.data(); */
 
   await firestore
     .collection(`orders/${cookie.rest_id}/invoices`)
@@ -370,12 +368,7 @@ exports.checkout = async (req, res, next) => {
         .doc(cookie.rest_id)
         .set(data, { merge: true });
 
-      if (isInvoice) {
-        data.invoice_no = set_invoice_no;
-        downloadInvoicePdf(res, req.body, user, data);
-      } else {
-        return res.status(200).json({ success: true });
-      }
+      return res.status(200).json({ success: true });
     })
     .catch((err) => {
       console.log(err);
