@@ -340,12 +340,15 @@ exports.checkoutCustomer = async (req, res, next) => {
     .utcOffset(process.env.UTC_OFFSET)
     .format("HH:mm");
   finalInvoice.tax = Number(data.tax);
+
   if (restData.taxInc) {
+    finalInvoice.total_amt = finalInvoice.taxable;
     finalInvoice.taxable =
       finalInvoice.taxable - (finalInvoice.taxable * restData.tax) / 100;
+  } else {
+    finalInvoice.total_amt =
+      finalInvoice.taxable + (finalInvoice.taxable * restData.tax) / 100;
   }
-  finalInvoice.total_amt =
-    finalInvoice.taxable + (finalInvoice.taxable * restData.tax) / 100;
 
   let index;
   if (table_no == "takeaway") {
@@ -405,10 +408,9 @@ exports.updateInvoice = async (req, res) => {
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
-
   delete invoice.invoice_id;
   delete invoice.order_no;
-console.log(invoice, invoice_id)
+  console.log(invoice, invoice_id);
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
     .doc(invoice_id)

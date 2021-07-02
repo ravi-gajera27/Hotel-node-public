@@ -330,7 +330,6 @@ exports.getBasicsByInterval = async (req, res, next) => {
 
     total.total_credit += tempInvoice.settle.credit;
     total.total_cust++;
-
     total.total_sales += tempInvoice.total_amt - tempInvoice.settle.credit;
 
     switch (tempInvoice.settle.method) {
