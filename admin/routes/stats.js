@@ -8,4 +8,6 @@ router.get('/download-invoice/:id', protect, stats.downloadInvoicePdf)
 router.get('/generate-eod/:date', protect, stats.downloadEodPdf)
 router.get('/category/:interval', protect, stats.getCategoriesStats)
 router.get('/advance/:slot/:interval', protect, stats.getAdvanceStats)
+router.get('/basics/:interval', protect, stats.getBasicsByInterval)
+
 module.exports = router 
