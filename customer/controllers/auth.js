@@ -326,11 +326,13 @@ exports.verifySession = async (req, res, next) => {
       flag = 0;
       restCust = false;
       for (ele of customers) {
+        console.log(ele)
         if (ele.cid == req.user.id) {
           if (ele.restore) {
             flag = 1;
             break;
           }
+          console.log(ele.table, cookie.table)
           if (
             Number(ele.table) == Number(cookie.table) &&
             ele.checkout == false
