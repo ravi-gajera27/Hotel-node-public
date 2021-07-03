@@ -20,7 +20,7 @@ module.exports = {
   REJECT_REQUEST: "Your request is rejected by restaurant",
   BLOCK: "Your are temporary blocked, you will be unlocked within 2 days",
   ACCEPT_REQUEST_ADMIN: "Request is successfully accepted",
-  REJECT_REQUEST_ADMIN: "Request is successfully rejected",
+  REJECT_REQUEST_ADMIN: "Request is successfully rejected by restaurant",
   ALREADY_SCAN_TAKEAWAY: "Scanning another qrcode is prohibitate",
   RESTORED: 'Successfully restored',
   NOT_REGISTERED: 'Restaurant is not registred yet',

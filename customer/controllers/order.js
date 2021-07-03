@@ -49,7 +49,7 @@ exports.addOrder = async (req, res, next) => {
         if (cust.req == undefined) {
           return res
             .status(401)
-            .json({ success: true, message: status.REQUEST_SENT });
+            .json({ success: true, message: status.REJECT_REQUEST_ADMIN });
         }
       }
     }
