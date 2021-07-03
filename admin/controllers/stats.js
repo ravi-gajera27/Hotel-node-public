@@ -174,9 +174,9 @@ exports.downloadEodPdf = async (req, res) => {
     if (tempInvoice.discount) {
       tempInvoice.discount = tempInvoice.discount.includes("%")
         ? Number(
-          (tempInvoice.taxable * Number(tempInvoice.discount.split("%")[0])) /
-          100
-        )
+            (tempInvoice.taxable * Number(tempInvoice.discount.split("%")[0])) /
+              100
+          )
         : tempInvoice.discount;
     } else {
       tempInvoice.discount = 0;
@@ -208,7 +208,6 @@ exports.downloadEodPdf = async (req, res) => {
     }
 
     invoice_array.push(tempInvoice);
-
   }
   invoice_array.sort((a, b) =>
     a.invoice_no > b.invoice_no ? 1 : b.invoice_no > a.invoice_no ? -1 : 0
@@ -267,19 +266,19 @@ exports.getBasicsByInterval = async (req, res, next) => {
 
   let start_date = interval[0];
   let end_date = interval[1];
-  
+
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
     .where("invoice_date", ">=", start_date)
     .where("invoice_date", "<=", end_date)
     .get()
     .then((invoiceRef) => {
-      let itemsArray=[];
-      let total_taxable=0;
+      let itemsArray = [];
+      let total_taxable = 0;
       let total = {
         total_orders: 0,
         // total_gross: 0,
-        total_sales:0,
+        total_sales: 0,
         total_discount: 0,
         total_cash: 0,
         total_card: 0,
@@ -287,8 +286,8 @@ exports.getBasicsByInterval = async (req, res, next) => {
         total_online: 0,
         total_tax: 0,
         total_cust: 0,
-        total_U_customers : 0,
-        total_item:0
+        total_U_customers: 0,
+        total_item: 0,
       };
       for (let invoice of invoiceRef.docs) {
         let tempInvoice = invoice.data();
@@ -308,49 +307,55 @@ exports.getBasicsByInterval = async (req, res, next) => {
           }
         }
         total.total_item = itemsArray.length;
-        
-    total_taxable += tempInvoice.taxable;
-    
-    if (tempInvoice.discount) {
-      tempInvoice.discount = tempInvoice.discount.includes("%")
-        ? Number(
-          (tempInvoice.taxable * Number(tempInvoice.discount.split("%")[0])) /
-          100
-        )
-        : tempInvoice.discount;
-    } else {
-      tempInvoice.discount = 0;
-    }
-    total.total_discount += tempInvoice.discount || 0;
 
-    tempInvoice.tax =
-      Number(tempInvoice.taxable - tempInvoice.discount) *
-      (tempInvoice.tax / 100);
-    total.total_tax += tempInvoice.tax;
+        total_taxable += tempInvoice.taxable;
 
-    total.total_credit += tempInvoice.settle.credit;
-    total.total_cust++;
-    total.total_sales += tempInvoice.total_amt - tempInvoice.settle.credit;
+        if (tempInvoice.discount) {
+          tempInvoice.discount = tempInvoice.discount.includes("%")
+            ? Number(
+                (tempInvoice.taxable *
+                  Number(tempInvoice.discount.split("%")[0])) /
+                  100
+              )
+            : tempInvoice.discount;
+        } else {
+          tempInvoice.discount = 0;
+        }
+        total.total_discount += tempInvoice.discount || 0;
 
-    switch (tempInvoice.settle.method) {
-      case "cash":
-        total.total_cash += tempInvoice.total_amt - tempInvoice.settle.credit;
-        tempInvoice.cash = tempInvoice.total_amt - tempInvoice.settle.credit;
-        break;
-      case "card":
-        total.total_card += tempInvoice.total_amt - tempInvoice.settle.credit;
-        tempInvoice.card = tempInvoice.total_amt - tempInvoice.settle.credit;
-        break;
-      case "online":
-        tempInvoice.online = tempInvoice.total_amt - tempInvoice.settle.credit;
-        total.total_online += tempInvoice.online;
-        break;
-    }
+        tempInvoice.tax =
+          Number(tempInvoice.taxable - tempInvoice.discount) *
+          (tempInvoice.tax / 100);
+        total.total_tax += tempInvoice.tax;
+
+        total.total_credit += tempInvoice.settle.credit;
+        total.total_cust++;
+        total.total_sales += tempInvoice.total_amt - tempInvoice.settle.credit;
+
+        switch (tempInvoice.settle.method) {
+          case "cash":
+            total.total_cash +=
+              tempInvoice.total_amt - tempInvoice.settle.credit;
+            tempInvoice.cash =
+              tempInvoice.total_amt - tempInvoice.settle.credit;
+            break;
+          case "card":
+            total.total_card +=
+              tempInvoice.total_amt - tempInvoice.settle.credit;
+            tempInvoice.card =
+              tempInvoice.total_amt - tempInvoice.settle.credit;
+            break;
+          case "online":
+            tempInvoice.online =
+              tempInvoice.total_amt - tempInvoice.settle.credit;
+            total.total_online += tempInvoice.online;
+            break;
+        }
       }
       res.status(200).json({ success: true, data: total });
-
-    }).catch((err) => {
-      console.log('errorn on sstats'+err)
+    })
+    .catch((err) => {
+      console.log("errorn on sstats" + err);
       res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };
@@ -412,7 +417,12 @@ exports.getCategoriesStats = async (req, res, next) => {
     .collection("categories")
     .get();
 
-  let menuRef = await firestore.collection('restaurants').doc(req.user.rest_id).collection('menu').doc('menu').get();
+  let menuRef = await firestore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .collection("menu")
+    .doc("menu")
+    .get();
 
   let categories = {};
   let items = {};
@@ -427,7 +437,7 @@ exports.getCategoriesStats = async (req, res, next) => {
   }
 
   for (let menu of menuRef.data().menu) {
-    items[menu.category][menu.name] = { qty: 0, price: 0 }
+    items[menu.category][menu.name] = { qty: 0, price: 0 };
   }
 
   let start_date = interval[0];
@@ -445,16 +455,19 @@ exports.getCategoriesStats = async (req, res, next) => {
     i.id = invoice.id;
     invoices.push(i);
     for (let ele of i.data) {
+      console.log(ele, categories[`${ele.category}`]);
       if (categories[`${ele.category}`] == undefined) {
-        continue
+        continue;
       }
       categories[`${ele.category}`] += ele.qty;
-      let q = items[`${ele.category}`][`${ele.name}`].qty;
-      let p = items[`${ele.category}`][`${ele.name}`].price;
-      items[`${ele.category}`][`${ele.name}`] = {
-        qty: q + ele.qty,
-        price: p + ele.price,
-      };
+      if (items[`${ele.category}`][`${ele.name}`]) {
+        let q = items[`${ele.category}`][`${ele.name}`].qty;
+        let p = items[`${ele.category}`][`${ele.name}`].price;
+        items[`${ele.category}`][`${ele.name}`] = {
+          qty: q + ele.qty,
+          price: p + ele.price,
+        };
+      }
     }
   }
   res
