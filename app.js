@@ -83,7 +83,7 @@ app.use("/api/admin/customer", custAdmin);
 app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
-var job = new CronJob('0,01 * * * *', function() {
+var job = new CronJob('*/1 * * * *', function() {
   console.log('You will see this message every 1 min');
 }, null, true, 'America/Los_Angeles');
 
