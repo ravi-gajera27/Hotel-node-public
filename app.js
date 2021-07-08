@@ -8,8 +8,7 @@ const ejs = require("ejs");
 let moment = require("moment");
 const db = require("./config/db");
 const path = require("path");
-const HASH = require("./utils/encryption");
-const randomstring = require("randomstring");
+
 
 //initialize server
 let app = express();
@@ -21,6 +20,8 @@ DbInitialize = async () => {
 DbInitialize();
 
 // listing routes
+const authSuperAdmin = require('./super-admin/routes/auth')
+const restSuperAdmin = require('./super-admin/routes/restaurants')
 const authAdmin = require("./admin/routes/auth");
 const authUsers = require("./customer/routes/auth");
 const order = require("./customer/routes/order");
@@ -33,6 +34,7 @@ var CronJob = require('cron').CronJob;
 
 let whitelist = [
   "http://localhost:4300",
+  "http://localhost:4400",
   "http://localhost:4200",
   "http://localhost:8100",
   "https://peraket-rms.web.app",
@@ -71,6 +73,10 @@ app.get('/eod1', (req, res)=>{
   res.render('eod1',{invoice_array: invoice_array})
 })
 
+// process routes of super-admin
+app.use("/api/super-admin/auth", authSuperAdmin);
+app.use("/api/super-admin/restaurant", restSuperAdmin);
+
 //process routes of admin
 app.use("/api/admin/auth", authAdmin);
 app.use("/api/admin/order", orderAdmin);
@@ -83,14 +89,16 @@ app.use("/api/admin/customer", custAdmin);
 app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
-var job = new CronJob('*/1 * * * *', function() {
+var job = new CronJob('*/30 * * * *', function() {
   console.log('You will see this message every 1 min');
 }, null, true, 'America/Los_Angeles');
 
 
+const enc = require('./utils/encryption')
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
   job.start();
+
   console.log(
     "app is running",
     moment().format("DD-MM-YYYY"),

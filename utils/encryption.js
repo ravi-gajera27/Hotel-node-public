@@ -4,6 +4,7 @@ const generateHash = async (password, saltRounds) =>
   new Promise((resolve, reject) => {
     bcrypt.hash(password, saltRounds, (err, hash) => {
       if (!err) {
+        console.log(hash)
         resolve(hash)
       }
       reject(err)

@@ -221,7 +221,7 @@ exports.removeAdmin = async (req, res) => {
 };
 
 exports.restaurantRegister = async (req, res, next) => {
-  req.body.created_at = new Date();
+  req.body.created_at = moment().format('YYYY-MM-DD')
   req.body.owner_id = req.user.id;
 
   if (req.user.rest_id) {

@@ -8,7 +8,7 @@ const compress_images = require("compress-images");
 const fs = require("fs");
 const path = require("path");
 const randomstring = require("randomstring");
-
+const sizeof = require("firestore-size");
 var credentials = require("../../peraket-rms-google-drive.json");
 let scopes = ["https://www.googleapis.com/auth/drive"];
 
@@ -93,7 +93,6 @@ exports.setCategory = async (req, res, next) => {
 };
 
 exports.getMenu = async (req, res, next) => {
-
   let menuDoc = await firstore
     .collection("restaurants")
     .doc(req.user.rest_id)
@@ -101,11 +100,14 @@ exports.getMenu = async (req, res, next) => {
     .doc("menu")
     .get();
 
+  let s = 0;
   let menu = [];
   if (menuDoc.exists) {
     menu = menuDoc.data().menu;
+    s += sizeof(menu);
   }
 
+  console.log(s);
   res.status(200).json({ success: true, data: menu });
 };
 

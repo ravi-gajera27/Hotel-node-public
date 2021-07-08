@@ -349,9 +349,12 @@ exports.checkout = async (req, res, next) => {
   req.body.time = moment().utcOffset(process.env.UTC_OFFSET).format("HH:mm");
   req.body.tax = Number(data.tax);
   if (data.taxInc) {
-    req.body.taxable = req.body.taxable - (req.body.taxable * data.tax) / 100;
-  }
+    req.body.total_amt = req.body.taxable
+    req.body.taxable =  (req.body.taxable * 100 ) / (100 + restData.tax);
+    req.body.taxInc = true
+  }else{
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
+  }
 
   await firestore
     .collection(`orders/${cookie.rest_id}/invoices`)
