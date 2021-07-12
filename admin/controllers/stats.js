@@ -9,6 +9,8 @@ const path = require("path");
 const fs = require("fs");
 let ejs = require("ejs");
 let pdf = require("html-pdf");
+const sizeof = require("firestore-size");
+var bson = require("bson");
 
 exports.getInvoices = (req, res) => {
   firestore
@@ -31,6 +33,56 @@ exports.getInvoices = (req, res) => {
     });
 };
 
+exports.getHomeForOwner = async (req, res) => {
+  let rest_details_ref = await firestore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .get();
+
+  let seatOrderRef = await firestore
+    .collection(`restaurants/${req.user.rest_id}/torder`)
+    .get();
+
+  let takeawayOrderRef = await firestore
+    .collection(`restaurants/${req.user.rest_id}/order`)
+    .get();
+
+  let obj = {
+    total_occupied: 0,
+    total_checkout: 0,
+    total_vaccant: 0,
+    seat_order: 0,
+    takeaway_order: 0,
+  };
+
+  let rest_details = rest_details_ref.data();
+
+  for (let data of rest_details?.customers) {
+    if (data.checkout) {
+      obj.total_checkout++;
+    } else {
+      obj.total_occupied++;
+    }
+  }
+
+  obj.total_vaccant =
+    Number(rest_details.tables) - obj.total_occupied - obj.total_checkout;
+
+  if (!seatOrderRef.empty) {
+    for (let order of seatOrderRef.docs) {
+      obj.seat_order++;
+    }
+  }
+
+  if (!takeawayOrderRef.empty) {
+    for (let order of takeawayOrderRef.docs) {
+      obj.takeaway_order++;
+    }
+  }
+
+  res.status(200).json({ success: true, data: obj });
+};
+
 exports.downloadInvoicePdf = async (req, res) => {
   let rest_details = await firestore
     .collection("restaurants")
@@ -45,6 +97,12 @@ exports.downloadInvoicePdf = async (req, res) => {
     .get();
 
   let invoice = invoiceRef.data();
+
+  let s = sizeof(invoice);
+  console.log(s);
+
+  var size = bson.calculateObjectSize(invoice);
+  console.log(size);
   let data = rest_details.data();
 
   let userRef = await firestore.collection("users").doc(invoice.cid).get();
@@ -109,6 +167,7 @@ exports.downloadInvoicePdf = async (req, res) => {
     }
   );
 };
+
 function IsIn2D(str, array) {
   for (var i = 0; i < array.length; i++) {
     if (array[i].name == str) {

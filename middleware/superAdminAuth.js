@@ -27,23 +27,10 @@ exports.protect = async (req, res, next) => {
         .status(401)
         .json({ success: false, message: status.UNAUTHORIZED });
     } else {
-      let user = await firstore.collection("admin").doc(decoded.user_id).get();
+      let user = await firstore.collection("super-admin").doc(decoded.user_id).get();
       if (user.exists) {
         req.user = user.data();
         req.user.id = user.id;
-        if (decoded.rest_id) {
-          req.user.rest_id = decoded.rest_id;
-        } else if (user.rest_id) {
-          req.user.rest_id = user.rest_id;
-        }
-        console.log(req.baseUrl);
-        if (!req.baseUrl.includes("auth") && !req.user.rest_id) {
-          return res.status(401).json({
-            success: false,
-            message: status.NOT_REGISTERED,
-            redirect: "/restaurant-profile-step-one",
-          });
-        }
         next();
       } else {
         return res
