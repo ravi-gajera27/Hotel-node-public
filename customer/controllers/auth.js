@@ -258,7 +258,7 @@ exports.verifySession = async(req, res, next) => {
     let customersRef = await firestore
         .collection("restaurants")
         .doc(cookie.rest_id)
-        .collection("takeaway")
+        .collection("customers")
         .doc("users");
 
     let users = await customersRef.get();
