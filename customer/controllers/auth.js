@@ -263,7 +263,7 @@ exports.verifySession = async(req, res, next) => {
 
     let users = await customersRef.get();
 
-    let data = (await restRef.get()).data();
+    let data = await restRef.get()
 
     if (!data.exists) {
         return res
@@ -273,6 +273,8 @@ exports.verifySession = async(req, res, next) => {
                 message: status.UNAUTHORIZED
             });
     }
+
+    data = data.data();
 
   let seatCust = users?.seat || []
 
