@@ -188,11 +188,11 @@ exports.restoreCustomer = async (req, res, next) => {
       .collection(`restaurants/${req.user.rest_id}/torder`)
       .doc(`${cid}`);
 
-      customers = (await customersRef.get()).data().takeaway 
+      customers = (await customersRef.get()).data().takeaway || []
 
   } else {
 
-    customers = (await customersRef.get()).data().seat 
+    customers = (await customersRef.get()).data().seat || []
 
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/order`)
@@ -263,20 +263,20 @@ exports.checkoutCustomer = async (req, res, next) => {
   .collection(`restaurants/${req.user.rest_id}/customers`)
   .doc("users");
 
-  let customers =  (await customersRef.get())
+  let customers =  (await customerRef.get())
   let seatCust;
   let takeawayCust;
 
   let orderRef;
   if (table_no == "takeaway") {
 
-    takeawayCust = customers.data().takeaway
+    takeawayCust = customers.data().takeaway || []
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/torder`)
       .doc(`${cid}`);
   } else {
 
-    seatCust = customers.data().seat
+    seatCust = customers.data().seat || []
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/order`)
       .doc(`table-${table_no}`);
@@ -359,17 +359,17 @@ exports.checkoutCustomer = async (req, res, next) => {
   finalInvoice.cid = cid;
   finalInvoice.cname = orderData.cname;
   finalInvoice.table = table_no;
-  finalInvoice.invoice_no = restData.inv_no;
+  finalInvoice.inv_no = restData.inv_no;
   finalInvoice.clean = false;
   delete finalInvoice.date;
   delete finalInvoice.qty;
-  finalInvoice.invoice_date = moment()
+  finalInvoice.inv_date = moment()
     .utcOffset(process.env.UTC_OFFSET)
     .format("YYYY-MM-DD");
   finalInvoice.time = moment()
     .utcOffset(process.env.UTC_OFFSET)
     .format("HH:mm");
-  finalInvoice.tax = Number(data.tax);
+  finalInvoice.tax = Number(restData.tax);
 
   if (restData.taxInc) {
     finalInvoice.total_amt = finalInvoice.taxable;
@@ -382,63 +382,115 @@ exports.checkoutCustomer = async (req, res, next) => {
       finalInvoice.taxable + (finalInvoice.taxable * restData.tax) / 100;
   }
 
-  let index;
-  if (table_no == "takeaway") {
-    index = takeawayCust.findIndex(
-      (ele) =>
-        ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
-    );
-    let obj = { ...takeawayCust[index] };
 
-    obj.checkout = true;
-    delete obj.req;
+ let inv = restData.inv;
+let date = moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD")
 
-    takeawayCust[index] = obj;
-  } else {
-    index = seatCust.findIndex(
-      (ele) =>
-        ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
-    );
-    seatCust[index].checkout = true;
+ if(!inv || inv.date != date){
+  inv = { date:  date, docId: date}
+ }
+
+ let invoiceRef = firestore
+  .collection(`orders/${req.user.rest_id}/invoices`).doc(inv.docId);
+
+let invoiceDoc = await invoiceRef.get();
+
+let invoiceData;
+if(invoiceDoc.exists){
+  let invoices = invoiceDoc.data().invoices;
+  if(invoices.length >= 130){
+    
+    let split = inv.docId.split('#')
+    if(split.length != 0){
+      inv.docId = split[0] + '#' + (Number(split[1]) + 1)
+    }else{
+      inv.docId = inv.docId + '#1'
+    }
+    invoiceData = {inv_date: date, invoices: [{...finalInvoice}]}
+  }else{
+    invoices.push({...finalInvoice})
+    invoiceData = {invoices: [...invoices]}
   }
+}else{
+  invoiceData = {inv_date: date, invoices: [{...finalInvoice}]}
+}
 
-  await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .add(finalInvoice)
-    .then(async (order) => {
-      await orderRef.delete();
+let index;
+if (table_no == "takeaway") {
+  index = takeawayCust.findIndex(
+    (ele) =>
+      ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
+  );
+  let obj = { ...takeawayCust[index] };
 
-     await customerRef.set({seat: [...seatCust], takeaway: [...takeawayCust]},{merge: true})
-      await restRef.set(restData, { merge: true });
-      return res
-        .status(200)
-        .json({ success: true, message: "Successfully checkout" });
-    })
-    .catch((err) => {
-      console.log(err);
-      return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR });
-    });
+  obj.checkout = true;
+  obj.inv_no = restData.inv_no
+  obj.inv_id = inv.docId
+  delete obj.req;
+
+  takeawayCust[index] = obj;
+} else {
+  index = seatCust.findIndex(
+    (ele) =>
+      ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
+  );
+  seatCust[index].checkout = true;
+  seatCust[index].inv_no = restData.inv_no;
+  seatCust[index].inv_id = inv.docId;
+}
+
+invoiceRef = firestore
+  .collection(`orders/${req.user.rest_id}/invoices`).doc(inv.docId);
+
+  restData.inv = inv
+  invoiceRef.set(invoiceData,{merge: true}).then(async e =>{
+  await orderRef.delete();
+
+  await customerRef.set({seat: [...seatCust], takeaway: [...takeawayCust]},{merge: true})
+   await restRef.set(restData, { merge: true });
+   return res
+     .status(200)
+     .json({ success: true, message: "Successfully checkout" });
+ })  .catch((err) => {
+  console.log(err);
+  return res
+    .status(500)
+    .json({ success: false, message: status.SERVER_ERROR });
+});
 };
 
 exports.updateInvoice = async (req, res) => {
   let invoice = req.body;
-  let invoice_id = req.params.invoice_id;
+  let inv_id = req.params.inv_id;
 
-  if (!invoice_id) {
+  if (!inv_id) {
     return res
       .status(400)
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
-  delete invoice.invoice_id;
+  delete invoice.inv_id;
   delete invoice.order_no;
-  console.log(invoice, invoice_id);
-  await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .doc(invoice_id)
-    .set(invoice, { merge: true })
+
+
+  let invoiceRef =  firestore
+  .collection(`orders/${req.user.rest_id}/invoices`)
+  .doc(inv_id)
+
+  let invoiceDoc = await invoiceRef.get()
+
+  let invoices = invoiceDoc.data().invoices;
+
+  let index = invoices.map(e => {return e.inv_no}).indexOf(invoice.inv_no)
+
+  if(index == -1){
+    return res
+    .status(400)
+    .json({ success: false, message: status.BAD_REQUEST });
+  }
+  invoices[index] = invoice;
+
+  await invoiceRef.set({invoices: [...invoices]},{merge: true})
     .then((e) => {
       return res
         .status(200)
@@ -454,9 +506,9 @@ exports.updateInvoice = async (req, res) => {
 exports.cleanUpCustomers = async (req, res) => {
   let invoice = req.body;
   console.log(invoice);
-  let invoice_id = req.params.invoice_id;
+  let inv_id = req.params.inv_id;
 
-  if (!invoice.cid || !invoice.table || !invoice_id) {
+  if (!invoice.cid || !invoice.table || !inv_id) {
     return res
       .status(400)
       .json({ success: false, message: status.BAD_REQUEST });
@@ -467,14 +519,14 @@ exports.cleanUpCustomers = async (req, res) => {
   .collection(`restaurants/${req.user.rest_id}/customers`)
   .doc("users");
 
-  let customers =  (await customersRef.get());
-  let seatCust;
-  let takeawayCust;
+  let customers =  (await customerRef.get());
+  let seatCust = [];
+  let takeawayCust = [];
 
-  if (table_no == "takeaway") {
-    takeawayCust = customers.data().takeaway
+  if (invoice.table == "takeaway") {
+    takeawayCust = customers.data().takeaway || []
   } else {
-    seatCust = customers.data().seat
+    seatCust = customers.data().seat || []
   }
 
   if (!customers.exists) {
@@ -483,7 +535,7 @@ exports.cleanUpCustomers = async (req, res) => {
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
-  if(table_no == 'takeaway'){
+  if(invoice.table_no == 'takeaway'){
     takeawayCust = takeawayCust.filter(
       (ele) => ele.cid != invoice.cid && ele.table != invoice.table
     );
@@ -493,15 +545,28 @@ exports.cleanUpCustomers = async (req, res) => {
     );
   }
 
-  delete invoice.invoice_id;
+  delete invoice.inv_id;
   delete invoice.order_no;
   delete invoice.clean;
 
+  let invoiceRef =  firestore
+  .collection(`orders/${req.user.rest_id}/invoices`)
+  .doc(inv_id)
 
-  await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .doc(invoice_id)
-    .set(invoice)
+  let invoiceDoc = await invoiceRef.get()
+
+  let invoices = invoiceDoc.data().invoices;
+
+  let index = invoices.map(e => {return e.inv_no}).indexOf(invoice.inv_no)
+
+  if(index == -1){
+    return res
+    .status(400)
+    .json({ success: false, message: status.BAD_REQUEST });
+  }
+  invoices[index] = invoice;
+
+  await invoiceRef.set({invoices: [...invoices]},{merge: true})
     .then(async (e) => {
       await customerRef.set({ seat: [...seatCust], takeaway: [...takeawayCust] }, { merge: true });
       await firestore
@@ -513,6 +578,7 @@ exports.cleanUpCustomers = async (req, res) => {
         .json({ success: true, message: "Successfully Cleaned up" });
     })
     .catch((err) => {
+      console.log(err)
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR });

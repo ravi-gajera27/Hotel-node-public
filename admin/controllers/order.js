@@ -167,14 +167,22 @@ exports.restoreOrder = async (req, res, next) => {
   }
 };
 
-
-
 exports.generateInvoice = async (req, res, next) => {
+  let inv_no = req.body.inv_no;
+  let inv_id = req.body.inv_id;
+
+  if (!inv_no || !inv_id ) {
+
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST });
+    
+  }
   let invoiceRef = await firestore
     .collection("orders")
     .doc(req.user.rest_id)
     .collection("invoices")
-    .doc(req.params.invoice_id)
+    .doc(inv_id)
     .get();
 
   if (!invoiceRef.exists) {
@@ -193,10 +201,17 @@ exports.generateInvoice = async (req, res, next) => {
     rest_address: rest_ref.address,
     gst_in: rest_ref.gst_in || "",
   };
+let invoices = invoiceRef.data().invoices;
+let index = invoices.map(e => {return e.inv_no}).indexOf(inv_no)
+if(index == -1){
+  return res
+  .status(400)
+  .json({ status: false, message: status.BAD_REQUEST });
+}
 
   res.status(200).json({
     success: true,
-    data: { invoice: invoiceRef.data(), rest_details: rest_details },
+    data: { invoice: invoices[index], rest_details: rest_details },
   });
 };
 
