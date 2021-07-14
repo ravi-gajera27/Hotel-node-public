@@ -220,10 +220,11 @@ exports.checkout = async (req, res, next) => {
     res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
-  let rest_details = await firestore
+  let restRef = await firestore
     .collection("restaurants")
     .doc(cookie.rest_id)
-    .get();
+   
+    let rest_details = await restRef.get();
 
   let data = rest_details.data();
 
@@ -326,7 +327,6 @@ let customers = (await customersRef.get()).data()
 
   data.inv_no = set_invoice_no;
 
-  await orderRef.delete();
 
   req.body.cid = req.user.id;
   req.body.cname = req.user.name;
@@ -384,7 +384,7 @@ let index;
 if (cookie.table == "takeaway") {
   index = takeawayCust.findIndex(
     (ele) =>
-      ele.cid == req.user.id && ele.table == cookie.table && ele.cname == orderData.cname
+      ele.cid == req.user.id && ele.table == cookie.table 
   );
   let obj = { ...takeawayCust[index] };
 
@@ -397,7 +397,7 @@ if (cookie.table == "takeaway") {
 } else {
   index = seatCust.findIndex(
     (ele) =>
-      ele.cid == req.user.id && ele.table == cookie.table && ele.cname == orderData.cname
+      ele.cid == req.user.id && ele.table == cookie.table 
   );
   seatCust[index].checkout = true;
   seatCust[index].inv_no = data.inv_no;
@@ -409,7 +409,7 @@ invoiceRef = firestore
 
   data.inv = inv
   invoiceRef.set(invoiceData,{merge: true}).then(async e =>{
-  await orderRef.delete();
+  await orderRef.delete()
 
   await customerRef.set({seat: [...seatCust], takeaway: [...takeawayCust]},{merge: true})
    await restRef.set(data, { merge: true });
