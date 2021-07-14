@@ -458,18 +458,19 @@ exports.getInvoicesByInterval = async (req, res, next) => {
 
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("invoice_date", ">=", start_date)
-    .where("invoice_date", "<=", end_date)
+    .where("inv_date", ">=", start_date)
+    .where("inv_date", "<=", end_date)
     .get()
     .then((data) => {
       let invoices = [];
       for (let invoice of data.docs) {
-        let i = invoice.data();
+        for(let i of invoice.data().invoices){
         if (i.clean == false) {
           continue;
         }
         i.id = invoice.id;
         invoices.push(i);
+      }
       }
       res.status(200).json({ success: true, data: invoices });
     })
@@ -525,13 +526,14 @@ exports.getCategoriesStats = async (req, res, next) => {
 
   let data = await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("invoice_date", ">=", start_date)
-    .where("invoice_date", "<=", end_date)
+    .where("inv_date", ">=", start_date)
+    .where("inv_date", "<=", end_date)
     .get();
 
   let invoices = [];
   for (let invoice of data.docs) {
-    let i = invoice.data();
+    for(let i of invoice.data().invoices){
+
     i.id = invoice.id;
     invoices.push(i);
     for (let ele of i.data) {
@@ -550,6 +552,7 @@ exports.getCategoriesStats = async (req, res, next) => {
       }
     }
   }
+}
   res
     .status(200)
     .json({ success: true, data: { categories: categories, items: items } });
@@ -577,27 +580,29 @@ exports.getAdvanceStats = async (req, res, next) => {
     intervalData = await getSlotBetweenInterval(slot, "", "");
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("invoice_date", ">=", start_date)
-      .where("invoice_date", "<=", end_date)
+      .where("inv_date", ">=", start_date)
+      .where("inv_date", "<=", end_date)
       .get();
 
     for (let invoice of data.docs) {
-      let i = invoice.data();
+      for(let i of invoice.data().invoices){
       index = moment(i.invoice_date).weekday();
       intervalData[index].value += i.total_amt;
+      }
     }
   } else if (slot.includes("month")) {
     intervalData = await getSlotBetweenInterval(slot, "", "");
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("invoice_date", ">=", start_date)
-      .where("invoice_date", "<=", end_date)
+      .where("inv_date", ">=", start_date)
+      .where("inv_date", "<=", end_date)
       .get();
 
     for (let invoice of data.docs) {
-      let i = invoice.data();
+      for(let i of invoice.data().invoices){
       index = moment(i.invoice_date).format("D");
       intervalData[index - 1].value += i.total_amt;
+      }
     }
   } else if (slot == "today") {
     let rest_ref = await firestore
@@ -613,12 +618,12 @@ exports.getAdvanceStats = async (req, res, next) => {
 
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("invoice_date", ">=", start_date)
-      .where("invoice_date", "<=", end_date)
+      .where("inv_date", ">=", start_date)
+      .where("inv_date", "<=", end_date)
       .get();
 
     for (let invoice of data.docs) {
-      let i = invoice.data();
+      for(let i of invoice.data().invoices){
       if (i.time) {
         index = intervalData.findIndex(
           (e) => i.time >= e.open_t && i.time < e.close_t
@@ -631,34 +636,37 @@ exports.getAdvanceStats = async (req, res, next) => {
         intervalData[index].value += i.total_amt;
       }
     }
+  }
   } else if (slot.includes("quarter")) {
     let slotData = await getMonthsOfQuarter(slot);
     intervalData = slotData[0];
     let starting_month = slotData[1];
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("invoice_date", ">=", start_date)
-      .where("invoice_date", "<=", end_date)
+      .where("inv_date", ">=", start_date)
+      .where("inv_date", "<=", end_date)
       .get();
 
     for (let invoice of data.docs) {
-      let i = invoice.data();
+      for(let i of invoice.data().invoices){
       index = moment(i.invoice_date).month();
       intervalData[index - starting_month].value += i.total_amt;
+      }
     }
   } else if (slot == "last-year" || slot == "this-year") {
     intervalData = await getMonthsOfYear(slot);
     let data = await firestore
       .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("invoice_date", ">=", start_date)
-      .where("invoice_date", "<=", end_date)
+      .where("inv_date", ">=", start_date)
+      .where("inv_date", "<=", end_date)
       .get();
     console.log(intervalData);
     for (let invoice of data.docs) {
-      let i = invoice.data();
+      for(let i of invoice.data().invoices){
       index = moment(i.invoice_date).month();
       index = index < 3 ? index + 9 : index - 3;
       intervalData[index].value += i.total_amt;
+      }
     }
   }
 

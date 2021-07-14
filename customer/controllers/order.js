@@ -384,7 +384,7 @@ let index;
 if (cookie.table == "takeaway") {
   index = takeawayCust.findIndex(
     (ele) =>
-      ele.cid == cid && ele.table == cookie.table && ele.cname == orderData.cname
+      ele.cid == req.user.id && ele.table == cookie.table && ele.cname == orderData.cname
   );
   let obj = { ...takeawayCust[index] };
 
@@ -397,7 +397,7 @@ if (cookie.table == "takeaway") {
 } else {
   index = seatCust.findIndex(
     (ele) =>
-      ele.cid == cid && ele.table == cookie.table && ele.cname == orderData.cname
+      ele.cid == req.user.id && ele.table == cookie.table && ele.cname == orderData.cname
   );
   seatCust[index].checkout = true;
   seatCust[index].inv_no = data.inv_no;
