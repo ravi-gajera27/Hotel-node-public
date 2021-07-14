@@ -61,9 +61,11 @@ exports.getHomeForOwner = async (req, res) => {
     total_vaccant: 0,
     seat_order: 0,
     takeaway_order: 0,
+    total_table: 0
   };
 
   let rest_details = rest_details_ref.data();
+  obj.total_table = Number(rest_details.tables);
 
   for (let data of seatCust) {
     if (data.checkout) {

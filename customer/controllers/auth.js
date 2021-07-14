@@ -261,7 +261,7 @@ exports.verifySession = async(req, res, next) => {
         .collection("customers")
         .doc("users");
 
-    let users = await customersRef.get();
+    let users = (await customersRef.get()).data();
 
     let data = await restRef.get()
 
@@ -277,8 +277,6 @@ exports.verifySession = async(req, res, next) => {
     data = data.data();
 
   let seatCust = users?.seat || []
-
-  console.log(seatCust, users)
 
   let takeawayCust = users?.takeaway || []
 
@@ -464,7 +462,7 @@ exports.verifySession = async(req, res, next) => {
                     cname: req.user.name,
                     checkout: false,
                 });
-                console.log('push',seatCust)
+              
             }
         
 
@@ -476,7 +474,7 @@ exports.verifySession = async(req, res, next) => {
                 checkout: false,
             };
            seatCust = [{...obj}]
-           console.log('single',seatCust)
+        
         }
     }
 
