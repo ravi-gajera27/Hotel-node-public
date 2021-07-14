@@ -278,7 +278,7 @@ exports.verifySession = async(req, res, next) => {
 
   let seatCust = users?.seat || []
 
-  console.log(seatCust)
+  console.log(seatCust, users)
 
   let takeawayCust = users?.takeaway || []
 
@@ -350,7 +350,6 @@ exports.verifySession = async(req, res, next) => {
                     checkout: false,
                 });
             }
-
          
         } else {
             let obj = {
@@ -401,7 +400,6 @@ exports.verifySession = async(req, res, next) => {
             flag = 0;
             restCust = false;
             for (let ele of seatCust) {
-            
                 if (ele.cid == req.user.id) {
                     if (ele.restore) {
                         flag = 1;
