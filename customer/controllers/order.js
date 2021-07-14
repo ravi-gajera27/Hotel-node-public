@@ -331,24 +331,24 @@ let customers = (await customersRef.get()).data()
   req.body.cid = req.user.id;
   req.body.cname = req.user.name;
   req.body.table = cookie.table;
-  req.body.invoice_no = set_invoice_no;
+  req.body.inv_no = set_invoice_no;
   req.body.clean = false;
   delete req.body.date;
   delete req.body.qty;
-  req.body.invoice_date = moment()
+  req.body.inv_date = moment()
     .utcOffset(process.env.UTC_OFFSET)
     .format("YYYY-MM-DD");
   req.body.time = moment().utcOffset(process.env.UTC_OFFSET).format("HH:mm");
   req.body.tax = Number(data.tax);
   if (data.taxInc) {
     req.body.total_amt = req.body.taxable
-    req.body.taxable =  (req.body.taxable * 100 ) / (100 + restData.tax);
+    req.body.taxable =  (req.body.taxable * 100 ) / (100 + data.tax);
     req.body.taxInc = true
   }else{
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
   }
 
-  let inv = restData.inv;
+  let inv = data.inv;
 let date = moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD")
 
  if(!inv || inv.date != date){
@@ -389,7 +389,7 @@ if (table_no == "takeaway") {
   let obj = { ...takeawayCust[index] };
 
   obj.checkout = true;
-  obj.inv_no = restData.inv_no
+  obj.inv_no = data.inv_no
   obj.inv_id = inv.docId
   delete obj.req;
 
@@ -400,19 +400,19 @@ if (table_no == "takeaway") {
       ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
   );
   seatCust[index].checkout = true;
-  seatCust[index].inv_no = restData.inv_no;
+  seatCust[index].inv_no = data.inv_no;
   seatCust[index].inv_id = inv.docId;
 }
 
 invoiceRef = firestore
   .collection(`orders/${cookie.rest_id}/invoices`).doc(inv.docId);
 
-  restData.inv = inv
+  data.inv = inv
   invoiceRef.set(invoiceData,{merge: true}).then(async e =>{
   await orderRef.delete();
 
   await customerRef.set({seat: [...seatCust], takeaway: [...takeawayCust]},{merge: true})
-   await restRef.set(restData, { merge: true });
+   await restRef.set(data, { merge: true });
    return res
      .status(200)
      .json({ success: true, message: "Successfully checkout" });
