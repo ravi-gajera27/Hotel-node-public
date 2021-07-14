@@ -371,13 +371,13 @@ if(invoiceDoc.exists){
     }else{
       inv.docId = inv.docId + '#1'
     }
-    invoiceData = {inv_date: date, invoices: [{...finalInvoice}]}
+    invoiceData = {inv_date: date, invoices: [{...req.body}]}
   }else{
-    invoices.push({...finalInvoice})
+    invoices.push({...req.body})
     invoiceData = {invoices: [...invoices]}
   }
 }else{
-  invoiceData = {inv_date: date, invoices: [{...finalInvoice}]}
+  invoiceData = {inv_date: date, invoices: [{...req.body}]}
 }
 
 let index;

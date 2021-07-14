@@ -469,9 +469,7 @@ exports.updateInvoice = async (req, res) => {
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
-  delete invoice.inv_id;
   delete invoice.order_no;
-
 
   let invoiceRef =  firestore
   .collection(`orders/${req.user.rest_id}/invoices`)
@@ -507,6 +505,8 @@ exports.cleanUpCustomers = async (req, res) => {
   let invoice = req.body;
   console.log(invoice);
   let inv_id = req.params.inv_id;
+
+  invoice.inv_id = inv_id;
 
   if (!invoice.cid || !invoice.table || !inv_id) {
     return res

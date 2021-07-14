@@ -53,8 +53,6 @@ exports.getHomeForOwner = async (req, res) => {
 
     let seatCust = customersRef.data().seat || []
   
-
-
   let obj = {
     total_occupied: 0,
     total_checkout: 0,
@@ -94,6 +92,8 @@ exports.getHomeForOwner = async (req, res) => {
 };
 
 exports.downloadInvoicePdf = async (req, res) => {
+  let inv_id = req.body.inv_id;
+  let inv_no = req.body.inv_no;
   let rest_details = await firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
