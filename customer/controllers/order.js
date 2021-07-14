@@ -381,10 +381,10 @@ if(invoiceDoc.exists){
 }
 
 let index;
-if (table_no == "takeaway") {
+if (cookie.table == "takeaway") {
   index = takeawayCust.findIndex(
     (ele) =>
-      ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
+      ele.cid == cid && ele.table == cookie.table && ele.cname == orderData.cname
   );
   let obj = { ...takeawayCust[index] };
 
@@ -397,7 +397,7 @@ if (table_no == "takeaway") {
 } else {
   index = seatCust.findIndex(
     (ele) =>
-      ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
+      ele.cid == cid && ele.table == cookie.table && ele.cname == orderData.cname
   );
   seatCust[index].checkout = true;
   seatCust[index].inv_no = data.inv_no;

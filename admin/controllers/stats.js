@@ -94,6 +94,12 @@ exports.getHomeForOwner = async (req, res) => {
 exports.downloadInvoicePdf = async (req, res) => {
   let inv_id = req.body.inv_id;
   let inv_no = req.body.inv_no;
+
+  if(!inv_id || !inv_no){
+    return res
+    .status(400)
+    .json({ success: false, message: status.BAD_REQUEST });
+  }
   let rest_details = await firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
@@ -103,16 +109,18 @@ exports.downloadInvoicePdf = async (req, res) => {
     .collection("orders")
     .doc(req.user.rest_id)
     .collection("invoices")
-    .doc(req.params.id)
+    .doc(inv_id)
     .get();
 
-  let invoice = invoiceRef.data();
+  let invoices = invoiceRef.data().invoices;
 
-  let s = sizeof(invoice);
-  console.log(s);
-
-  var size = bson.calculateObjectSize(invoice);
-  console.log(size);
+  let index = invoices.map(e=>{return e.inv_no}).indexOf(inv_no);
+  if(index == -1){
+    return res
+    .status(400)
+    .json({ success: false, message: status.BAD_REQUEST });
+  }
+  let invoice = invoices[index]
   let data = rest_details.data();
 
   let userRef = await firestore.collection("users").doc(invoice.cid).get();
@@ -127,7 +135,7 @@ exports.downloadInvoicePdf = async (req, res) => {
       invoice: invoice,
       user: user,
       rest: data,
-      invoice_date: moment(invoice.invoice_date).format("DD/MM/YYYY"),
+      inv_date: moment(invoice.inv_date).format("DD/MM/YYYY"),
     },
     (err, data) => {
       if (err) {
@@ -198,7 +206,7 @@ exports.downloadEodPdf = async (req, res) => {
     .collection("orders")
     .doc(req.user.rest_id)
     .collection("invoices")
-    .where("invoice_date", "==", date)
+    .where("inv_date", "==", date)
     .get();
 
   let data = rest_details.data();
@@ -218,7 +226,7 @@ exports.downloadEodPdf = async (req, res) => {
   let topPerformer = [];
 
   for (let invoice of invoiceRef.docs) {
-    let tempInvoice = invoice.data();
+    for(let tempInvoice of invoice.data().invoices)
 
     if (tempInvoice.clean == false) {
       continue;
