@@ -307,7 +307,7 @@ exports.verifySession = async(req, res, next) => {
             seatCust.splice(index, 1);
         }
 
-        if (takeawayCust  && takeawayCust.length != 0) {
+        if (takeawayCust.length != 0) {
             index = 0;
             flag = 0;
             for (ele of takeawayCust) {
@@ -386,9 +386,7 @@ exports.verifySession = async(req, res, next) => {
             takeawayCust.splice(index, 1);
         }
 
-     
-
-        if (seatCust && seatCust.length != 0) {
+        if (seatCust.length != 0) {
 
             if (Number(cookie.table) > Number(data.tables)) {
                 return res
@@ -468,6 +466,7 @@ exports.verifySession = async(req, res, next) => {
                     cname: req.user.name,
                     checkout: false,
                 });
+                console.log('push',seatCust)
             }
         
 
@@ -479,6 +478,7 @@ exports.verifySession = async(req, res, next) => {
                 checkout: false,
             };
            seatCust = [{...obj}]
+           console.log('single',seatCust)
         }
     }
 
