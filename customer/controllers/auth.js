@@ -278,6 +278,8 @@ exports.verifySession = async(req, res, next) => {
 
   let seatCust = users?.seat || []
 
+  console.log(seatCust)
+
   let takeawayCust = users?.takeaway || []
 
     if (cookie.table == "takeaway") {
