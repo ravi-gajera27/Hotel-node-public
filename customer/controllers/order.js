@@ -7,6 +7,7 @@ const path = require("path");
 const fs = require("fs");
 let ejs = require("ejs");
 let pdf = require("html-pdf");
+const randomstring = require("randomstring");
 
 exports.addOrder = async (req, res, next) => {
   console.log(req.body);
@@ -94,6 +95,7 @@ exports.addOrder = async (req, res, next) => {
         restore: false,
       };
     } else {
+      req.body.id = await generateRandomString();
       send_data = {
         cid: req.user.id,
         cname: req.user.name,
@@ -129,6 +131,16 @@ exports.addOrder = async (req, res, next) => {
       send_data.unique = true;
     }
   } else {
+    let validId = false
+    let id
+    do{
+      id = await generateRandomString();
+      let filter = orderData.filter(e => e.id ==id)
+      if(filter.length == 0){
+        validId = true
+      }
+    }while(!validId)
+    req.body.id = id;
     orderData.push(req.body);
     send_data = orderData;
     send_data = { order: [...send_data] };
@@ -426,3 +438,10 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
     }
   );
 };
+
+async function generateRandomString() {
+  return await randomstring.generate({
+    length: 6,
+    charset: "numeric",
+  });
+}
