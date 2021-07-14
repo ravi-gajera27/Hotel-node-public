@@ -226,7 +226,7 @@ exports.downloadEodPdf = async (req, res) => {
   let topPerformer = [];
 
   for (let invoice of invoiceRef.docs) {
-    for(let tempInvoice of invoice.data().invoices)
+    for(let tempInvoice of invoice.data().invoices){
 
     if (tempInvoice.clean == false) {
       continue;
@@ -286,6 +286,7 @@ exports.downloadEodPdf = async (req, res) => {
 
     invoice_array.push(tempInvoice);
   }
+}
   invoice_array.sort((a, b) =>
     a.invoice_no > b.invoice_no ? 1 : b.invoice_no > a.invoice_no ? -1 : 0
   );
@@ -346,8 +347,8 @@ exports.getBasicsByInterval = async (req, res, next) => {
 
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("invoice_date", ">=", start_date)
-    .where("invoice_date", "<=", end_date)
+    .where("inv_date", ">=", start_date)
+    .where("inv_date", "<=", end_date)
     .get()
     .then((invoiceRef) => {
       let itemsArray = [];
@@ -367,7 +368,8 @@ exports.getBasicsByInterval = async (req, res, next) => {
         total_item: 0,
       };
       for (let invoice of invoiceRef.docs) {
-        let tempInvoice = invoice.data();
+        for(let tempInvoice of invoice.data().invoices){
+    
         if (tempInvoice.clean == false) {
           continue;
         }
@@ -429,6 +431,7 @@ exports.getBasicsByInterval = async (req, res, next) => {
             break;
         }
       }
+    }
       res.status(200).json({ success: true, data: total });
     })
     .catch((err) => {
