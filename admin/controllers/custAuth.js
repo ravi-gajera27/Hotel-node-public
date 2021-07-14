@@ -3,13 +3,13 @@ const status = require("../../utils/status");
 const moment = require("moment");
 
 exports.acceptRequest = async (req, res, next) => {
-  let takeawayRef = await firestore
+  let custoemrsRef = await firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
-    .collection("takeaway")
+    .collection("customers")
     .doc("users");
 
-  let customers = (await takeawayRef.get()).data().customers;
+  let customers = (await custoemrsRef.get()).data().takeaway;
 
   customers.map((cust) => {
     if (cust.cid == req.params.cid) {
@@ -17,19 +17,19 @@ exports.acceptRequest = async (req, res, next) => {
     }
   });
 
-  await takeawayRef.set({ customers: [...customers] }, { merge: true });
+  await custoemrsRef.set({ takeaway: [...customers] }, { merge: true });
 
   res.status(200).json({ success: true, message: status.ACCEPT_REQUEST_ADMIN });
 };
 
 exports.rejectRequest = async (req, res, next) => {
-  let takeawayRef = await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .collection("takeaway")
-    .doc("users");
+  let customersRef = await firestore
+  .collection("restaurants")
+  .doc(req.user.rest_id)
+  .collection("customers")
+  .doc("users");
 
-  let customers = (await takeawayRef.get()).data().customers;
+  let customers = (await customersRef.get()).data().takeaway;
 
   customers = customers.filter((cust) => cust.cid != req.params.cid);
 
@@ -37,19 +37,19 @@ exports.rejectRequest = async (req, res, next) => {
 
   await userRef.set({ join: "" }, { merge: true });
 
-  await takeawayRef.set({ customers: [...customers] }, { merge: true });
+  await customersRef.set({ takeaway: [...customers] }, { merge: true });
 
   res.status(200).json({ success: true, message: status.REJECT_REQUEST_ADMIN });
 };
 
 exports.blockCustomer = async (req, res, next) => {
-  let takeawayRef = await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .collection("takeaway")
-    .doc("users");
+  let customersRef = await firestore
+  .collection("restaurants")
+  .doc(req.user.rest_id)
+  .collection("customers")
+  .doc("users");
 
-  let customers = (await takeawayRef.get()).data().customers;
+  let customers = (await customersRef.get()).data().takeaway;
 
   customers = customers.filter((cust) => cust.cid != req.params.cid);
 
@@ -57,7 +57,7 @@ exports.blockCustomer = async (req, res, next) => {
 
   let blocked = moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD");
 
-  await takeawayRef.set({ customers: [...customers] }, { merge: true });
+  await customersRef.set({ takeaway: [...customers] }, { merge: true });
 
   await userRef.set({ blocked: blocked, join: "" }, { merge: true });
 
@@ -75,32 +75,31 @@ exports.removeCustomer = async (req, res, next) => {
   }
 
   let orderRef;
-  let customersRef;
+  let orderCollectionRef;
+  let customersRef = await firestore
+    .collection(`restaurants`)
+    .doc(req.user.rest_id)
+    .collection("takeaway")
+    .doc("users");
+
+let customers
 
   if (table_no == "takeaway") {
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/torder`)
-      .doc(`${cid}`);
+      .doc(`${cid}`); 
 
-    customersRef = await firestore
-      .collection(`restaurants`)
-      .doc(req.user.rest_id)
-      .collection("takeaway")
-      .doc("users");
+      customers = (await customersRef.get()).data().takeaway || []
+
   } else {
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/order`)
       .doc(`table-${table_no}`);
 
-    customersRef = await firestore
-      .collection(`restaurants`)
-      .doc(req.user.rest_id);
+      customers = (await customersRef.get()).data().seat || []
   }
 
   let order = await orderRef.get();
-
-  let data = await customersRef.get();
-  customers = data.data().customers;
 
   let newCustomers = [];
 
@@ -114,17 +113,28 @@ exports.removeCustomer = async (req, res, next) => {
     newCustomers.push(cust);
   }
 
-  await customersRef.set(
-    {
-      customers: newCustomers,
-    },
-    { merge: true }
-  );
+  if(table_no == 'takeaway'){
+    await customersRef.set(
+      {
+        takeaway: newCustomers,
+      },
+      { merge: true }
+    );
+  }else{
+    await customersRef.set(
+      {
+        seat: newCustomers,
+      },
+      { merge: true }
+    );
+  }
+
 
   if (order.exists) {
     await orderRef
       .set({ restore: true }, { merge: true })
       .then(async (e) => {
+
         await firestore
           .collection("users")
           .doc(`${cid}`)
@@ -164,30 +174,30 @@ exports.restoreCustomer = async (req, res, next) => {
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
-  let customersRef;
+  let  customersRef = await firestore
+  .collection("restaurants")
+  .doc(req.user.rest_id)
+  .collection("customers")
+  .doc("users");
+
+  let customers
   let orderRef;
+  
   if (table_no == "takeaway") {
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/torder`)
       .doc(`${cid}`);
 
-    customersRef = await firestore
-      .collection("restaurants")
-      .doc(req.user.rest_id)
-      .collection("takeaway")
-      .doc("users");
+      customers = (await customersRef.get()).data().takeaway 
+
   } else {
-    customersRef = await firestore
-      .collection(`restaurants`)
-      .doc(req.user.rest_id);
+
+    customers = (await customersRef.get()).data().seat 
 
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/order`)
       .doc(`table-${table_no}`);
   }
-
-  let data = (await customersRef.get()).data();
-  let customers = data.customers;
 
   let index = customers.findIndex((ele) => {
     return cid == ele.cid && ele.table == table_no;
@@ -206,8 +216,9 @@ exports.restoreCustomer = async (req, res, next) => {
 
   delete customers[index].restore;
 
-  await customersRef
-    .set({ customers: [...customers] }, { merge: true })
+  if (table_no == "takeaway") {
+    await customersRef
+    .set({ takeaway: [...customers] }, { merge: true })
     .then(async (e) => {
       await firestore
         .collection("users")
@@ -219,6 +230,23 @@ exports.restoreCustomer = async (req, res, next) => {
     .catch((err) => {
       res.status(404).json({ success: false, message: status.SERVER_ERROR });
     });
+  }
+  else{
+    await customersRef
+    .set({ seat: [...customers] }, { merge: true })
+    .then(async (e) => {
+      await firestore
+        .collection("users")
+        .doc(`${cid}`)
+        .set({ join: req.user.rest_id }, { merge: true });
+
+      res.status(200).json({ success: true, message: status.RESTORED });
+    })
+    .catch((err) => {
+      res.status(404).json({ success: false, message: status.SERVER_ERROR });
+    });
+  }
+
 };
 
 exports.checkoutCustomer = async (req, res, next) => {
@@ -231,27 +259,29 @@ exports.checkoutCustomer = async (req, res, next) => {
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
-  let customerRef;
+  let customerRef = firestore
+  .collection(`restaurants/${req.user.rest_id}/customers`)
+  .doc("users");
+
+  let customers =  (await customersRef.get())
+  let seatCust;
+  let takeawayCust;
+
   let orderRef;
   if (table_no == "takeaway") {
-    customerRef = firestore
-      .collection(`restaurants/${req.user.rest_id}/takeaway`)
-      .doc("users");
 
+    takeawayCust = customers.data().takeaway
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/torder`)
       .doc(`${cid}`);
   } else {
-    customerRef = firestore
-      .collection(`restaurants`)
-      .doc(`${req.user.rest_id}`);
 
+    seatCust = customers.data().seat
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/order`)
       .doc(`table-${table_no}`);
   }
 
-  let data = (await customerRef.get()).data();
 
   let orderDoc = await orderRef.get();
   let orderData = orderDoc.data();
@@ -354,24 +384,22 @@ exports.checkoutCustomer = async (req, res, next) => {
 
   let index;
   if (table_no == "takeaway") {
-    console.log(data);
-    takeawayUser = data;
-    index = takeawayUser.customers.findIndex(
+    index = takeawayCust.findIndex(
       (ele) =>
         ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
     );
-    let obj = { ...takeawayUser.customers[index] };
+    let obj = { ...takeawayCust[index] };
 
     obj.checkout = true;
     delete obj.req;
 
-    takeawayUser.customers[index] = obj;
+    takeawayCust[index] = obj;
   } else {
-    index = data.customers.findIndex(
+    index = seatCust.findIndex(
       (ele) =>
         ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname
     );
-    data.customers[index].checkout = true;
+    seatCust[index].checkout = true;
   }
 
   await firestore
@@ -380,13 +408,7 @@ exports.checkoutCustomer = async (req, res, next) => {
     .then(async (order) => {
       await orderRef.delete();
 
-      if (table_no == "takeaway") {
-        data.customers[index].invoice_id = order.id;
-        await customerRef.set({ customers: [...data.customers] });
-      } else {
-        data.customers[index].invoice_id = order.id;
-        restData.customers = data.customers;
-      }
+     await customerRef.set({seat: [...seatCust], takeaway: [...takeawayCust]},{merge: true})
       await restRef.set(restData, { merge: true });
       return res
         .status(200)
@@ -440,42 +462,48 @@ exports.cleanUpCustomers = async (req, res) => {
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
-  let customerRef;
-  if (invoice.table == "takeaway") {
-    customerRef = firestore
-      .collection(`restaurants/${req.user.rest_id}/takeaway`)
-      .doc(`users`);
+
+  let customerRef = firestore
+  .collection(`restaurants/${req.user.rest_id}/customers`)
+  .doc("users");
+
+  let customers =  (await customersRef.get());
+  let seatCust;
+  let takeawayCust;
+
+  if (table_no == "takeaway") {
+    takeawayCust = customers.data().takeaway
   } else {
-    customerRef = firestore
-      .collection(`restaurants`)
-      .doc(`${req.user.rest_id}`);
+    seatCust = customers.data().seat
   }
 
-  let custDoc = await customerRef.get();
-
-  if (!custDoc.exists) {
+  if (!customers.exists) {
     return res
       .status(400)
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
-  let customers = custDoc
-    .data()
-    .customers.filter(
+  if(table_no == 'takeaway'){
+    takeawayCust = takeawayCust.filter(
       (ele) => ele.cid != invoice.cid && ele.table != invoice.table
     );
+  }else{
+    seatCust = seatCust.filter(
+      (ele) => ele.cid != invoice.cid && ele.table != invoice.table
+    );
+  }
 
   delete invoice.invoice_id;
   delete invoice.order_no;
   delete invoice.clean;
 
-  console.log(invoice);
+
   await firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
     .doc(invoice_id)
     .set(invoice)
     .then(async (e) => {
-      await customerRef.set({ customers: [...customers] }, { merge: true });
+      await customerRef.set({ seat: [...seatCust], takeaway: [...takeawayCust] }, { merge: true });
       await firestore
         .collection("users")
         .doc(invoice.cid)

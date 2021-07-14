@@ -47,17 +47,27 @@ exports.getHomeForOwner = async (req, res) => {
     .collection(`restaurants/${req.user.rest_id}/order`)
     .get();
 
+    let customersRef = await firestore
+    .collection(`restaurants/${req.user.rest_id}/customers`).doc('users')
+    .get();
+
+    let seatCust = customersRef.data().seat || []
+  
+
+
   let obj = {
     total_occupied: 0,
     total_checkout: 0,
     total_vaccant: 0,
     seat_order: 0,
     takeaway_order: 0,
+    total_table: 0
   };
 
   let rest_details = rest_details_ref.data();
+  obj.total_table = Number(rest_details.tables);
 
-  for (let data of rest_details?.customers) {
+  for (let data of seatCust) {
     if (data.checkout) {
       obj.total_checkout++;
     } else {
