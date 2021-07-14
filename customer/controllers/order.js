@@ -365,11 +365,11 @@ if(invoiceDoc.exists){
   let invoices = invoiceDoc.data().invoices;
   if(invoices.length >= 130){
     
-    let split = inv.docId.split('#')
+    let split = inv.docId.split('_')
     if(split.length != 0){
-      inv.docId = split[0] + '#' + (Number(split[1]) + 1)
+      inv.docId = split[0] + '_' + (Number(split[1]) + 1)
     }else{
-      inv.docId = inv.docId + '#1'
+      inv.docId = inv.docId + '_1'
     }
     invoiceData = {inv_date: date, invoices: [{...req.body}]}
   }else{

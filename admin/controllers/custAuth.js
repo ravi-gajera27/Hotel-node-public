@@ -79,7 +79,7 @@ exports.removeCustomer = async (req, res, next) => {
   let customersRef = await firestore
     .collection(`restaurants`)
     .doc(req.user.rest_id)
-    .collection("takeaway")
+    .collection("customers")
     .doc("users");
 
 let customers
@@ -264,19 +264,15 @@ exports.checkoutCustomer = async (req, res, next) => {
   .doc("users");
 
   let customers =  (await customerRef.get())
-  let seatCust = [];
-  let takeawayCust = [];
+  let seatCust = customers.data()?.seat || [];
+  let takeawayCust = customers.data()?.takeaway ||[];
 
   let orderRef;
   if (table_no == "takeaway") {
-
-    takeawayCust = customers.data().takeaway || []
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/torder`)
       .doc(`${cid}`);
   } else {
-
-    seatCust = customers.data().seat || []
     orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/order`)
       .doc(`table-${table_no}`);
@@ -341,6 +337,8 @@ exports.checkoutCustomer = async (req, res, next) => {
         }
       }
     } else {
+      delete order.id
+      delete order.inst
       finalInvoice = JSON.parse(JSON.stringify(order));
     }
 
@@ -398,13 +396,14 @@ let invoiceDoc = await invoiceRef.get();
 let invoiceData;
 if(invoiceDoc.exists){
   let invoices = invoiceDoc.data().invoices;
-  if(invoices.length >= 130){
+  if(invoices.length >= 3){
     
-    let split = inv.docId.split('#')
-    if(split.length != 0){
-      inv.docId = split[0] + '#' + (Number(split[1]) + 1)
+    let split = inv.docId.split('_')
+    console.log(split, split.length)
+    if(split.length == 2){
+      inv.docId = split[0] + '_' + (Number(split[1]) + 1)
     }else{
-      inv.docId = inv.docId + '#1'
+      inv.docId = inv.docId + '_1'
     }
     invoiceData = {inv_date: date, invoices: [{...finalInvoice}]}
   }else{
@@ -503,10 +502,9 @@ exports.updateInvoice = async (req, res) => {
 
 exports.cleanUpCustomers = async (req, res) => {
   let invoice = req.body;
-  console.log(invoice);
   let inv_id = req.params.inv_id;
-
   invoice.inv_id = inv_id;
+
 
   if (!invoice.cid || !invoice.table || !inv_id) {
     return res
@@ -519,14 +517,6 @@ exports.cleanUpCustomers = async (req, res) => {
   .doc("users");
 
   let customers =  (await customerRef.get());
-  let seatCust = [];
-  let takeawayCust = [];
-
-  if (invoice.table == "takeaway") {
-    takeawayCust = customers.data().takeaway || []
-  } else {
-    seatCust = customers.data().seat || []
-  }
 
   if (!customers.exists) {
     return res
@@ -534,7 +524,10 @@ exports.cleanUpCustomers = async (req, res) => {
       .json({ success: false, message: status.BAD_REQUEST });
   }
 
-  if(invoice.table_no == 'takeaway'){
+  let seatCust = customers.data()?.seat || [];
+  let takeawayCust = customers.data()?.takeaway ||[];
+
+  if(invoice.table == 'takeaway'){
     takeawayCust = takeawayCust.filter(
       (ele) => ele.cid != invoice.cid && ele.table != invoice.table
     );
@@ -544,7 +537,6 @@ exports.cleanUpCustomers = async (req, res) => {
     );
   }
 
-  delete invoice.inv_id;
   delete invoice.order_no;
   delete invoice.clean;
 
@@ -559,6 +551,7 @@ exports.cleanUpCustomers = async (req, res) => {
   let index = invoices.map(e => {return e.inv_no}).indexOf(invoice.inv_no)
 
   if(index == -1){
+    console.log('bad index')
     return res
     .status(400)
     .json({ success: false, message: status.BAD_REQUEST });
