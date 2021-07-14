@@ -476,6 +476,6 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
 async function generateRandomString() {
   return await randomstring.generate({
     length: 8,
-    charset: "alphanumeric ",
+    charset: "alphanumeric",
   });
 }

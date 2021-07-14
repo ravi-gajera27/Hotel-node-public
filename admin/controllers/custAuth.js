@@ -264,8 +264,8 @@ exports.checkoutCustomer = async (req, res, next) => {
   .doc("users");
 
   let customers =  (await customerRef.get())
-  let seatCust;
-  let takeawayCust;
+  let seatCust = [];
+  let takeawayCust = [];
 
   let orderRef;
   if (table_no == "takeaway") {
@@ -513,7 +513,6 @@ exports.cleanUpCustomers = async (req, res) => {
       .status(400)
       .json({ success: false, message: status.BAD_REQUEST });
   }
-
 
   let customerRef = firestore
   .collection(`restaurants/${req.user.rest_id}/customers`)
