@@ -411,7 +411,7 @@ invoiceRef = firestore
   invoiceRef.set(invoiceData,{merge: true}).then(async e =>{
   await orderRef.delete()
 
-  await customerRef.set({seat: [...seatCust], takeaway: [...takeawayCust]},{merge: true})
+  await customersRef.set({seat: [...seatCust], takeaway: [...takeawayCust]},{merge: true})
    await restRef.set(data, { merge: true });
    return res
      .status(200)
