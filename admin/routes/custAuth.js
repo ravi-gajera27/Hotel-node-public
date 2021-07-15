@@ -15,8 +15,8 @@ router.get(
   protect,
   custAuth.checkoutCustomer
 );
-router.put("/invoice/:invoice_id", protect, custAuth.updateInvoice);
-router.put("/cleanup-customer/:invoice_id", protect, custAuth.cleanUpCustomers);
+router.put("/invoice/:inv_id", protect, custAuth.updateInvoice);
+router.put("/cleanup-customer/:inv_id", protect, custAuth.cleanUpCustomers);
 router.delete(
   "/remove-customer/:table_no/:cid",
   protect,

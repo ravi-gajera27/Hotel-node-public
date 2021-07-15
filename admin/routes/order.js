@@ -22,6 +22,6 @@ router.put(
   protect,
   order.setOrderByOrderId
 );
-router.get("/generate-invoice/:invoice_id", protect, order.generateInvoice);
+router.post("/generate-invoice", protect, order.generateInvoice);
 
 module.exports = router;

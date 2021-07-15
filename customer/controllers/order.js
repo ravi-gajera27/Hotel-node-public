@@ -52,8 +52,8 @@ exports.addOrder = async (req, res, next) => {
       if (cookie.table == "takeaway") {
         if (cust.req == undefined) {
           return res
-            .status(401)
-            .json({ success: true, message: status.REJECT_REQUEST_ADMIN });
+            .status(403)
+            .json({ success: true, message: status.REQUEST_NOT_ACCEPT });
         }
       }
     }
@@ -220,10 +220,11 @@ exports.checkout = async (req, res, next) => {
     res.status(400).json({ success: false, message: status.BAD_REQUEST });
   }
 
-  let rest_details = await firestore
+  let restRef = await firestore
     .collection("restaurants")
     .doc(cookie.rest_id)
-    .get();
+   
+    let rest_details = await restRef.get();
 
   let data = rest_details.data();
 
@@ -235,30 +236,7 @@ exports.checkout = async (req, res, next) => {
 let customers = (await customersRef.get()).data()
   let seatCust = customers?.seat || [];
   let takeawayCust = customers?.takeaway || [];
-  let index;
 
-  if (cookie.table == "takeaway") {
-    index = takeawayCust.findIndex(
-      (ele) =>
-        ele.cid == req.user.id &&
-        ele.table == cookie.table &&
-        ele.cname == req.user.name
-    );
-    let obj = { ...takeawayCust[index] };
-
-    obj.checkout = true;
-    delete obj.req;
-
-    takeawayCust[index] = obj;
-  } else {
-    index = seatCust.findIndex(
-      (ele) =>
-        ele.cid == req.user.id &&
-        ele.table == cookie.table &&
-        ele.cname == req.user.name
-    );
-    seatCust[index].checkout = true;
-  }
 
   let invoice_format = data.invoice_format;
   let set_invoice_no = "";
@@ -349,46 +327,102 @@ let customers = (await customersRef.get()).data()
 
   data.inv_no = set_invoice_no;
 
-  await orderRef.delete();
 
   req.body.cid = req.user.id;
   req.body.cname = req.user.name;
   req.body.table = cookie.table;
-  req.body.invoice_no = set_invoice_no;
+  req.body.inv_no = set_invoice_no;
   req.body.clean = false;
   delete req.body.date;
   delete req.body.qty;
-  req.body.invoice_date = moment()
+  req.body.inv_date = moment()
     .utcOffset(process.env.UTC_OFFSET)
     .format("YYYY-MM-DD");
   req.body.time = moment().utcOffset(process.env.UTC_OFFSET).format("HH:mm");
   req.body.tax = Number(data.tax);
   if (data.taxInc) {
     req.body.total_amt = req.body.taxable
-    req.body.taxable =  (req.body.taxable * 100 ) / (100 + restData.tax);
+    req.body.taxable =  (req.body.taxable * 100 ) / (100 + data.tax);
     req.body.taxInc = true
   }else{
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
   }
 
-  await firestore
-    .collection(`orders/${cookie.rest_id}/invoices`)
-    .add(req.body)
-    .then(async (order) => {
-      await customersRef.set({seat: [...seatCust], takeaway: [...takeawayCust]})
-      await firestore
-        .collection("restaurants")
-        .doc(cookie.rest_id)
-        .set(data, { merge: true });
+  let inv = data.inv;
+let date = moment().utcOffset(process.env.UTC_OFFSET).format("YYYY-MM-DD")
 
-      return res.status(200).json({ success: true });
-    })
-    .catch((err) => {
-      console.log(err);
-      return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR });
-    });
+ if(!inv || inv.date != date){
+  inv = { date:  date, docId: date}
+ }
+
+ let invoiceRef = firestore
+  .collection(`orders/${cookie.rest_id}/invoices`).doc(inv.docId);
+
+let invoiceDoc = await invoiceRef.get();
+
+let invoiceData;
+if(invoiceDoc.exists){
+  let invoices = invoiceDoc.data().invoices;
+  if(invoices.length >= 130){
+    
+    let split = inv.docId.split('_')
+    if(split.length != 0){
+      inv.docId = split[0] + '_' + (Number(split[1]) + 1)
+    }else{
+      inv.docId = inv.docId + '_1'
+    }
+    invoiceData = {inv_date: date, invoices: [{...req.body}]}
+  }else{
+    invoices.push({...req.body})
+    invoiceData = {invoices: [...invoices]}
+  }
+}else{
+  invoiceData = {inv_date: date, invoices: [{...req.body}]}
+}
+
+let index;
+if (cookie.table == "takeaway") {
+  index = takeawayCust.findIndex(
+    (ele) =>
+      ele.cid == req.user.id && ele.table == cookie.table 
+  );
+  let obj = { ...takeawayCust[index] };
+
+  obj.checkout = true;
+  obj.inv_no = data.inv_no
+  obj.inv_id = inv.docId
+  delete obj.req;
+
+  takeawayCust[index] = obj;
+} else {
+  index = seatCust.findIndex(
+    (ele) =>
+      ele.cid == req.user.id && ele.table == cookie.table 
+  );
+  seatCust[index].checkout = true;
+  seatCust[index].inv_no = data.inv_no;
+  seatCust[index].inv_id = inv.docId;
+}
+
+invoiceRef = firestore
+  .collection(`orders/${cookie.rest_id}/invoices`).doc(inv.docId);
+
+  data.inv = inv
+  invoiceRef.set(invoiceData,{merge: true}).then(async e =>{
+  await orderRef.delete()
+
+  await customersRef.set({seat: [...seatCust], takeaway: [...takeawayCust]},{merge: true})
+   await restRef.set(data, { merge: true });
+   return res
+     .status(200)
+     .json({ success: true, message: "Successfully checkout" });
+ })  .catch((err) => {
+  console.log(err);
+  return res
+    .status(500)
+    .json({ success: false, message: status.SERVER_ERROR });
+});
+
 };
 
 const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
@@ -442,6 +476,6 @@ const downloadInvoicePdf = async (res, invoice, user, rest_details) => {
 async function generateRandomString() {
   return await randomstring.generate({
     length: 8,
-    charset: "alphanumeric ",
+    charset: "alphanumeric",
   });
 }
