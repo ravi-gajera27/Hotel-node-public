@@ -52,7 +52,7 @@ exports.addOrder = async (req, res, next) => {
       if (cookie.table == "takeaway") {
         if (cust.req == undefined) {
           return res
-            .status(401)
+            .status(403)
             .json({ success: true, message: status.REQUEST_NOT_ACCEPT });
         }
       }
