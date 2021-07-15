@@ -308,7 +308,7 @@ exports.verifySession = async(req, res, next) => {
         if (takeawayCust.length != 0) {
             index = 0;
             flag = 0;
-            for (ele of takeawayCust) {
+            for (let ele of takeawayCust) {
                 if (ele.cid == req.user.id) {
                     if (ele.restore) {
                         flag = 1;
@@ -320,10 +320,10 @@ exports.verifySession = async(req, res, next) => {
                             request: true,
                             message: status.REQUEST_SENT,
                         });
-                    } else if (ele.req == false) {
+                    } else if (!ele.req) {
                         return res.status(403).json({
                             success: false,
-                            message: status.REJECT_REQUEST,
+                            message: status.REQUEST_SENT_ALLREADAY,
                         });
                     } else if (ele.checkout) {
                         return res.status(401).json({
