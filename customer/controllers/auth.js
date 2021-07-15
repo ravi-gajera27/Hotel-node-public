@@ -340,6 +340,7 @@ exports.verifySession = async(req, res, next) => {
 
             if (flag) {
                 delete takeawayCust[index].restore;
+                delete takeawayCust[index].req;
             } else {
                 takeawayCust.push({
                     table: cookie.table,
