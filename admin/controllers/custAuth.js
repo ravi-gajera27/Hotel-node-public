@@ -396,7 +396,7 @@ let invoiceDoc = await invoiceRef.get();
 let invoiceData;
 if(invoiceDoc.exists){
   let invoices = invoiceDoc.data().invoices;
-  if(invoices.length >= 3){
+  if(invoices.length >= 130){
     
     let split = inv.docId.split('_')
     console.log(split, split.length)

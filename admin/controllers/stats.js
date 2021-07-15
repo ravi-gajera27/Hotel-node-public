@@ -240,7 +240,7 @@ exports.downloadEodPdf = async (req, res) => {
         topPerformer.push({
           name: itemFromInvoice.name,
           qty: itemFromInvoice.qty,
-          category: itemFromInvoice.category,
+          category: itemFromInvoice.category
         });
       }
     }
