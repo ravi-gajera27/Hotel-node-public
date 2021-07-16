@@ -404,7 +404,6 @@ exports.verifySession = async(req, res, next) => {
                         flag = 1;
                         break;
                     }
-                   
                     if (
                         Number(ele.table) == Number(cookie.table) &&
                         ele.checkout == false

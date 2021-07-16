@@ -372,7 +372,6 @@ exports.checkoutCustomer = async (req, res, next) => {
   if (restData.taxInc) {
     finalInvoice.total_amt = finalInvoice.taxable;
     finalInvoice.taxable =
-    finalInvoice.taxable =
     (finalInvoice.taxable * 100 ) / (100 + restData.tax);
     finalInvoice.taxInc = true;
   } else {
