@@ -341,6 +341,8 @@ let customers = (await customersRef.get()).data()
   req.body.time = moment().utcOffset(process.env.UTC_OFFSET).format("HH:mm");
   req.body.tax = Number(data.tax);
   if (data.taxInc) {
+    req.body.total_amt = req.body.taxable
+    req.body.taxable =  (req.body.taxable * 100 ) / (100 + data.tax);
     req.body.taxInc = true
   }else{
   req.body.total_amt = req.body.taxable + (req.body.taxable * data.tax) / 100;
