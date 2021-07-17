@@ -18,5 +18,6 @@ router.put(
   auth.checkVerificationCodeForForgotPass
 );
 router.put("/change-password", auth.changePassword);
+router.get("/rest-details", protect, auth.getRestDetails);
 
 module.exports = router;

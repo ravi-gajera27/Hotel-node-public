@@ -277,7 +277,6 @@ exports.getUser = async (req, res, next) => {
       if (user.exists) {
         let data = user.data();
         delete data.password;
-        if (data.role == "owner") {
           if (data.rest_id) {
             let restRef = await firestore
               .collection(`restaurants`)
@@ -286,18 +285,13 @@ exports.getUser = async (req, res, next) => {
             restRef = restRef.data();
             if (restRef.verified) {
               data.verified = true;
-            } else {
-              data.verified = false;
+            } 
+            if (restRef.locked) {
+              data.locked = true;
             }
             delete data.rest_id;
             data.rest = true;
           }
-        } else if (data.role == "admin") {
-          delete data.rest_id;
-          data.rest = true;
-          data.verified = true;
-          data.verifyOtp = true;
-        }
 
         res.status(200).json({ success: true, data: data });
       } else {
@@ -472,6 +466,47 @@ exports.verifyOtp = async (req, res, next) => {
         .json({ success: false, message: status.SERVER_ERROR });
     });
 };
+
+exports.getRestDetails = async(req, res) =>{
+  if(!req.user.rest_id){
+    return res.status(401).json({
+      success: false,
+      message: status.NOT_REGISTERED,
+      redirect: "/restaurant-profile-step-one",
+    });
+  }
+
+  let restDetailsDoc = await firestore.collection('restaurants').doc(req.user.rest_id).get();
+
+  if(!restDetailsDoc.exists){
+    return res.status(401).json({
+      success: false,
+      message: status.NOT_REGISTERED,
+      redirect: "/restaurant-profile-step-one",
+    });
+  }
+
+  let restData = restDetailsDoc.data()
+  if(!restData.verified){
+    return res.status(401).json({
+      success: false,
+      message: status.NOT_VERIFIED,
+      redirect: "/verification",
+    });
+  }
+  else if(restData.locked){
+    return res.status(401).json({
+      success: false,
+      message: status.LOCKED,
+      redirect: "/lock",
+    });
+  }
+
+  delete restData.verified;
+  delete restData.locked;
+
+  return res.status(200).json({success: true, data: restData})
+}
 
 sendToken = async (data, res) => {
   let token = await TOKEN.generateToken(data);
