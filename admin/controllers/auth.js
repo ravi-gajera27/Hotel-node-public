@@ -292,7 +292,6 @@ exports.getUser = async (req, res, next) => {
             delete data.rest_id;
             data.rest = true;
           }
-
         res.status(200).json({ success: true, data: data });
       } else {
         res.status(401).json({ success: false, redirect: "/login" });

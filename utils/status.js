@@ -28,5 +28,6 @@ module.exports = {
   NOT_VERIFIED: 'Your restaurant is not verified yet',
   LOCKED: 'Your account has been locked',
   FORBIDDEN_REQ: 'Your are not allowed to process this request',
-  ALREARY_REGISTRED: 'You have already registred restaurant'
+  ALREARY_REGISTRED: 'You have already registred restaurant',
+  INVOICE_GEN: 'Invoice has been geenrated successfully'
 };
