@@ -7,7 +7,6 @@ const expressFileUpload = require("express-fileupload");
 const ejs = require("ejs");
 let moment = require("moment");
 const db = require("./config/db");
-const cron = require('./utils/cron');
 const path = require("path");
 
 //initialize server
@@ -19,6 +18,7 @@ DbInitialize = async () => {
 };
 DbInitialize();
 
+const cron = require('./utils/cron');
 
 // listing routes
 const authSuperAdmin = require('./super-admin/routes/auth')

@@ -29,5 +29,6 @@ module.exports = {
   LOCKED: 'Your account has been locked',
   FORBIDDEN_REQ: 'Your are not allowed to process this request',
   ALREARY_REGISTRED: 'You have already registred restaurant',
-  INVOICE_GEN: 'Invoice has been geenrated successfully'
+  INVOICE_GEN: 'Invoice has been geenrated successfully',
+  LOCKED_REST: 'Restaurant is successfully locked'
 };
