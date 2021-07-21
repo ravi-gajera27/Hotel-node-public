@@ -170,7 +170,8 @@ exports.getUser = async(req, res, next) => {
                 let obj = {
                     name: user.name,
                     email: user.email,
-                    mobile_no: user.mobile_no
+                    mobile_no: user.mobile_no,
+                    id: userDoc.id
                 }
                 res.status(200).json({
                     success: true,
