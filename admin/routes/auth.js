@@ -10,7 +10,9 @@ router.post("/rest-details", protect, auth.restaurantRegister);
 router.get("/admin", protect, auth.getAdminList);
 router.post("/admin", protect, auth.addAdmin);
 router.delete("/admin/:email", protect, auth.removeAdmin);
-router.put("/rest-details", protect, auth.updateRestaurantDetaials);
+router.put("/rest-details", protect, auth.updateRestaurantDetails);
+router.put("/step-rest-details", protect, auth.updateStepRestaurantDetaials);
+router.put("/step-menu-details", protect, auth.addMenuFileRestStep);
 router.post("/reset-password", protect, auth.resetPassword);
 router.put("/forgot-password", auth.forgotPasswordCheckMail);
 router.put(
@@ -18,5 +20,6 @@ router.put(
   auth.checkVerificationCodeForForgotPass
 );
 router.put("/change-password", auth.changePassword);
+router.get("/rest-details", protect, auth.getRestDetails);
 
 module.exports = router;

@@ -52,6 +52,6 @@ exports.verifyRestaurantById = async (req, res) => {
       res.status(200).json({ success: true, message: "Successfully Verified" });
     })
     .catch((err) => {
-      res.status(500).json({ success: true, message: status.SERVER_ERROR });
+      res.status(500).json({ success: false, message: status.SERVER_ERROR });
     });
 };

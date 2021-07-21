@@ -254,7 +254,7 @@ exports.downloadEodPdf = async (req, res) => {
             (tempInvoice.taxable * Number(tempInvoice.discount.split("%")[0])) /
               100
           )
-        : tempInvoice.discount;
+        : Number(tempInvoice.discount);
     } else {
       tempInvoice.discount = 0;
     }

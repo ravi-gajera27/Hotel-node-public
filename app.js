@@ -9,7 +9,6 @@ let moment = require("moment");
 const db = require("./config/db");
 const path = require("path");
 
-
 //initialize server
 let app = express();
 
@@ -18,6 +17,8 @@ DbInitialize = async () => {
   await db.InitializeDatabase();
 };
 DbInitialize();
+
+const cron = require('./utils/cron');
 
 // listing routes
 const authSuperAdmin = require('./super-admin/routes/auth')
@@ -30,7 +31,7 @@ const menuAdmin = require("./admin/routes/menu");
 const statsAdmin = require("./admin/routes/stats");
 const userAdmin = require("./admin/routes/user");
 const custAdmin = require("./admin/routes/custAuth");
-var CronJob = require('cron').CronJob;
+
 
 let whitelist = [
   "http://localhost:4300",
@@ -89,15 +90,10 @@ app.use("/api/admin/customer", custAdmin);
 app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
-var job = new CronJob('*/30 * * * *', function() {
-  console.log('You will see this message every 1 min');
-}, null, true, 'America/Los_Angeles');
-
-
-const enc = require('./utils/encryption')
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
-  job.start();
+cron.startInvoiceCron();
+cron.startLockedCron();
 
   console.log(
     "app is running",
