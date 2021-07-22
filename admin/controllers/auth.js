@@ -8,42 +8,48 @@ const randomstring = require('randomstring')
 sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY)
 
 exports.login = async (req, res, next) => {
-  let data = req.body
-  console.log(req.body)
+  try {
+    let data = req.body
+    console.log(req.body)
 
-  if (!data.email || !data.password) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
-
-  let usersRef = firestore.collection('admin')
-  let user = await usersRef.where('email', '==', data.email).limit(1).get()
-
-  if (user.empty) {
-    return res
-      .status(401)
-      .json({ success: false, message: status.INVALID_EMAIL })
-  }
-
-  let password, id, rest_id
-
-  user.forEach((doc) => {
-    password = doc.data().password
-    id = doc.id
-    rest_id = doc.data().rest_id
-  })
-
-  let verifyPassword = await HASH.verifyHash(data.password, password)
-
-  if (!verifyPassword) {
-    return res
-      .status(401)
-      .json({ success: false, message: status.INVALID_PASS })
-  } else {
-    if (rest_id) {
-      await sendToken({ user_id: id, rest_id: rest_id }, res)
-    } else {
-      await sendToken({ user_id: id }, res)
+    if (!data.email || !data.password) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
     }
+
+    let usersRef = firestore.collection('admin')
+    let user = await usersRef.where('email', '==', data.email).limit(1).get()
+
+    if (user.empty) {
+      return res
+        .status(401)
+        .json({ success: false, message: status.INVALID_EMAIL })
+    }
+
+    let password, id, rest_id
+
+    user.forEach((doc) => {
+      password = doc.data().password
+      id = doc.id
+      rest_id = doc.data().rest_id
+    })
+
+    let verifyPassword = await HASH.verifyHash(data.password, password)
+
+    if (!verifyPassword) {
+      return res
+        .status(401)
+        .json({ success: false, message: status.INVALID_PASS })
+    } else {
+      if (rest_id) {
+        await sendToken({ user_id: id, rest_id: rest_id }, res)
+      } else {
+        await sendToken({ user_id: id }, res)
+      }
+    }
+  } catch (e) {
+    console.log('admin login', e)
   }
 }
 exports.resetPassword = async (req, res, next) => {
@@ -287,22 +293,21 @@ exports.addMenuFileRestStep = async (req, res, next) => {
   if (menu.length != 0) {
     let tempMenu = []
     for (let ele of menu) {
-      valid = false;
-      let id;
+      valid = false
+      let id
       do {
-        id = await generateRandomStringForMenu();
-        valid = false;
+        id = await generateRandomStringForMenu()
+        valid = false
         for (let m of tempMenu) {
           if (m.id == id) {
-            valid = true;
-            break;
+            valid = true
+            break
           }
         }
-      
-      } while (valid);
-  
-      ele.id = id;
-      tempMenu.push({...ele});
+      } while (valid)
+
+      ele.id = id
+      tempMenu.push({ ...ele })
     }
     await firestore
       .collection('restaurants')
@@ -593,6 +598,6 @@ async function generateRandomString() {
 async function generateRandomStringForMenu() {
   return await randomstring.generate({
     length: 12,
-    charset: "alphabetic",
-  });
+    charset: 'alphabetic',
+  })
 }

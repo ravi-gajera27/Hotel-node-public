@@ -40,12 +40,12 @@ exports.getHomeForOwner = async (req, res) => {
     .get();
 
   let seatOrderRef = await firestore
-    .collection(`restaurants/${req.user.rest_id}/torder`)
+    .collection(`restaurants/${req.user.rest_id}/torder`).where('restore','!=', true)
     .get();
 
   let takeawayOrderRef = await firestore
-    .collection(`restaurants/${req.user.rest_id}/order`)
-    .get();
+    .collection(`restaurants/${req.user.rest_id}/order`).where('restore','!=', true)
+    .get()
 
     let customersRef = await firestore
     .collection(`restaurants/${req.user.rest_id}/customers`).doc('users')
@@ -66,6 +66,9 @@ exports.getHomeForOwner = async (req, res) => {
   obj.total_table = Number(rest_details.tables);
 
   for (let data of seatCust) {
+    if(data.restore){
+      continue;
+    }
     if (data.checkout) {
       obj.total_checkout++;
     } else {

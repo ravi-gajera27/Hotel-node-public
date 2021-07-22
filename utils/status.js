@@ -7,7 +7,8 @@ module.exports = {
   MOBILE_USED: "Mobile No is already in use",
   INVALID_PASS: "Please provide valid password",
   SESSION_EXIST: "Someone is already using this table",
-  FORBIDDEN: "You have already occupied another table",
+  OCCUPIED: "You have already occupied another table",
+  CHECKOUTED:'You have already checkouted, please complete your payment process',
   SESSION_EXIST_REST: "You have already join other restaurant",
   PASSWORD_MISMATCH: "You have entered wrong current Password",
   PASSWORD_NOT_EQUAL: "New Password and Re-entered Password does not match",
@@ -30,5 +31,6 @@ module.exports = {
   FORBIDDEN_REQ: 'Your are not allowed to process this request',
   ALREARY_REGISTRED: 'You have already registred restaurant',
   INVOICE_GEN: 'Invoice has been geenrated successfully',
-  LOCKED_REST: 'Restaurant is successfully locked'
+  LOCKED_REST: 'Restaurant is successfully locked',
+  SCAN_QR: 'Scan QR code properly'
 };
