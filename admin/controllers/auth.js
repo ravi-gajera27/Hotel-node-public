@@ -560,13 +560,13 @@ exports.getRestDetails = async (req, res) => {
   } else if (!restData.invoice_format) {
     return res.status(401).json({
       success: false,
-      message: status.NOT_VERIFIED,
+      message: status.REST_STEP_INCOMPLETE,
       redirect: '/restaurant-invoice',
     })
   } else if (!restData.tables) {
     return res.status(401).json({
       success: false,
-      message: status.NOT_VERIFIED,
+      message: status.REST_STEP_INCOMPLETE,
       redirect: '/restaurant-menu',
     })
   } else if (restData.locked) {

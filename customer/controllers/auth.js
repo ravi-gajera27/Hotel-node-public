@@ -3,8 +3,11 @@ const status = require('../../utils/status')
 const HASH = require('../../utils/encryption')
 const TOKEN = require('../../utils/token')
 const { extractCookie } = require('../../utils/cookie-parser')
-const moment = require('moment')
 const size = require('firestore-size')
+const moment = require('moment')
+const sgMail = require('@sendgrid/mail')
+const randomstring = require('randomstring')
+sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY)
 
 exports.login = async (req, res, next) => {
   try {
@@ -61,10 +64,18 @@ exports.login = async (req, res, next) => {
       let user = await usersRef.where('email', '==', data.email).limit(1).get()
 
       if (user.empty) {
-        return res.status(401).json({
-          success: false,
-          message: status.INVALID_EMAIL,
+        data.created_at = moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .format('YYYY-MM-DD hh:mm A')
+        let u = await firestore.collection('users').add({
+          ...data,
         })
+        return await sendToken(
+          {
+            user_id: u.id,
+          },
+          res,
+        )
       }
 
       let id
@@ -89,7 +100,7 @@ exports.signup = async (req, res, next) => {
     let data = req.body
 
     if (!data.provider) {
-      if (!data.email || !data.password || !data.name || !data.mobile_no) {
+      if (!data.email || !data.password || !data.name) {
         return res.status(400).json({
           success: false,
           message: status.BAD_REQUEST,
@@ -106,20 +117,25 @@ exports.signup = async (req, res, next) => {
         })
       }
 
-      user = await usersRef
-        .where('mobile_no', '==', data.mobile_no)
-        .limit(1)
-        .get()
+      if (data.mobile_no) {
+        user = await usersRef
+          .where('mobile_no', '==', data.mobile_no)
+          .limit(1)
+          .get()
 
-      if (!user.empty) {
-        return res.status(403).json({
-          success: false,
-          message: status.MOBILE_USED,
-        })
+        if (!user.empty) {
+          return res.status(403).json({
+            success: false,
+            message: status.MOBILE_USED,
+          })
+        }
+      } else {
+        delete data.mobile_no
       }
-
       data.password = await HASH.generateHash(data.password, 10)
-      data.created_at = new Date()
+      data.created_at = moment()
+        .utcOffset(process.env.UTC_OFFSET)
+        .format('YYYY-MM-DD hh:mm A')
       delete data.repassword
     } else {
       if (!data.email || !data.provider) {
@@ -474,10 +490,157 @@ exports.verifySession = async (req, res, next) => {
   }
 }
 
+exports.forgotPasswordCheckMail = async (req, res) => {
+  let email = req.body.email
+  console.log(req.body)
+  if (!email) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
+  }
+
+  let usersRef = firestore.collection('users')
+  let user = await usersRef.where('email', '==', email).limit(1).get()
+
+  if (user.empty || user.docs[0].data().provider) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.INVALID_EMAIL })
+  }
+
+  let user_id = user.docs[0].id
+
+  let code = await generateRandomString()
+
+  const msg = {
+    to: email, // Change to your recipient
+    from: 'peraket.dev@gmail.com', // Change to your verified sender
+    subject: 'Verification Code',
+    text: `Your verification code for forgot password is ${code}`,
+  }
+  sgMail
+    .send(msg)
+    .then(() => {
+      usersRef
+        .doc(user_id)
+        .set({ ver_code: code }, { merge: true })
+        .then(
+          (e) => {
+            return res.status(200).json({
+              success: true,
+              message: 'We have sent verification code on you registered email',
+            })
+          },
+          (err) => {
+            return res
+              .status(500)
+              .json({ success: false, message: status.SERVER_ERROR })
+          },
+        )
+    })
+    .catch((error) => {
+      console.log(error)
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR })
+    })
+}
+
+exports.checkVerificationCodeForForgotPass = async (req, res) => {
+  let data = req.body
+  console.log(data)
+  if (!data.email || !data.code) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
+  }
+
+  let usersRef = firestore.collection('users')
+  let user = await usersRef.where('email', '==', data.email).limit(1).get()
+
+  if (user.empty || user.docs[0].data().provider) {
+    return res
+      .status(404)
+      .json({ success: false, message: status.UNAUTHORIZED })
+  }
+
+  user_id = user.docs[0].id
+  let tempuser
+  user.docs.forEach((e) => {
+    tempuser = e.data()
+  })
+
+  if (tempuser.ver_code != data.code) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'Provide valid verification code' })
+  }
+
+  return res
+    .status(200)
+    .json({ success: true, message: 'Successfully verified' })
+}
+
+exports.changePassword = async (req, res) => {
+  let { email, new_pass, confirm_pass, code } = req.body
+  if (!email || !new_pass || !confirm_pass || !code) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
+  }
+
+  if (new_pass != confirm_pass) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.PASSWORD_NOT_EQUAL })
+  }
+
+  let usersRef = firestore.collection('users')
+  let user = await usersRef.where('email', '==', email).get()
+
+  if (user.empty || user.docs[0].data().provider) {
+    return res
+      .status(404)
+      .json({ success: false, message: status.UNAUTHORIZED })
+  }
+
+  let tempuser
+  user.docs.forEach((e) => {
+    tempuser = e.data()
+  })
+
+  user_id = user.docs[0].id
+
+  if (tempuser.ver_code != code) {
+    return res
+      .status(404)
+      .json({ success: false, message: status.UNAUTHORIZED })
+  }
+
+  tempuser.password = await HASH.generateHash(new_pass, 10)
+  delete tempuser.ver_code
+
+  usersRef
+    .doc(user_id)
+    .set(tempuser)
+    .then((e) => {
+      return res.status(200).json({
+        success: true,
+        message: 'Your password is successfully changed',
+      })
+    })
+    .catch((err) => {
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR })
+    })
+}
+
 sendToken = async (data, res) => {
   let token = await TOKEN.generateToken(data)
   return res.status(200).json({
     success: true,
     token: token,
+  })
+}
+
+async function generateRandomString() {
+  return await randomstring.generate({
+    length: 6,
+    charset: 'numeric',
   })
 }
