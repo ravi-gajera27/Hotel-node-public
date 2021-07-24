@@ -48,110 +48,151 @@ exports.login = async (req, res, next) => {
         await sendToken({ user_id: id }, res)
       }
     }
-  } catch (e) {
-    console.log('admin login', e)
+  } catch (err) {
+    console.log('admin auth login', err)
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
 }
 exports.resetPassword = async (req, res, next) => {
-  let data = req.body
+  try {
+    let data = req.body
 
-  if (!data.cur_password || !data.new_password || !data.re_password) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
+    if (!data.cur_password || !data.new_password || !data.re_password) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
 
-  if (data.new_password != data.re_password) {
+    if (data.new_password != data.re_password) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.PASSWORD_NOT_EQUAL })
+    }
+
+    let admin = await firestore.collection('admin').doc(req.user.id).get()
+    let pass = await HASH.verifyHash(data.cur_password, admin.data().password)
+    if (!pass) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.PASSWORD_MISMATCH })
+    }
+    let new_pass = await HASH.generateHash(data.new_password, 10)
+
+    await firestore
+      .collection('admin')
+      .doc(req.user.id)
+      .set({ password: new_pass }, { merge: true })
+    res.status(200).json({ success: true, message: status.SUCCESS_CHANGED })
+  } catch (err) {
+    console.log('admin auth resetPassword', err)
     return res
-      .status(400)
-      .json({ success: false, message: status.PASSWORD_NOT_EQUAL })
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
-
-  let admin = await firestore.collection('admin').doc(req.user.id).get()
-  let pass = await HASH.verifyHash(data.cur_password, admin.data().password)
-  if (!pass) {
-    return res
-      .status(400)
-      .json({ success: false, message: status.PASSWORD_MISMATCH })
-  }
-  let new_pass = await HASH.generateHash(data.new_password, 10)
-
-  await firestore
-    .collection('admin')
-    .doc(req.user.id)
-    .set({ password: new_pass }, { merge: true })
-  res.status(200).json({ success: true, message: status.SUCCESS_CHANGED })
 }
 
 exports.signup = async (req, res, next) => {
-  let data = req.body
+  try {
+    let data = req.body
 
-  if (
-    !data.email ||
-    !data.password ||
-    !data.first_name ||
-    !data.last_name ||
-    !data.mobile_no
-  ) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
+    if (
+      !data.email ||
+      !data.password ||
+      !data.first_name ||
+      !data.last_name ||
+      !data.mobile_no
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+
+    let usersRef = firestore.collection('admin')
+    let user = await usersRef.where('email', '==', data.email).limit(1).get()
+
+    if (!user.empty) {
+      return res
+        .status(403)
+        .json({ success: false, message: status.EMAIL_USED })
+    }
+
+    user = await usersRef
+      .where('mobile_no', '==', data.mobile_no)
+      .limit(1)
+      .get()
+
+    if (!user.empty) {
+      return res
+        .status(403)
+        .json({ success: false, message: status.MOBILE_USED })
+    }
+
+    data.password = await HASH.generateHash(data.password, 10)
+    data.created_at = moment().format('YYYY-MM-DD')
+    delete data.repassword
+    data.role = 'owner'
+    user = await firestore.collection('admin').add({ ...data })
+    await sendToken({ user_id: user.id }, res)
+  } catch (err) {
+    console.log('admin auth signup', err)
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
-
-  let usersRef = firestore.collection('admin')
-  let user = await usersRef.where('email', '==', data.email).limit(1).get()
-
-  if (!user.empty) {
-    return res.status(403).json({ success: false, message: status.EMAIL_USED })
-  }
-
-  user = await usersRef.where('mobile_no', '==', data.mobile_no).limit(1).get()
-
-  if (!user.empty) {
-    return res.status(403).json({ success: false, message: status.MOBILE_USED })
-  }
-
-  data.password = await HASH.generateHash(data.password, 10)
-  data.created_at = moment().format('YYYY-MM-DD')
-  delete data.repassword
-  data.role = 'owner'
-  user = await firestore.collection('admin').add({ ...data })
-  await sendToken({ user_id: user.id }, res)
 }
 
 exports.addAdmin = async (req, res, next) => {
-  let data = req.body
+  try {
+    let data = req.body
 
-  if (data.password != data.confirm_password) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
+    if (data.password != data.confirm_password) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
 
-  if (
-    !data.email ||
-    !data.password ||
-    !data.first_name ||
-    !data.last_name ||
-    !data.confirm_password
-  ) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
+    if (
+      !data.email ||
+      !data.password ||
+      !data.first_name ||
+      !data.last_name ||
+      !data.confirm_password
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
 
-  if (req.user.role != 'owner') {
+    if (req.user.role != 'owner') {
+      return res
+        .status(403)
+        .json({ success: false, message: status.FORBIDDEN_REQ })
+    }
+
+    let usersRef = firestore.collection('admin')
+    let user = await usersRef.where('email', '==', data.email).limit(1).get()
+
+    if (!user.empty) {
+      return res
+        .status(403)
+        .json({ success: false, message: status.EMAIL_USED })
+    }
+
+    data.password = await HASH.generateHash(data.password, 10)
+    data.created_at = moment().format('YYYY-MM-DD')
+    delete data.confirm_password
+    data.rest_id = req.user.rest_id
+    data.role = 'admin'
+    user = await firestore.collection('admin').add({ ...data })
+    res.status(200).json({ success: true, message: status.SUCCESS_ADDED })
+  } catch (err) {
+    console.log('admin auth addAdmin', err)
     return res
-      .status(403)
-      .json({ success: false, message: status.FORBIDDEN_REQ })
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
-
-  let usersRef = firestore.collection('admin')
-  let user = await usersRef.where('email', '==', data.email).limit(1).get()
-
-  if (!user.empty) {
-    return res.status(403).json({ success: false, message: status.EMAIL_USED })
-  }
-
-  data.password = await HASH.generateHash(data.password, 10)
-  data.created_at = moment().format('YYYY-MM-DD')
-  delete data.confirm_password
-  data.rest_id = req.user.rest_id
-  data.role = 'admin'
-  user = await firestore.collection('admin').add({ ...data })
-  res.status(200).json({ success: true, message: status.SUCCESS_ADDED })
 }
 
 exports.getAdminList = async (req, res) => {
@@ -180,36 +221,45 @@ exports.getAdminList = async (req, res) => {
 }
 
 exports.removeAdmin = async (req, res) => {
-  let email = req.params.email
+  try {
+    let email = req.params.email
 
-  if (!email) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
 
-  if (req.user.role != 'owner') {
+    if (req.user.role != 'owner') {
+      return res
+        .status(403)
+        .json({ success: false, message: status.FORBIDDEN_REQ })
+    }
+
+    let adminRef = await firestore.collection('admin')
+    let admin = await adminRef
+      .where('email', '==', email)
+      .where('rest_id', '==', req.user.rest_id)
+      .limit(1)
+      .get()
+
+    if (admin.empty) {
+      return res
+        .status(403)
+        .json({ success: false, message: status.UNAUTHORIZED })
+    }
+
+    for (let doc of admin.docs) {
+      await firestore.collection('admin').doc(doc.id).delete()
+    }
+
+    res.status(200).json({ success: true, message: status.SUCCESS_REMOVED })
+  } catch (err) {
+    console.log('admin auth removeAdmin', err)
     return res
-      .status(403)
-      .json({ success: false, message: status.FORBIDDEN_REQ })
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
-
-  let adminRef = await firestore.collection('admin')
-  let admin = await adminRef
-    .where('email', '==', email)
-    .where('rest_id', '==', req.user.rest_id)
-    .limit(1)
-    .get()
-
-  if (admin.empty) {
-    return res
-      .status(403)
-      .json({ success: false, message: status.UNAUTHORIZED })
-  }
-
-  for (let doc of admin.docs) {
-    await firestore.collection('admin').doc(doc.id).delete()
-  }
-
-  res.status(200).json({ success: true, message: status.SUCCESS_REMOVED })
 }
 
 exports.restaurantRegister = async (req, res, next) => {
@@ -237,6 +287,7 @@ exports.restaurantRegister = async (req, res, next) => {
       sendToken(data, res)
     })
     .catch((err) => {
+      console.log('admin auth restaurantregister', err)
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -269,6 +320,7 @@ exports.updateStepRestaurantDetaials = async (req, res, next) => {
       return res.status(200).json({ success: true, message: 'Success' })
     })
     .catch((err) => {
+      console.log('admin auth updateStepRestaurantDetaials', err)
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -276,59 +328,63 @@ exports.updateStepRestaurantDetaials = async (req, res, next) => {
 }
 
 exports.addMenuFileRestStep = async (req, res, next) => {
-  if (!req.body.tables) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
-
-  let categories = req.body.categories
-  let menu = req.body.menu
-  if (categories.length != 0) {
-    await firestore
-      .collection('restaurants')
-      .doc(req.user.rest_id)
-      .collection('categories')
-      .add({ cat: [...categories] })
-  }
-
-  if (menu.length != 0) {
-    let tempMenu = []
-    for (let ele of menu) {
-      valid = false
-      let id
-      do {
-        id = await generateRandomStringForMenu()
-        valid = false
-        for (let m of tempMenu) {
-          if (m.id == id) {
-            valid = true
-            break
-          }
-        }
-      } while (valid)
-
-      ele.id = id
-      tempMenu.push({ ...ele })
-    }
-    await firestore
-      .collection('restaurants')
-      .doc(req.user.rest_id)
-      .collection('menu')
-      .doc('menu')
-      .set({ menu: [...tempMenu] })
-  }
-
-  firestore
-    .collection('restaurants')
-    .doc(req.user.rest_id)
-    .set({ tables: req.body.tables }, { merge: true })
-    .then(async (profile) => {
-      return res.status(200).json({ success: true, message: 'Success' })
-    })
-    .catch((err) => {
+  try {
+    if (!req.body.tables) {
       return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR })
-    })
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+
+    let categories = req.body.categories
+    let menu = req.body.menu
+    if (categories.length != 0) {
+      await firestore
+        .collection('restaurants')
+        .doc(req.user.rest_id)
+        .collection('categories')
+        .add({ cat: [...categories] })
+    }
+
+    if (menu.length != 0) {
+      let tempMenu = []
+      for (let ele of menu) {
+        valid = false
+        let id
+        do {
+          id = await generateRandomStringForMenu()
+          valid = false
+          for (let m of tempMenu) {
+            if (m.id == id) {
+              valid = true
+              break
+            }
+          }
+        } while (valid)
+
+        ele.id = id
+        tempMenu.push({ ...ele })
+      }
+      await firestore
+        .collection('restaurants')
+        .doc(req.user.rest_id)
+        .collection('menu')
+        .doc('menu')
+        .set({ menu: [...tempMenu] })
+    }
+
+    firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .set({ tables: req.body.tables }, { merge: true })
+      .then(async (profile) => {
+        return res.status(200).json({ success: true, message: 'Success' })
+      })
+  } catch (err) {
+    console.log('admin auth addMenuFileRestStep', err)
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
 }
 
 exports.getUser = async (req, res, next) => {
@@ -367,6 +423,7 @@ exports.getUser = async (req, res, next) => {
       }
     })
     .catch((err) => {
+      console.log('admin auth getUser', err)
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -374,34 +431,35 @@ exports.getUser = async (req, res, next) => {
 }
 
 exports.forgotPasswordCheckMail = async (req, res) => {
-  let email = req.body.email
-  console.log(req.body)
-  if (!email) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
+  try {
+    let email = req.body.email
+    console.log(req.body)
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
 
-  let usersRef = firestore.collection('admin')
-  let user = await usersRef.where('email', '==', email).limit(1).get()
+    let usersRef = firestore.collection('admin')
+    let user = await usersRef.where('email', '==', email).limit(1).get()
 
-  if (user.empty) {
-    return res
-      .status(400)
-      .json({ success: false, message: status.INVALID_EMAIL })
-  }
+    if (user.empty) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.INVALID_EMAIL })
+    }
 
-  let user_id = user.docs[0].id
+    let user_id = user.docs[0].id
 
-  let code = await generateRandomString()
+    let code = await generateRandomString()
 
-  const msg = {
-    to: email, // Change to your recipient
-    from: 'peraket.dev@gmail.com', // Change to your verified sender
-    subject: 'Verification Code',
-    text: `Your verification code for forgot password id ${code}`,
-  }
-  sgMail
-    .send(msg)
-    .then(() => {
+    const msg = {
+      to: email, // Change to your recipient
+      from: 'peraket.dev@gmail.com', // Change to your verified sender
+      subject: 'Verification Code',
+      text: `Your verification code for forgot password id ${code}`,
+    }
+    sgMail.send(msg).then(() => {
       usersRef
         .doc(user_id)
         .set({ ver_code: code }, { merge: true })
@@ -419,98 +477,111 @@ exports.forgotPasswordCheckMail = async (req, res) => {
           },
         )
     })
-    .catch((error) => {
-      console.log(error)
-      return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR })
-    })
+  } catch (err) {
+    console.log('admin auth forgotPasswordCheckMail', err)
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
 }
 
 exports.checkVerificationCodeForForgotPass = async (req, res) => {
-  let data = req.body
-  console.log(data)
-  if (!data.email || !data.code) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
+  try {
+    let data = req.body
+    console.log(data)
+    if (!data.email || !data.code) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
 
-  let usersRef = firestore.collection('admin')
-  let user = await usersRef.where('email', '==', data.email).limit(1).get()
+    let usersRef = firestore.collection('admin')
+    let user = await usersRef.where('email', '==', data.email).limit(1).get()
 
-  if (user.empty) {
+    if (user.empty) {
+      return res
+        .status(404)
+        .json({ success: false, message: status.UNAUTHORIZED })
+    }
+
+    user_id = user.docs[0].id
+    let tempuser
+    user.docs.forEach((e) => {
+      tempuser = e.data()
+    })
+
+    if (tempuser.ver_code != data.code) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Provide valid verification code' })
+    }
+
     return res
-      .status(404)
-      .json({ success: false, message: status.UNAUTHORIZED })
-  }
-
-  user_id = user.docs[0].id
-  let tempuser
-  user.docs.forEach((e) => {
-    tempuser = e.data()
-  })
-
-  if (tempuser.ver_code != data.code) {
+      .status(200)
+      .json({ success: true, message: 'Successfully verified' })
+  } catch (err) {
+    console.log('admin auth checkVerificationCode', err)
     return res
-      .status(400)
-      .json({ success: false, message: 'Provide valid verification code' })
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
-
-  return res
-    .status(200)
-    .json({ success: true, message: 'Successfully verified' })
 }
 
 exports.changePassword = async (req, res) => {
-  let { email, new_pass, confirm_pass, code } = req.body
-  if (!email || !new_pass || !confirm_pass || !code) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
-
-  if (new_pass != confirm_pass) {
-    return res
-      .status(400)
-      .json({ success: false, message: status.PASSWORD_NOT_EQUAL })
-  }
-
-  let usersRef = firestore.collection('admin')
-  let user = await usersRef.where('email', '==', email).get()
-
-  if (user.empty) {
-    return res
-      .status(404)
-      .json({ success: false, message: status.UNAUTHORIZED })
-  }
-
-  let tempuser
-  user.docs.forEach((e) => {
-    tempuser = e.data()
-  })
-
-  user_id = user.docs[0].id
-
-  if (tempuser.ver_code != code) {
-    return res
-      .status(404)
-      .json({ success: false, message: status.UNAUTHORIZED })
-  }
-
-  tempuser.password = await HASH.generateHash(new_pass, 10)
-  delete tempuser.ver_code
-
-  usersRef
-    .doc(user_id)
-    .set(tempuser)
-    .then((e) => {
-      return res.status(200).json({
-        success: true,
-        message: 'Your password is successfully changed',
-      })
-    })
-    .catch((err) => {
+  try {
+    let { email, new_pass, confirm_pass, code } = req.body
+    if (!email || !new_pass || !confirm_pass || !code) {
       return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR })
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+
+    if (new_pass != confirm_pass) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.PASSWORD_NOT_EQUAL })
+    }
+
+    let usersRef = firestore.collection('admin')
+    let user = await usersRef.where('email', '==', email).get()
+
+    if (user.empty) {
+      return res
+        .status(404)
+        .json({ success: false, message: status.UNAUTHORIZED })
+    }
+
+    let tempuser
+    user.docs.forEach((e) => {
+      tempuser = e.data()
     })
+
+    user_id = user.docs[0].id
+
+    if (tempuser.ver_code != code) {
+      return res
+        .status(404)
+        .json({ success: false, message: status.UNAUTHORIZED })
+    }
+
+    tempuser.password = await HASH.generateHash(new_pass, 10)
+    delete tempuser.ver_code
+
+    usersRef
+      .doc(user_id)
+      .set(tempuser)
+      .then((e) => {
+        return res.status(200).json({
+          success: true,
+          message: 'Your password is successfully changed',
+        })
+      })
+  } catch (err) {
+    console.log('admin auth changepassword', err)
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
 }
 
 exports.verifyOtp = async (req, res, next) => {
