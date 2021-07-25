@@ -40,12 +40,12 @@ exports.getHomeForOwner = async (req, res) => {
     .get();
 
   let seatOrderRef = await firestore
-    .collection(`restaurants/${req.user.rest_id}/torder`)
+    .collection(`restaurants/${req.user.rest_id}/order`).where('restore','!=', true)
     .get();
 
   let takeawayOrderRef = await firestore
-    .collection(`restaurants/${req.user.rest_id}/order`)
-    .get();
+    .collection(`restaurants/${req.user.rest_id}/torder`).where('restore','!=', true)
+    .get()
 
     let customersRef = await firestore
     .collection(`restaurants/${req.user.rest_id}/customers`).doc('users')
@@ -66,6 +66,9 @@ exports.getHomeForOwner = async (req, res) => {
   obj.total_table = Number(rest_details.tables);
 
   for (let data of seatCust) {
+    if(data.restore){
+      continue;
+    }
     if (data.checkout) {
       obj.total_checkout++;
     } else {
@@ -77,15 +80,11 @@ exports.getHomeForOwner = async (req, res) => {
     Number(rest_details.tables) - obj.total_occupied - obj.total_checkout;
 
   if (!seatOrderRef.empty) {
-    for (let order of seatOrderRef.docs) {
-      obj.seat_order++;
-    }
+      obj.seat_order = seatOrderRef.docs.length
   }
 
   if (!takeawayOrderRef.empty) {
-    for (let order of takeawayOrderRef.docs) {
-      obj.takeaway_order++;
-    }
+      obj.takeaway_order = takeawayOrderRef.docs.length
   }
 
   res.status(200).json({ success: true, data: obj });

@@ -8,6 +8,7 @@ const ejs = require("ejs");
 let moment = require("moment");
 const db = require("./config/db");
 const path = require("path");
+const logger = require('./config/logger');
 
 //initialize server
 let app = express();
@@ -39,7 +40,8 @@ let whitelist = [
   "http://localhost:4200",
   "http://localhost:8100",
   "https://peraket-rms.web.app",
-  "https://peraket-admin.web.app"
+  "https://peraket-admin.web.app",
+  "http://192.168.0.103:4200"
 ];
 const corsConfig = {
   credentials: true,
@@ -91,10 +93,10 @@ app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
 //running app on specific port
-app.listen(process.env.PORT || 5000, () => {
+app.listen(process.env.PORT || 5000, "192.168.0.103", () => {
 cron.startInvoiceCron();
 cron.startLockedCron();
-
+logger.error('This is server error')
   console.log(
     "app is running",
     moment().format("DD-MM-YYYY"),

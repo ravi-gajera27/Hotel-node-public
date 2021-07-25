@@ -3,6 +3,7 @@ const status = require("../../utils/status");
 const moment = require("moment");
 
 exports.acceptRequest = async (req, res, next) => {
+  try{
   let custoemrsRef = await firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
@@ -20,6 +21,12 @@ exports.acceptRequest = async (req, res, next) => {
   await custoemrsRef.set({ takeaway: [...customers] }, { merge: true });
 
   res.status(200).json({ success: true, message: status.ACCEPT_REQUEST_ADMIN });
+}  catch(err){
+  console.log('admin custAuth acceptRequest',err)
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+}
 };
 
 exports.rejectRequest = async (req, res, next) => {
