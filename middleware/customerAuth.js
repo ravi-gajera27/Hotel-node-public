@@ -1,4 +1,3 @@
-const ErrorResponse = require('../utils/errorResponse');
 const HASH = require('../utils/token');
 const status = require('../utils/status');
 const admin = require('firebase-admin');

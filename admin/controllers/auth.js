@@ -5,7 +5,8 @@ const TOKEN = require('../../utils/token')
 const moment = require('moment')
 const sgMail = require('@sendgrid/mail')
 const randomstring = require('randomstring')
-sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY)
+const logger = require('../../config/logger')
+const { extractErrorMessage } = require('../../utils/error')
 
 exports.login = async (req, res, next) => {
   try {
@@ -49,7 +50,8 @@ exports.login = async (req, res, next) => {
       }
     }
   } catch (err) {
-    console.log('admin auth login', err)
+    let e = extractErrorMessage(err)
+    logger.error({ label: `admin auth login ${req.user.rest_id}`, message: e })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -86,7 +88,9 @@ exports.resetPassword = async (req, res, next) => {
       .set({ password: new_pass }, { merge: true })
     res.status(200).json({ success: true, message: status.SUCCESS_CHANGED })
   } catch (err) {
-    console.log('admin auth resetPassword', err)
+    let e = extractErrorMessage(err)
+    logger.error({ label: `admin auth resetPassword ${req.user.rest_id}`, message: e })
+    
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -136,7 +140,8 @@ exports.signup = async (req, res, next) => {
     user = await firestore.collection('admin').add({ ...data })
     await sendToken({ user_id: user.id }, res)
   } catch (err) {
-    console.log('admin auth signup', err)
+    let e = extractErrorMessage(err)
+    logger.error({ label: `admin auth signup ${req.user.rest_id}`, message: e })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -188,7 +193,8 @@ exports.addAdmin = async (req, res, next) => {
     user = await firestore.collection('admin').add({ ...data })
     res.status(200).json({ success: true, message: status.SUCCESS_ADDED })
   } catch (err) {
-    console.log('admin auth addAdmin', err)
+    let e = extractErrorMessage(err)
+    logger.error({ label: `admin auth addAdmin ${req.user.rest_id}`, message: e })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -196,6 +202,7 @@ exports.addAdmin = async (req, res, next) => {
 }
 
 exports.getAdminList = async (req, res) => {
+  try{
   if (req.user.role != 'owner') {
     return res
       .status(403)
@@ -218,6 +225,10 @@ exports.getAdminList = async (req, res) => {
   })
 
   res.status(200).json({ success: true, data: adminList })
+}catch(err){
+  let e = extractErrorMessage(err)
+  logger.error({ label: `admin auth getAdminList ${req.user.rest_id}`, message: e })
+}
 }
 
 exports.removeAdmin = async (req, res) => {
@@ -255,7 +266,8 @@ exports.removeAdmin = async (req, res) => {
 
     res.status(200).json({ success: true, message: status.SUCCESS_REMOVED })
   } catch (err) {
-    console.log('admin auth removeAdmin', err)
+    let e = extractErrorMessage(err)
+    logger.error({ label: `admin auth removeAdmin ${req.user.rest_id}`, message: e })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -263,6 +275,7 @@ exports.removeAdmin = async (req, res) => {
 }
 
 exports.restaurantRegister = async (req, res, next) => {
+  try{
   req.body.created_at = moment().format('YYYY-MM-DD')
   req.body.owner_id = req.user.id
 
@@ -286,12 +299,13 @@ exports.restaurantRegister = async (req, res, next) => {
       }
       sendToken(data, res)
     })
-    .catch((err) => {
-      console.log('admin auth restaurantregister', err)
-      return res
+  }catch(err){
+    let e = extractErrorMessage(err)
+    logger.error({ label: `admin auth restaurantRegister ${req.user.rest_id}`, message: e })
+    return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
-    })
+  }
 }
 
 exports.updateRestaurantDetails = async (req, res, next) => {
@@ -305,6 +319,8 @@ exports.updateRestaurantDetails = async (req, res, next) => {
         .json({ success: true, message: status.SUCCESS_UPDATED })
     })
     .catch((err) => {
+      let e = extractErrorMessage(err)
+      logger.error({ label: `admin auth updateRestaurantDetails ${req.user.rest_id}`, message: e })
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -320,7 +336,8 @@ exports.updateStepRestaurantDetaials = async (req, res, next) => {
       return res.status(200).json({ success: true, message: 'Success' })
     })
     .catch((err) => {
-      console.log('admin auth updateStepRestaurantDetaials', err)
+      let e = extractErrorMessage(err)
+      logger.error({ label: `admin auth updateStepRestaurantDetaials ${req.user.rest_id}`, message: e })
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -380,7 +397,8 @@ exports.addMenuFileRestStep = async (req, res, next) => {
         return res.status(200).json({ success: true, message: 'Success' })
       })
   } catch (err) {
-    console.log('admin auth addMenuFileRestStep', err)
+    let e = extractErrorMessage(err)
+      logger.error({ label: `admin auth addMenuFileRestStep ${req.user.rest_id}`, message: e })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -423,7 +441,8 @@ exports.getUser = async (req, res, next) => {
       }
     })
     .catch((err) => {
-      console.log('admin auth getUser', err)
+      let e = extractErrorMessage(err)
+      logger.error({ label: `admin auth getUser ${req.user.rest_id}`, message: e })
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -478,7 +497,8 @@ exports.forgotPasswordCheckMail = async (req, res) => {
         )
     })
   } catch (err) {
-    console.log('admin auth forgotPasswordCheckMail', err)
+    let e = extractErrorMessage(err)
+    logger.error({ label: `admin auth forgotPasswordCheckMail ${req.user.rest_id}`, message: e })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -520,7 +540,8 @@ exports.checkVerificationCodeForForgotPass = async (req, res) => {
       .status(200)
       .json({ success: true, message: 'Successfully verified' })
   } catch (err) {
-    console.log('admin auth checkVerificationCode', err)
+    let e = extractErrorMessage(err)
+    logger.error({ label: `admin auth checkVerificationCode ${req.user.rest_id}`, message: e })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -577,7 +598,8 @@ exports.changePassword = async (req, res) => {
         })
       })
   } catch (err) {
-    console.log('admin auth changepassword', err)
+    let e = extractErrorMessage(err)
+    logger.error({ label: `admin auth changepassword ${req.user.rest_id}`, message: e })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -593,6 +615,8 @@ exports.verifyOtp = async (req, res, next) => {
       res.status(200).json({ success: true })
     })
     .catch((err) => {
+      let e = extractErrorMessage(err)
+      logger.error({ label: `admin auth verifyOtp ${req.user.rest_id}`, message: e })
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -600,6 +624,7 @@ exports.verifyOtp = async (req, res, next) => {
 }
 
 exports.getRestDetails = async (req, res) => {
+  try{
   if (!req.user.rest_id) {
     return res.status(401).json({
       success: false,
@@ -652,6 +677,13 @@ exports.getRestDetails = async (req, res) => {
   delete restData.locked
 
   return res.status(200).json({ success: true, data: restData })
+}catch(err){
+  let e = extractErrorMessage(err)
+  logger.error({ label: `admin auth getRestDetails ${req.user.rest_id}`, message: e })
+  return res
+  .status(500)
+  .json({ success: false, message: status.SERVER_ERROR })
+}
 }
 
 sendToken = async (data, res) => {
