@@ -4,7 +4,8 @@ const firestore = admin.firestore();
 const status = require("../../utils/status");
 const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
-
+const { extractErrorMessage }=require('../../utils/error')
+const logger=require('../../config/logger')
 exports.getUsers = (req, res) => {
     firestore
       .collection("restaurants")
@@ -22,6 +23,13 @@ exports.getUsers = (req, res) => {
         res.status(200).json({ data: data, success: true });
       })
       .catch((err) => {
-        res.status(500).json({ success: false, message: status.SERVER_ERROR });
+          let e = extractErrorMessage(err)
+          logger.error({
+            label: `admin user getUser ${req.user.rest_id}`,
+            message: e,
+          })
+          return res
+            .status(500)
+            .json({ success: false, message: status.SERVER_ERROR })
       });
   };
