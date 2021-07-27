@@ -8,7 +8,8 @@ const ejs = require("ejs");
 let moment = require("moment");
 const db = require("./config/db");
 const path = require("path");
-const logger = require('./config/logger');
+
+
 
 //initialize server
 let app = express();
@@ -18,6 +19,8 @@ DbInitialize = async () => {
   await db.InitializeDatabase();
 };
 DbInitialize();
+
+require('./config/mail');
 
 const cron = require('./utils/cron');
 
@@ -92,11 +95,12 @@ app.use("/api/admin/customer", custAdmin);
 app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
+
 //running app on specific port
-app.listen(process.env.PORT || 5000, "192.168.0.103", () => {
+app.listen(process.env.PORT || 5000, () => {
 cron.startInvoiceCron();
 cron.startLockedCron();
-logger.error('This is server error')
+
   console.log(
     "app is running",
     moment().format("DD-MM-YYYY"),

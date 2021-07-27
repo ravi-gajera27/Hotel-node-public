@@ -7,6 +7,8 @@ const size = require('firestore-size')
 const moment = require('moment')
 const sgMail = require('@sendgrid/mail')
 const randomstring = require('randomstring')
+const { extractErrorMessage }=require('../../utils/error')
+const logger=require('../../config/logger')
 sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY)
 
 exports.login = async (req, res, next) => {
@@ -90,8 +92,15 @@ exports.login = async (req, res, next) => {
         res,
       )
     }
-  } catch (e) {
-    console.log('customer login', e)
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `customer auth login ${req.user.id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
 }
 
@@ -165,8 +174,15 @@ exports.signup = async (req, res, next) => {
       },
       res,
     )
-  } catch (e) {
-    console.log('customer signup', e)
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `customer auth signup ${req.user.id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
 }
 
@@ -191,10 +207,14 @@ exports.getUser = async (req, res, next) => {
       }
     })
     .catch((err) => {
-      return res.status(500).json({
-        success: false,
-        message: status.SERVER_ERROR,
+      let e = extractErrorMessage(err)
+      logger.error({
+        label: `customer auth getUser ${req.user.id}`,
+        message: e,
       })
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR })
     })
 }
 
@@ -216,14 +236,19 @@ exports.verifyOtp = async (req, res, next) => {
       })
     })
     .catch((err) => {
-      return res.status(500).json({
-        success: false,
-        message: status.SERVER_ERROR,
+      let e = extractErrorMessage(err)
+      logger.error({
+        label: `customer auth verifyOtp ${req.user.id}`,
+        message: e,
       })
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR })
     })
 }
 
 exports.verifySession = async (req, res, next) => {
+  let cookie = await extractCookie(req, res)
   try {
     let cookie = await extractCookie(req, res)
     console.log(cookie)
@@ -485,40 +510,48 @@ exports.verifySession = async (req, res, next) => {
     return res.status(200).json({
       success: true,
     })
-  } catch (e) {
-    console.log('customer verifysession', e)
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `customer auth verifySession ${cookie.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
 }
 
 exports.forgotPasswordCheckMail = async (req, res) => {
-  let email = req.body.email
-  console.log(req.body)
-  if (!email) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
+  try {
+    let email = req.body.email
+    console.log(req.body)
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
 
-  let usersRef = firestore.collection('users')
-  let user = await usersRef.where('email', '==', email).limit(1).get()
+    let usersRef = firestore.collection('users')
+    let user = await usersRef.where('email', '==', email).limit(1).get()
 
-  if (user.empty || user.docs[0].data().provider) {
-    return res
-      .status(400)
-      .json({ success: false, message: status.INVALID_EMAIL })
-  }
+    if (user.empty || user.docs[0].data().provider) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.INVALID_EMAIL })
+    }
 
-  let user_id = user.docs[0].id
+    let user_id = user.docs[0].id
 
-  let code = await generateRandomString()
+    let code = await generateRandomString()
 
-  const msg = {
-    to: email, // Change to your recipient
-    from: 'peraket.dev@gmail.com', // Change to your verified sender
-    subject: 'Verification Code',
-    text: `Your verification code for forgot password is ${code}`,
-  }
-  sgMail
-    .send(msg)
-    .then(() => {
+    const msg = {
+      to: email, // Change to your recipient
+      from: 'peraket.dev@gmail.com', // Change to your verified sender
+      subject: 'Verification Code',
+      text: `Your verification code for forgot password is ${code}`,
+    }
+    sgMail.send(msg).then(() => {
       usersRef
         .doc(user_id)
         .set({ ver_code: code }, { merge: true })
@@ -530,104 +563,127 @@ exports.forgotPasswordCheckMail = async (req, res) => {
             })
           },
           (err) => {
-            return res
-              .status(500)
-              .json({ success: false, message: status.SERVER_ERROR })
+            throw err
           },
         )
     })
-    .catch((error) => {
-      console.log(error)
-      return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `customer auth forgotPasswordCheckMail ${req.user.id}`,
+      message: e,
     })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
 }
 
 exports.checkVerificationCodeForForgotPass = async (req, res) => {
-  let data = req.body
-  console.log(data)
-  if (!data.email || !data.code) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
+  try {
+    let data = req.body
+    console.log(data)
+    if (!data.email || !data.code) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
 
-  let usersRef = firestore.collection('users')
-  let user = await usersRef.where('email', '==', data.email).limit(1).get()
+    let usersRef = firestore.collection('users')
+    let user = await usersRef.where('email', '==', data.email).limit(1).get()
 
-  if (user.empty || user.docs[0].data().provider) {
+    if (user.empty || user.docs[0].data().provider) {
+      return res
+        .status(404)
+        .json({ success: false, message: status.UNAUTHORIZED })
+    }
+
+    user_id = user.docs[0].id
+    let tempuser
+    user.docs.forEach((e) => {
+      tempuser = e.data()
+    })
+
+    if (tempuser.ver_code != data.code) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Provide valid verification code' })
+    }
+
     return res
-      .status(404)
-      .json({ success: false, message: status.UNAUTHORIZED })
-  }
-
-  user_id = user.docs[0].id
-  let tempuser
-  user.docs.forEach((e) => {
-    tempuser = e.data()
-  })
-
-  if (tempuser.ver_code != data.code) {
+      .status(200)
+      .json({ success: true, message: 'Successfully verified' })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `customer auth  checkVerificationCodeForForgotPass ${req.user.id}`,
+      message: e,
+    })
     return res
-      .status(400)
-      .json({ success: false, message: 'Provide valid verification code' })
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
-
-  return res
-    .status(200)
-    .json({ success: true, message: 'Successfully verified' })
 }
 
 exports.changePassword = async (req, res) => {
-  let { email, new_pass, confirm_pass, code } = req.body
-  if (!email || !new_pass || !confirm_pass || !code) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
-
-  if (new_pass != confirm_pass) {
-    return res
-      .status(400)
-      .json({ success: false, message: status.PASSWORD_NOT_EQUAL })
-  }
-
-  let usersRef = firestore.collection('users')
-  let user = await usersRef.where('email', '==', email).get()
-
-  if (user.empty || user.docs[0].data().provider) {
-    return res
-      .status(404)
-      .json({ success: false, message: status.UNAUTHORIZED })
-  }
-
-  let tempuser
-  user.docs.forEach((e) => {
-    tempuser = e.data()
-  })
-
-  user_id = user.docs[0].id
-
-  if (tempuser.ver_code != code) {
-    return res
-      .status(404)
-      .json({ success: false, message: status.UNAUTHORIZED })
-  }
-
-  tempuser.password = await HASH.generateHash(new_pass, 10)
-  delete tempuser.ver_code
-
-  usersRef
-    .doc(user_id)
-    .set(tempuser)
-    .then((e) => {
-      return res.status(200).json({
-        success: true,
-        message: 'Your password is successfully changed',
-      })
-    })
-    .catch((err) => {
+  try {
+    let { email, new_pass, confirm_pass, code } = req.body
+    if (!email || !new_pass || !confirm_pass || !code) {
       return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR })
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+
+    if (new_pass != confirm_pass) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.PASSWORD_NOT_EQUAL })
+    }
+
+    let usersRef = firestore.collection('users')
+    let user = await usersRef.where('email', '==', email).get()
+
+    if (user.empty || user.docs[0].data().provider) {
+      return res
+        .status(404)
+        .json({ success: false, message: status.UNAUTHORIZED })
+    }
+
+    let tempuser
+    user.docs.forEach((e) => {
+      tempuser = e.data()
     })
+
+    user_id = user.docs[0].id
+
+    if (tempuser.ver_code != code) {
+      return res
+        .status(404)
+        .json({ success: false, message: status.UNAUTHORIZED })
+    }
+
+    tempuser.password = await HASH.generateHash(new_pass, 10)
+    delete tempuser.ver_code
+
+    usersRef
+      .doc(user_id)
+      .set(tempuser)
+      .then((e) => {
+        return res.status(200).json({
+          success: true,
+          message: 'Your password is successfully changed',
+        })
+      })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `customer auth  changePassword ${req.user.id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
 }
 
 sendToken = async (data, res) => {

@@ -1,963 +1,1053 @@
-const admin = require("firebase-admin");
-const firestore = admin.firestore();
+const admin = require('firebase-admin')
+const firestore = admin.firestore()
 
-const status = require("../../utils/status");
-const HASH = require("../../utils/encryption");
-const TOKEN = require("../../utils/token");
-let moment = require("moment");
-const path = require("path");
-const fs = require("fs");
-let ejs = require("ejs");
-let pdf = require("html-pdf");
-const sizeof = require("firestore-size");
-var bson = require("bson");
+const status = require('../../utils/status')
+const HASH = require('../../utils/encryption')
+const TOKEN = require('../../utils/token')
+let moment = require('moment')
+const path = require('path')
+const fs = require('fs')
+let ejs = require('ejs')
+let pdf = require('html-pdf')
+const sizeof = require('firestore-size')
+var bson = require('bson')
+const { extractErrorMessage }=require('../../utils/error')
+const logger=require('../../config/logger')
 
 exports.getInvoices = (req, res) => {
   firestore
-    .collection("orders")
+    .collection('orders')
     .doc(req.user.rest_id)
-    .collection("invoices")
+    .collection('invoices')
     .get()
     .then((resp) => {
-      let data = [];
+      let data = []
 
       for (let ele of resp.docs) {
-        let temp = ele.data();
-        temp.id = ele.id;
-        data.push(temp);
+        let temp = ele.data()
+        temp.id = ele.id
+        data.push(temp)
       }
-      res.status(200).json({ data: data, success: true });
+      res.status(200).json({ data: data, success: true })
     })
     .catch((err) => {
-      res.status(500).json({ success: false, message: status.SERVER_ERROR });
-    });
-};
+      res.status(500).json({ success: false, message: status.SERVER_ERROR })
+    })
+}
 
 exports.getHomeForOwner = async (req, res) => {
-  let rest_details_ref = await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .get();
+  try {
+    let rest_details_ref = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .get()
 
-  let seatOrderRef = await firestore
-    .collection(`restaurants/${req.user.rest_id}/order`).where('restore','!=', true)
-    .get();
+    let seatOrderRef = await firestore
+      .collection(`restaurants/${req.user.rest_id}/order`)
+      .where('restore', '!=', true)
+      .get()
 
-  let takeawayOrderRef = await firestore
-    .collection(`restaurants/${req.user.rest_id}/torder`).where('restore','!=', true)
-    .get()
+    let takeawayOrderRef = await firestore
+      .collection(`restaurants/${req.user.rest_id}/torder`)
+      .where('restore', '!=', true)
+      .get()
 
     let customersRef = await firestore
-    .collection(`restaurants/${req.user.rest_id}/customers`).doc('users')
-    .get();
+      .collection(`restaurants/${req.user.rest_id}/customers`)
+      .doc('users')
+      .get()
 
     let seatCust = customersRef.data().seat || []
-  
-  let obj = {
-    total_occupied: 0,
-    total_checkout: 0,
-    total_vaccant: 0,
-    seat_order: 0,
-    takeaway_order: 0,
-    total_table: 0
-  };
 
-  let rest_details = rest_details_ref.data();
-  obj.total_table = Number(rest_details.tables);
-
-  for (let data of seatCust) {
-    if(data.restore){
-      continue;
+    let obj = {
+      total_occupied: 0,
+      total_checkout: 0,
+      total_vaccant: 0,
+      seat_order: 0,
+      takeaway_order: 0,
+      total_table: 0,
     }
-    if (data.checkout) {
-      obj.total_checkout++;
-    } else {
-      obj.total_occupied++;
-    }
-  }
 
-  obj.total_vaccant =
-    Number(rest_details.tables) - obj.total_occupied - obj.total_checkout;
+    let rest_details = rest_details_ref.data()
+    obj.total_table = Number(rest_details.tables)
 
-  if (!seatOrderRef.empty) {
-      obj.seat_order = seatOrderRef.docs.length
-  }
-
-  if (!takeawayOrderRef.empty) {
-      obj.takeaway_order = takeawayOrderRef.docs.length
-  }
-
-  res.status(200).json({ success: true, data: obj });
-};
-
-exports.downloadInvoicePdf = async (req, res) => {
-  let inv_id = req.body.inv_id;
-  let inv_no = req.body.inv_no;
-
-  if(!inv_id || !inv_no){
-    return res
-    .status(400)
-    .json({ success: false, message: status.BAD_REQUEST });
-  }
-  let rest_details = await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .get();
-
-  let invoiceRef = await firestore
-    .collection("orders")
-    .doc(req.user.rest_id)
-    .collection("invoices")
-    .doc(inv_id)
-    .get();
-
-  let invoices = invoiceRef.data().invoices;
-
-  let index = invoices.map(e=>{return e.inv_no}).indexOf(inv_no);
-  if(index == -1){
-    return res
-    .status(400)
-    .json({ success: false, message: status.BAD_REQUEST });
-  }
-  let invoice = invoices[index]
-  let data = rest_details.data();
-
-  let userRef = await firestore.collection("users").doc(invoice.cid).get();
-  let user = userRef.data();
-
-  var fileName = `invoice-${invoice.cid}.pdf`;
-
-  var output_path = process.env.INVOICE_PATH + fileName;
-  await ejs.renderFile(
-    path.join(__dirname + "/../../utils/templates/invoice.ejs"),
-    {
-      invoice: invoice,
-      user: user,
-      rest: data,
-      inv_date: moment(invoice.inv_date).format("DD/MM/YYYY"),
-    },
-    (err, data) => {
-      if (err) {
-        console.log(err);
+    for (let data of seatCust) {
+      if (data.restore) {
+        continue
+      }
+      if (data.checkout) {
+        obj.total_checkout++
       } else {
-        let options = {
-          format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
-          orientation: "portrait", // portrait or landscape
-          border: "0",
-          type: "pdf",
-          /* header: {
-          height: "1400px",
-          width: "100px",
-          contents: `<div style="position: absolute;top: 0;left: 0; bottom: 0; height: 1400px;width: 100px;background: url("https://drive.google.com/thumbnail?id=1hgGQNIMxQIgEA72UlUU8eF0crWFnsKVL") center bottom no-repeat, url("https://drive.google.com/thumbnail?id=1RnQX_4yl-cSc9rhXtC3BC_AoJnL4d0IE") repeat">
-          <div style=" -moz-border-radius: 50%;
-          -webkit-border-radius: 50%;
-          border-radius: 50%;
-          background: #415472;
-          width: 30px;
-          height: 30px;
-          position: absolute;
-          left: 33%; top: 440px;"></div>
-          <div style=" -moz-border-radius: 50%;
-          -webkit-border-radius: 50%;
-          border-radius: 50%;
-          background: #415472;
-          width: 30px;
-          height: 30px;
-          position: absolute;
-          left: 33%;top: 690px;></div>
-          </div>`,
-          }, */
-        };
-
-        pdf.create(data, options).toFile(output_path, function (err, data) {
-          if (err) {
-            console.log(err);
-          } else {
-            fs.readFile(output_path, function (err, data) {
-              fs.unlinkSync(output_path);
-              res.contentType("application/pdf");
-              res.status(200).send(data);
-            });
-          }
-        });
+        obj.total_occupied++
       }
     }
-  );
-};
+
+    obj.total_vaccant =
+      Number(rest_details.tables) - obj.total_occupied - obj.total_checkout
+
+    if (!seatOrderRef.empty) {
+      obj.seat_order = seatOrderRef.docs.length
+    }
+
+    if (!takeawayOrderRef.empty) {
+      obj.takeaway_order = takeawayOrderRef.docs.length
+    }
+
+    res.status(200).json({ success: true, data: obj })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin state getHomeForOwner ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+}
+
+exports.downloadInvoicePdf = async (req, res) => {
+  try {
+    let inv_id = req.body.inv_id
+    let inv_no = req.body.inv_no
+
+    if (!inv_id || !inv_no) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+    let rest_details = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .get()
+
+    let invoiceRef = await firestore
+      .collection('orders')
+      .doc(req.user.rest_id)
+      .collection('invoices')
+      .doc(inv_id)
+      .get()
+
+    let invoices = invoiceRef.data().invoices
+
+    let index = invoices
+      .map((e) => {
+        return e.inv_no
+      })
+      .indexOf(inv_no)
+    if (index == -1) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+    let invoice = invoices[index]
+    let data = rest_details.data()
+
+    let userRef = await firestore.collection('users').doc(invoice.cid).get()
+    let user = userRef.data()
+
+    var fileName = `invoice-${invoice.cid}.pdf`
+
+    var output_path = process.env.INVOICE_PATH + fileName
+    await ejs.renderFile(
+      path.join(__dirname + '/../../utils/templates/invoice.ejs'),
+      {
+        invoice: invoice,
+        user: user,
+        rest: data,
+        inv_date: moment(invoice.inv_date).format('DD/MM/YYYY'),
+      },
+      (err, data) => {
+        if (err) {
+          throw err
+        } else {
+          let options = {
+            format: 'A4', // allowed units: A3, A4, A5, Legal, Letter, Tabloid
+            orientation: 'portrait', // portrait or landscape
+            border: '0',
+            type: 'pdf',
+          }
+
+          pdf.create(data, options).toFile(output_path, function (err, data) {
+            if (err) {
+              throw err
+            } else {
+              fs.readFile(output_path, function (err, data) {
+                fs.unlinkSync(output_path)
+                res.contentType('application/pdf')
+                res.status(200).send(data)
+              })
+            }
+          })
+        }
+      },
+    )
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin state downloadInvoicePdf ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+}
 
 function IsIn2D(str, array) {
   for (var i = 0; i < array.length; i++) {
     if (array[i].name == str) {
-      return i;
+      return i
     }
   }
-  return -1;
+  return -1
 }
 exports.downloadEodPdf = async (req, res) => {
-  let rest_details = await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .get();
+  try {
+    let rest_details = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .get()
 
-  let date = req.params.date;
+    let date = req.params.date
 
-  let invoiceRef = await firestore
-    .collection("orders")
-    .doc(req.user.rest_id)
-    .collection("invoices")
-    .where("inv_date", "==", date)
-    .get();
+    let invoiceRef = await firestore
+      .collection('orders')
+      .doc(req.user.rest_id)
+      .collection('invoices')
+      .where('inv_date', '==', date)
+      .get()
 
-  let data = rest_details.data();
+    let data = rest_details.data()
 
-  let total = {
-    total_gross: 0,
-    total_net: 0,
-    total_discount: 0,
-    total_cash: 0,
-    total_card: 0,
-    total_credit: 0,
-    total_online: 0,
-    total_tax: 0,
-    total_cust: 0,
-  };
-  let invoice_array = [];
-  let topPerformer = [];
-
-  for (let invoice of invoiceRef.docs) {
-    for(let tempInvoice of invoice.data().invoices){
-
-    if (tempInvoice.clean == false) {
-      continue;
+    let total = {
+      total_gross: 0,
+      total_net: 0,
+      total_discount: 0,
+      total_cash: 0,
+      total_card: 0,
+      total_credit: 0,
+      total_online: 0,
+      total_tax: 0,
+      total_cust: 0,
     }
-    for (let itemFromInvoice of tempInvoice.data) {
-      var ind = IsIn2D(itemFromInvoice.name, [...topPerformer]);
+    let invoice_array = []
+    let topPerformer = []
 
-      if (ind > -1) {
-        topPerformer[ind].qty += itemFromInvoice.qty;
-      } else {
-        topPerformer.push({
-          name: itemFromInvoice.name,
-          qty: itemFromInvoice.qty,
-          category: itemFromInvoice.category
-        });
-      }
-    }
-    topPerformer.sort((a, b) => (b.qty > a.qty ? 1 : a.qty > b.qty ? -1 : 0));
-
-    tempInvoice.gross = tempInvoice.taxable;
-    total.total_gross += tempInvoice.gross;
-    if (tempInvoice.discount) {
-      tempInvoice.discount = tempInvoice.discount.includes("%")
-        ? Number(
-            (tempInvoice.taxable * Number(tempInvoice.discount.split("%")[0])) /
-              100
-          )
-        : Number(tempInvoice.discount);
-    } else {
-      tempInvoice.discount = 0;
-    }
-    total.total_discount += tempInvoice.discount || 0;
-
-    tempInvoice.tax =
-      Number(tempInvoice.taxable - tempInvoice.discount) *
-      (tempInvoice.tax / 100);
-    total.total_tax += tempInvoice.tax;
-
-    total.total_net += tempInvoice.total_amt;
-    total.total_credit += tempInvoice.settle.credit;
-    total.total_cust++;
-
-    switch (tempInvoice.settle.method) {
-      case "cash":
-        total.total_cash += tempInvoice.total_amt - tempInvoice.settle.credit;
-        tempInvoice.cash = tempInvoice.total_amt - tempInvoice.settle.credit;
-        break;
-      case "card":
-        total.total_card += tempInvoice.total_amt - tempInvoice.settle.credit;
-        tempInvoice.card = tempInvoice.total_amt - tempInvoice.settle.credit;
-        break;
-      case "online":
-        tempInvoice.online = tempInvoice.total_amt - tempInvoice.settle.credit;
-        total.total_online += tempInvoice.online;
-        break;
-    }
-
-    invoice_array.push(tempInvoice);
-  }
-}
-  invoice_array.sort((a, b) =>
-    a.invoice_no > b.invoice_no ? 1 : b.invoice_no > a.invoice_no ? -1 : 0
-  );
-
-  var fileName = `eod-${date}-${rest_details.id}.pdf`;
-
-  var output_path = process.env.EOD_PATH + fileName;
-  await ejs.renderFile(
-    path.join(__dirname + "/../../utils/templates/eod.ejs"),
-    {
-      invoice_array: invoice_array,
-      rest: data,
-      date: date,
-      total: total,
-      topPerformer: topPerformer,
-    },
-    (err, data) => {
-      if (err) {
-        console.log(err);
-      } else {
-        let options = {
-          format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
-          orientation: "portrait", // portrait or landscape
-          border: "0",
-          type: "pdf",
-        };
-
-        pdf.create(data, options).toFile(output_path, function (err, data) {
-          if (err) {
-            console.log(err);
-          } else {
-            fs.readFile(output_path, function (err, data) {
-              fs.unlinkSync(output_path);
-              res.contentType("application/pdf");
-              res.status(200).send(data);
-            });
-          }
-        });
-      }
-    }
-  );
-};
-exports.getBasicsByInterval = async (req, res, next) => {
-  let interval = req.params.interval;
-
-  if (!interval) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
-  }
-
-  interval = interval.split("_");
-
-  if (interval.length != 2) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
-  }
-
-  let start_date = interval[0];
-  let end_date = interval[1];
-
-  await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("inv_date", ">=", start_date)
-    .where("inv_date", "<=", end_date)
-    .get()
-    .then((invoiceRef) => {
-      let itemsArray = [];
-      let total_taxable = 0;
-      let total = {
-        total_orders: 0,
-        // total_gross: 0,
-        total_sales: 0,
-        total_discount: 0,
-        total_cash: 0,
-        total_card: 0,
-        total_credit: 0,
-        total_online: 0,
-        total_tax: 0,
-        total_cust: 0,
-        total_U_customers: 0,
-        total_item: 0,
-      };
-      for (let invoice of invoiceRef.docs) {
-        for(let tempInvoice of invoice.data().invoices){
-    
+    for (let invoice of invoiceRef.docs) {
+      for (let tempInvoice of invoice.data().invoices) {
         if (tempInvoice.clean == false) {
-          continue;
+          continue
         }
-        total.total_orders++;
+        for (let itemFromInvoice of tempInvoice.data) {
+          var ind = IsIn2D(itemFromInvoice.name, [...topPerformer])
 
-        if (tempInvoice.unique) {
-          total.total_U_customers++;
-        }
-
-        for (let items of tempInvoice.data) {
-          if (!itemsArray.includes(items.name)) {
-            // console.log(items.name)
-            itemsArray.push(items.name);
+          if (ind > -1) {
+            topPerformer[ind].qty += itemFromInvoice.qty
+          } else {
+            topPerformer.push({
+              name: itemFromInvoice.name,
+              qty: itemFromInvoice.qty,
+              category: itemFromInvoice.category,
+            })
           }
         }
-        total.total_item = itemsArray.length;
+        topPerformer.sort((a, b) =>
+          b.qty > a.qty ? 1 : a.qty > b.qty ? -1 : 0,
+        )
 
-        total_taxable += tempInvoice.taxable;
-
+        tempInvoice.gross = tempInvoice.taxable
+        total.total_gross += tempInvoice.gross
         if (tempInvoice.discount) {
-          tempInvoice.discount = tempInvoice.discount.includes("%")
+          tempInvoice.discount = tempInvoice.discount.includes('%')
             ? Number(
                 (tempInvoice.taxable *
-                  Number(tempInvoice.discount.split("%")[0])) /
-                  100
+                  Number(tempInvoice.discount.split('%')[0])) /
+                  100,
               )
-            : tempInvoice.discount;
+            : Number(tempInvoice.discount)
         } else {
-          tempInvoice.discount = 0;
+          tempInvoice.discount = 0
         }
-        total.total_discount += tempInvoice.discount || 0;
+        total.total_discount += tempInvoice.discount || 0
 
         tempInvoice.tax =
           Number(tempInvoice.taxable - tempInvoice.discount) *
-          (tempInvoice.tax / 100);
-        total.total_tax += tempInvoice.tax;
+          (tempInvoice.tax / 100)
+        total.total_tax += tempInvoice.tax
 
-        total.total_credit += tempInvoice.settle.credit;
-        total.total_cust++;
-        total.total_sales += tempInvoice.total_amt - tempInvoice.settle.credit;
+        total.total_net += tempInvoice.total_amt
+        total.total_credit += tempInvoice.settle.credit
+        total.total_cust++
 
         switch (tempInvoice.settle.method) {
-          case "cash":
+          case 'cash':
             total.total_cash +=
-              tempInvoice.total_amt - tempInvoice.settle.credit;
-            tempInvoice.cash =
-              tempInvoice.total_amt - tempInvoice.settle.credit;
-            break;
-          case "card":
+              tempInvoice.total_amt - tempInvoice.settle.credit
+            tempInvoice.cash = tempInvoice.total_amt - tempInvoice.settle.credit
+            break
+          case 'card':
             total.total_card +=
-              tempInvoice.total_amt - tempInvoice.settle.credit;
-            tempInvoice.card =
-              tempInvoice.total_amt - tempInvoice.settle.credit;
-            break;
-          case "online":
+              tempInvoice.total_amt - tempInvoice.settle.credit
+            tempInvoice.card = tempInvoice.total_amt - tempInvoice.settle.credit
+            break
+          case 'online':
             tempInvoice.online =
-              tempInvoice.total_amt - tempInvoice.settle.credit;
-            total.total_online += tempInvoice.online;
-            break;
+              tempInvoice.total_amt - tempInvoice.settle.credit
+            total.total_online += tempInvoice.online
+            break
         }
+
+        invoice_array.push(tempInvoice)
       }
     }
-      res.status(200).json({ success: true, data: total });
-    })
-    .catch((err) => {
-      console.log("errorn on sstats" + err);
-      res.status(500).json({ success: false, message: status.SERVER_ERROR });
-    });
-};
+    invoice_array.sort((a, b) =>
+      a.invoice_no > b.invoice_no ? 1 : b.invoice_no > a.invoice_no ? -1 : 0,
+    )
 
-exports.getInvoicesByInterval = async (req, res, next) => {
-  let interval = req.params.interval;
+    var fileName = `eod-${date}-${rest_details.id}.pdf`
 
-  if (!interval) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
-  }
+    var output_path = process.env.EOD_PATH + fileName
+    await ejs.renderFile(
+      path.join(__dirname + '/../../utils/templates/eod.ejs'),
+      {
+        invoice_array: invoice_array,
+        rest: data,
+        date: date,
+        total: total,
+        topPerformer: topPerformer,
+      },
+      (err, data) => {
+        if (err) {
+          throw err
+        } else {
+          let options = {
+            format: 'A4', // allowed units: A3, A4, A5, Legal, Letter, Tabloid
+            orientation: 'portrait', // portrait or landscape
+            border: '0',
+            type: 'pdf',
+          }
 
-  interval = interval.split("_");
-
-  if (interval.length != 2) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
-  }
-
-  let start_date = interval[0];
-  let end_date = interval[1];
-
-  await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("inv_date", ">=", start_date)
-    .where("inv_date", "<=", end_date)
-    .get()
-    .then((data) => {
-      let invoices = [];
-      for (let invoice of data.docs) {
-        for(let i of invoice.data().invoices){
-        if (i.clean == false) {
-          continue;
+          pdf.create(data, options).toFile(output_path, function (err, data) {
+            if (err) {
+              throw err
+            } else {
+              fs.readFile(output_path, function (err, data) {
+                fs.unlinkSync(output_path)
+                res.contentType('application/pdf')
+                res.status(200).send(data)
+              })
+            }
+          })
         }
-        i.id = invoice.id;
-        invoices.push(i);
-      }
-      }
-      res.status(200).json({ success: true, data: invoices });
+      },
+    )
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin state downloadEodPdf ${req.user.rest_id}`,
+      message: e,
     })
-    .catch((err) => {
-      res.status(500).json({ success: false, message: status.SERVER_ERROR });
-    });
-};
-
-exports.getCategoriesStats = async (req, res, next) => {
-  let interval = req.params.interval;
-
-  if (!interval) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
-  }
-
-  interval = interval.split("_");
-
-  if (interval.length != 2) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
-  }
-
-  let cat = await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .collection("categories")
-    .get();
-
-  let menuRef = await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .collection("menu")
-    .doc("menu")
-    .get();
-
-  let categories = {};
-  let items = {};
-  if (!cat.empty) {
-    cat.docs.map((e) => {
-      let data = e.data().cat;
-      for (let e of data) {
-        categories[`${e.name}`] = 0;
-        items[`${e.name}`] = {};
-      }
-    });
-  }
-
-  for (let menu of menuRef.data().menu) {
-    items[menu.category][menu.name] = { qty: 0, price: 0 };
-  }
-
-  let start_date = interval[0];
-  let end_date = interval[1];
-
-  let data = await firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .where("inv_date", ">=", start_date)
-    .where("inv_date", "<=", end_date)
-    .get();
-
-  let invoices = [];
-  for (let invoice of data.docs) {
-    for(let i of invoice.data().invoices){
-
-    i.id = invoice.id;
-    invoices.push(i);
-    for (let ele of i.data) {
-      console.log(ele, categories[`${ele.category}`]);
-      if (categories[`${ele.category}`] == undefined) {
-        continue;
-      }
-      categories[`${ele.category}`] += ele.qty;
-      if (items[`${ele.category}`][`${ele.name}`]) {
-        let q = items[`${ele.category}`][`${ele.name}`].qty;
-        let p = items[`${ele.category}`][`${ele.name}`].price;
-        items[`${ele.category}`][`${ele.name}`] = {
-          qty: q + ele.qty,
-          price: p + ele.price,
-        };
-      }
-    }
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
 }
-  res
-    .status(200)
-    .json({ success: true, data: { categories: categories, items: items } });
-};
+exports.getBasicsByInterval = async (req, res, next) => {
+  try {
+    let interval = req.params.interval
+
+    if (!interval) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST })
+    }
+
+    interval = interval.split('_')
+
+    if (interval.length != 2) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST })
+    }
+
+    let start_date = interval[0]
+    let end_date = interval[1]
+
+    await firestore
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where('inv_date', '>=', start_date)
+      .where('inv_date', '<=', end_date)
+      .get()
+      .then((invoiceRef) => {
+        let itemsArray = []
+        let total_taxable = 0
+        let total = {
+          total_orders: 0,
+          // total_gross: 0,
+          total_sales: 0,
+          total_discount: 0,
+          total_cash: 0,
+          total_card: 0,
+          total_credit: 0,
+          total_online: 0,
+          total_tax: 0,
+          total_cust: 0,
+          total_U_customers: 0,
+          total_item: 0,
+        }
+        for (let invoice of invoiceRef.docs) {
+          for (let tempInvoice of invoice.data().invoices) {
+            if (tempInvoice.clean == false) {
+              continue
+            }
+            total.total_orders++
+
+            if (tempInvoice.unique) {
+              total.total_U_customers++
+            }
+
+            for (let items of tempInvoice.data) {
+              if (!itemsArray.includes(items.name)) {
+                // console.log(items.name)
+                itemsArray.push(items.name)
+              }
+            }
+            total.total_item = itemsArray.length
+
+            total_taxable += tempInvoice.taxable
+
+            if (tempInvoice.discount) {
+              tempInvoice.discount = tempInvoice.discount.includes('%')
+                ? Number(
+                    (tempInvoice.taxable *
+                      Number(tempInvoice.discount.split('%')[0])) /
+                      100,
+                  )
+                : tempInvoice.discount
+            } else {
+              tempInvoice.discount = 0
+            }
+            total.total_discount += tempInvoice.discount || 0
+
+            tempInvoice.tax =
+              Number(tempInvoice.taxable - tempInvoice.discount) *
+              (tempInvoice.tax / 100)
+            total.total_tax += tempInvoice.tax
+
+            total.total_credit += tempInvoice.settle.credit
+            total.total_cust++
+            total.total_sales +=
+              tempInvoice.total_amt - tempInvoice.settle.credit
+
+            switch (tempInvoice.settle.method) {
+              case 'cash':
+                total.total_cash +=
+                  tempInvoice.total_amt - tempInvoice.settle.credit
+                tempInvoice.cash =
+                  tempInvoice.total_amt - tempInvoice.settle.credit
+                break
+              case 'card':
+                total.total_card +=
+                  tempInvoice.total_amt - tempInvoice.settle.credit
+                tempInvoice.card =
+                  tempInvoice.total_amt - tempInvoice.settle.credit
+                break
+              case 'online':
+                tempInvoice.online =
+                  tempInvoice.total_amt - tempInvoice.settle.credit
+                total.total_online += tempInvoice.online
+                break
+            }
+          }
+        }
+        res.status(200).json({ success: true, data: total })
+      })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin state getBasicByInterval ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+}
+
+exports.getInvoicesByInterval = async (req, res, next) => {
+  try {
+    let interval = req.params.interval
+
+    if (!interval) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST })
+    }
+
+    interval = interval.split('_')
+
+    if (interval.length != 2) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST })
+    }
+
+    let start_date = interval[0]
+    let end_date = interval[1]
+
+    await firestore
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where('inv_date', '>=', start_date)
+      .where('inv_date', '<=', end_date)
+      .get()
+      .then((data) => {
+        let invoices = []
+        for (let invoice of data.docs) {
+          for (let i of invoice.data().invoices) {
+            if (i.clean == false) {
+              continue
+            }
+            i.id = invoice.id
+            invoices.push(i)
+          }
+        }
+        res.status(200).json({ success: true, data: invoices })
+      })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin state getInvoicesByInterval ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+}
+
+exports.getCategoriesStats = async (req, res, next) => {
+  try {
+    let interval = req.params.interval
+
+    if (!interval) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST })
+    }
+
+    interval = interval.split('_')
+
+    if (interval.length != 2) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST })
+    }
+
+    let cat = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .collection('categories')
+      .get()
+
+    let menuRef = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .collection('menu')
+      .doc('menu')
+      .get()
+
+    let categories = {}
+    let items = {}
+    if (!cat.empty) {
+      cat.docs.map((e) => {
+        let data = e.data().cat
+        for (let e of data) {
+          categories[`${e.name}`] = 0
+          items[`${e.name}`] = {}
+        }
+      })
+    }
+
+    for (let menu of menuRef.data().menu) {
+      items[menu.category][menu.name] = { qty: 0, price: 0 }
+    }
+
+    let start_date = interval[0]
+    let end_date = interval[1]
+
+    let data = await firestore
+      .collection(`orders/${req.user.rest_id}/invoices`)
+      .where('inv_date', '>=', start_date)
+      .where('inv_date', '<=', end_date)
+      .get()
+
+    let invoices = []
+    for (let invoice of data.docs) {
+      for (let i of invoice.data().invoices) {
+        i.id = invoice.id
+        invoices.push(i)
+        for (let ele of i.data) {
+          console.log(ele, categories[`${ele.category}`])
+          if (categories[`${ele.category}`] == undefined) {
+            continue
+          }
+          categories[`${ele.category}`] += ele.qty
+          if (items[`${ele.category}`][`${ele.name}`]) {
+            let q = items[`${ele.category}`][`${ele.name}`].qty
+            let p = items[`${ele.category}`][`${ele.name}`].price
+            items[`${ele.category}`][`${ele.name}`] = {
+              qty: q + ele.qty,
+              price: p + ele.price,
+            }
+          }
+        }
+      }
+    }
+    res
+      .status(200)
+      .json({ success: true, data: { categories: categories, items: items } })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin state getCategoriesStats ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+}
 
 exports.getAdvanceStats = async (req, res, next) => {
-  let interval = req.params.interval;
-  let slot = req.params.slot;
+  try {
+    let interval = req.params.interval
+    let slot = req.params.slot
 
-  if (!interval || !slot) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
-  }
-
-  interval = interval.split("_");
-
-  if (interval.length != 2) {
-    return res.status(400).json({ status: false, message: status.BAD_REQUEST });
-  }
-
-  let start_date = interval[0];
-  let end_date = interval[1];
-
-  let intervalData;
-  if (slot == "this-week") {
-    intervalData = await getSlotBetweenInterval(slot, "", "");
-    let data = await firestore
-      .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("inv_date", ">=", start_date)
-      .where("inv_date", "<=", end_date)
-      .get();
-
-    for (let invoice of data.docs) {
-      for(let i of invoice.data().invoices){
-      index = moment(i.invoice_date).weekday();
-      intervalData[index].value += i.total_amt;
-      }
+    if (!interval || !slot) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST })
     }
-  } else if (slot.includes("month")) {
-    intervalData = await getSlotBetweenInterval(slot, "", "");
-    let data = await firestore
-      .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("inv_date", ">=", start_date)
-      .where("inv_date", "<=", end_date)
-      .get();
 
-    for (let invoice of data.docs) {
-      for(let i of invoice.data().invoices){
-      index = moment(i.invoice_date).format("D");
-      intervalData[index - 1].value += i.total_amt;
-      }
+    interval = interval.split('_')
+
+    if (interval.length != 2) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST })
     }
-  } else if (slot == "today") {
-    let rest_ref = await firestore
-      .collection("restaurants")
-      .doc(req.user.rest_id)
-      .get();
-    let rest_details = rest_ref.data();
-    intervalData = await getSlotBetweenInterval(
-      slot,
-      rest_details.open_time,
-      rest_details.close_time
-    );
 
-    let data = await firestore
-      .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("inv_date", ">=", start_date)
-      .where("inv_date", "<=", end_date)
-      .get();
+    let start_date = interval[0]
+    let end_date = interval[1]
 
-    for (let invoice of data.docs) {
-      for(let i of invoice.data().invoices){
-      if (i.time) {
-        index = intervalData.findIndex(
-          (e) => i.time >= e.open_t && i.time < e.close_t
-        );
-        console.log(index);
-        if (index == -1) {
-          if (i.time > rest_details.close_time) index = intervalData.length - 1;
-          else if (i.time < rest_details.open_time) index = 0;
+    let intervalData
+    if (slot == 'this-week') {
+      intervalData = await getSlotBetweenInterval(slot, '', '')
+      let data = await firestore
+        .collection(`orders/${req.user.rest_id}/invoices`)
+        .where('inv_date', '>=', start_date)
+        .where('inv_date', '<=', end_date)
+        .get()
+
+      for (let invoice of data.docs) {
+        for (let i of invoice.data().invoices) {
+          index = moment(i.invoice_date).weekday()
+          intervalData[index].value += i.total_amt
         }
-        intervalData[index].value += i.total_amt;
       }
-    }
-  }
-  } else if (slot.includes("quarter")) {
-    let slotData = await getMonthsOfQuarter(slot);
-    intervalData = slotData[0];
-    let starting_month = slotData[1];
-    let data = await firestore
-      .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("inv_date", ">=", start_date)
-      .where("inv_date", "<=", end_date)
-      .get();
+    } else if (slot.includes('month')) {
+      intervalData = await getSlotBetweenInterval(slot, '', '')
+      let data = await firestore
+        .collection(`orders/${req.user.rest_id}/invoices`)
+        .where('inv_date', '>=', start_date)
+        .where('inv_date', '<=', end_date)
+        .get()
 
-    for (let invoice of data.docs) {
-      for(let i of invoice.data().invoices){
-      index = moment(i.invoice_date).month();
-      intervalData[index - starting_month].value += i.total_amt;
+      for (let invoice of data.docs) {
+        for (let i of invoice.data().invoices) {
+          index = moment(i.invoice_date).format('D')
+          intervalData[index - 1].value += i.total_amt
+        }
       }
-    }
-  } else if (slot == "last-year" || slot == "this-year") {
-    intervalData = await getMonthsOfYear(slot);
-    let data = await firestore
-      .collection(`orders/${req.user.rest_id}/invoices`)
-      .where("inv_date", ">=", start_date)
-      .where("inv_date", "<=", end_date)
-      .get();
-    console.log(intervalData);
-    for (let invoice of data.docs) {
-      for(let i of invoice.data().invoices){
-      index = moment(i.invoice_date).month();
-      index = index < 3 ? index + 9 : index - 3;
-      intervalData[index].value += i.total_amt;
-      }
-    }
-  }
+    } else if (slot == 'today') {
+      let rest_ref = await firestore
+        .collection('restaurants')
+        .doc(req.user.rest_id)
+        .get()
+      let rest_details = rest_ref.data()
+      intervalData = await getSlotBetweenInterval(
+        slot,
+        rest_details.open_time,
+        rest_details.close_time,
+      )
 
-  res.status(200).json({ success: true, data: intervalData });
-};
+      let data = await firestore
+        .collection(`orders/${req.user.rest_id}/invoices`)
+        .where('inv_date', '>=', start_date)
+        .where('inv_date', '<=', end_date)
+        .get()
+
+      for (let invoice of data.docs) {
+        for (let i of invoice.data().invoices) {
+          if (i.time) {
+            index = intervalData.findIndex(
+              (e) => i.time >= e.open_t && i.time < e.close_t,
+            )
+            console.log(index)
+            if (index == -1) {
+              if (i.time > rest_details.close_time)
+                index = intervalData.length - 1
+              else if (i.time < rest_details.open_time) index = 0
+            }
+            intervalData[index].value += i.total_amt
+          }
+        }
+      }
+    } else if (slot.includes('quarter')) {
+      let slotData = await getMonthsOfQuarter(slot)
+      intervalData = slotData[0]
+      let starting_month = slotData[1]
+      let data = await firestore
+        .collection(`orders/${req.user.rest_id}/invoices`)
+        .where('inv_date', '>=', start_date)
+        .where('inv_date', '<=', end_date)
+        .get()
+
+      for (let invoice of data.docs) {
+        for (let i of invoice.data().invoices) {
+          index = moment(i.invoice_date).month()
+          intervalData[index - starting_month].value += i.total_amt
+        }
+      }
+    } else if (slot == 'last-year' || slot == 'this-year') {
+      intervalData = await getMonthsOfYear(slot)
+      let data = await firestore
+        .collection(`orders/${req.user.rest_id}/invoices`)
+        .where('inv_date', '>=', start_date)
+        .where('inv_date', '<=', end_date)
+        .get()
+
+      for (let invoice of data.docs) {
+        for (let i of invoice.data().invoices) {
+          index = moment(i.invoice_date).month()
+          index = index < 3 ? index + 9 : index - 3
+          intervalData[index].value += i.total_amt
+        }
+      }
+    }
+
+    res.status(200).json({ success: true, data: intervalData })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin state getAdvanceStats ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+}
 
 function getSlotBetweenInterval(interval, start, end) {
-  let data = [];
-  switch (interval) {
-    case "today":
-      let o = start.split(":");
-      let c = end.split(":");
-      if (c[0] == "00") {
-        c[0] = "24";
-      }
-      if (o[1] != "00") {
-        if (Number(o[0]) + 2 <= Number(c[0])) {
-          let name = `${moment(start, "HH:mm").format("h:mm A")}-${moment(
+  try {
+    let data = []
+    switch (interval) {
+      case 'today':
+        let o = start.split(':')
+        let c = end.split(':')
+        if (c[0] == '00') {
+          c[0] = '24'
+        }
+        if (o[1] != '00') {
+          if (Number(o[0]) + 2 <= Number(c[0])) {
+            let name = `${moment(start, 'HH:mm').format('h:mm A')}-${moment(
+              `${Number(o[0]) + 2}:00`,
+              'HH:mm',
+            ).format('h A')}`
+            o[1] = ':00'
+            let temp = {
+              name: name,
+              open_t: start,
+              close_t: Number(o[0]) + 2 + ':00',
+              value: 0,
+            }
+            o[0] = Number(o[0]) + 2
+            data.push(temp)
+          }
+        }
+
+        while (Number(o[0]) + 2 < Number(c[0])) {
+          let name = `${moment(`${o[0]}:00`, 'HH:mm').format('h A')}-${moment(
             `${Number(o[0]) + 2}:00`,
-            "HH:mm"
-          ).format("h A")}`;
-          o[1] = ":00";
+            'HH:mm',
+          ).format('h A')}`
           let temp = {
             name: name,
-            open_t: start,
-            close_t: Number(o[0]) + 2 + ":00",
+            open_t: `${o[0]}:00`,
+            close_t: `${Number(o[0]) + 2}:00`,
             value: 0,
-          };
-          o[0] = Number(o[0]) + 2;
-          data.push(temp);
-        }
-      }
-
-      while (Number(o[0]) + 2 < Number(c[0])) {
-        let name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
-          `${Number(o[0]) + 2}:00`,
-          "HH:mm"
-        ).format("h A")}`;
-        let temp = {
-          name: name,
-          open_t: `${o[0]}:00`,
-          close_t: `${Number(o[0]) + 2}:00`,
-          value: 0,
-        };
-        o[0] = Number(o[0]) + 2;
-        data.push(temp);
-      }
-
-      if (Number(o[0]) != Number(c[0])) {
-        let name;
-        if (c[1] != "00") {
-          name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
-            `${c[0]}:${c[1]}`,
-            "HH:mm"
-          ).format("hh:mm A")}`;
-        } else {
-          name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
-            `${c[0]}:${c[1]}`,
-            "HH:mm"
-          ).format("h A")}`;
+          }
+          o[0] = Number(o[0]) + 2
+          data.push(temp)
         }
 
-        let temp = {
-          name: name,
-          open_t: `${o[0]}:00`,
-          close_t: `${end}`,
-          value: 0,
-        };
-        data.push(temp);
-      }
+        if (Number(o[0]) != Number(c[0])) {
+          let name
+          if (c[1] != '00') {
+            name = `${moment(`${o[0]}:00`, 'HH:mm').format('h A')}-${moment(
+              `${c[0]}:${c[1]}`,
+              'HH:mm',
+            ).format('hh:mm A')}`
+          } else {
+            name = `${moment(`${o[0]}:00`, 'HH:mm').format('h A')}-${moment(
+              `${c[0]}:${c[1]}`,
+              'HH:mm',
+            ).format('h A')}`
+          }
 
-      break;
+          let temp = {
+            name: name,
+            open_t: `${o[0]}:00`,
+            close_t: `${end}`,
+            value: 0,
+          }
+          data.push(temp)
+        }
 
-    case "this-week":
-      for (let i = 0; i < 7; i++) {
-        let day = moment().weekday(i).format("dddd");
-        data.push({ name: day, value: 0 });
-      }
-      break;
+        break
 
-    case "this-month":
-      days = moment().utcOffset(process.env.UTC_OFFSET).daysInMonth();
-      month = moment(
-        moment().utcOffset(process.env.UTC_OFFSET).month() + 1,
-        "MM"
-      )
-        .utcOffset(process.env.UTC_OFFSET)
-        .format("MMM");
-      for (let i = 1; i <= days; i++) {
-        data.push({ name: i + " " + month, value: 0 });
-      }
-      break;
+      case 'this-week':
+        for (let i = 0; i < 7; i++) {
+          let day = moment().weekday(i).format('dddd')
+          data.push({ name: day, value: 0 })
+        }
+        break
 
-    case "last-month":
-      days = moment()
-        .utcOffset(process.env.UTC_OFFSET)
-        .subtract(1, "months")
-        .daysInMonth();
-      month = moment(
-        moment()
+      case 'this-month':
+        days = moment().utcOffset(process.env.UTC_OFFSET).daysInMonth()
+        month = moment(
+          moment().utcOffset(process.env.UTC_OFFSET).month() + 1,
+          'MM',
+        )
           .utcOffset(process.env.UTC_OFFSET)
-          .subtract(1, "months")
-          .month() + 1,
-        "MM"
-      )
-        .utcOffset(process.env.UTC_OFFSET)
-        .format("MMM");
-      for (let i = 1; i <= days; i++) {
-        data.push({ name: i + " " + month, value: 0 });
-      }
+          .format('MMM')
+        for (let i = 1; i <= days; i++) {
+          data.push({ name: i + ' ' + month, value: 0 })
+        }
+        break
+
+      case 'last-month':
+        days = moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .subtract(1, 'months')
+          .daysInMonth()
+        month = moment(
+          moment()
+            .utcOffset(process.env.UTC_OFFSET)
+            .subtract(1, 'months')
+            .month() + 1,
+          'MM',
+        )
+          .utcOffset(process.env.UTC_OFFSET)
+          .format('MMM')
+        for (let i = 1; i <= days; i++) {
+          data.push({ name: i + ' ' + month, value: 0 })
+        }
+    }
+    return data
+  } catch (err) {
+    throw err
   }
-  return data;
 }
 
 function getMonthsOfQuarter(quarter) {
-  let months = [];
-  let starting_month;
-  switch (quarter) {
-    case "quarter-1":
-      current_month = moment().month();
-      starting_month = 3;
-      if (current_month < 3) {
-        for (let i = 3; i <= 5; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          months.push({
-            name: month,
-            value: 0,
-          });
+  try {
+    let months = []
+    let starting_month
+    switch (quarter) {
+      case 'quarter-1':
+        current_month = moment().month()
+        starting_month = 3
+        if (current_month < 3) {
+          for (let i = 3; i <= 5; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            months.push({
+              name: month,
+              value: 0,
+            })
+          }
+        } else {
+          for (let i = 3; i <= 5; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            months.push({
+              name: month,
+              value: 0,
+            })
+          }
         }
-      } else {
-        for (let i = 3; i <= 5; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          months.push({
-            name: month,
-            value: 0,
-          });
+        break
+      case 'quarter-2':
+        starting_month = 6
+        current_month = moment().month()
+        if (current_month < 3) {
+          for (let i = 6; i <= 8; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            months.push({
+              name: month,
+              value: 0,
+            })
+          }
+        } else {
+          for (let i = 6; i <= 8; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            months.push({
+              name: month,
+              value: 0,
+            })
+          }
         }
-      }
-      break;
-    case "quarter-2":
-      starting_month = 6;
-      current_month = moment().month();
-      if (current_month < 3) {
-        for (let i = 6; i <= 8; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          months.push({
-            name: month,
-            value: 0,
-          });
+        break
+      case 'quarter-3':
+        starting_month = 9
+        current_month = moment().month()
+        if (current_month < 3) {
+          for (let i = 9; i <= 11; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            months.push({
+              name: month,
+              value: 0,
+            })
+          }
+        } else {
+          for (let i = 9; i <= 11; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            months.push({
+              name: month,
+              value: 0,
+            })
+          }
         }
-      } else {
-        for (let i = 6; i <= 8; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          months.push({
-            name: month,
-            value: 0,
-          });
+        break
+      case 'quarter-4':
+        starting_month = 0
+        current_month = moment().month()
+        if (current_month >= 3) {
+          for (let i = 0; i <= 2; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            months.push({
+              name: month,
+              value: 0,
+            })
+          }
+        } else {
+          for (let i = 0; i <= 2; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            months.push({
+              name: month,
+              value: 0,
+            })
+          }
         }
-      }
-      break;
-    case "quarter-3":
-      starting_month = 9;
-      current_month = moment().month();
-      if (current_month < 3) {
-        for (let i = 9; i <= 11; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          months.push({
-            name: month,
-            value: 0,
-          });
-        }
-      } else {
-        for (let i = 9; i <= 11; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          months.push({
-            name: month,
-            value: 0,
-          });
-        }
-      }
-      break;
-    case "quarter-4":
-      starting_month = 0;
-      current_month = moment().month();
-      if (current_month >= 3) {
-        for (let i = 0; i <= 2; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          months.push({
-            name: month,
-            value: 0,
-          });
-        }
-      } else {
-        for (let i = 0; i <= 2; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          months.push({
-            name: month,
-            value: 0,
-          });
-        }
-      }
-      break;
+        break
+    }
+    return [months, starting_month]
+  } catch (err) {
+    throw err
   }
-  return [months, starting_month];
 }
 
 function getMonthsOfYear(slot) {
-  let data = [];
-  switch (slot) {
-    case "this-year":
-      current_month = moment().utcOffset(process.env.UTC_OFFSET).month();
-      if (current_month >= 3) {
-        for (let i = 3; i <= 11; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          year = moment().year();
-          data.push({
-            name: month,
-            year: year,
-            value: 0,
-          });
+  try {
+    let data = []
+    switch (slot) {
+      case 'this-year':
+        current_month = moment().utcOffset(process.env.UTC_OFFSET).month()
+        if (current_month >= 3) {
+          for (let i = 3; i <= 11; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            year = moment().year()
+            data.push({
+              name: month,
+              year: year,
+              value: 0,
+            })
+          }
+          for (let i = 0; i <= 2; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            year = moment().add(1, 'year').year()
+            data.push({
+              name: month,
+              year: year,
+              value: 0,
+            })
+          }
+        } else {
+          for (let i = 3; i <= 11; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            year = moment().subtract(1, 'year').year()
+            data.push({
+              name: month,
+              year: year,
+              value: 0,
+            })
+          }
+          for (let i = 0; i <= 2; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            year = moment().year()
+            data.push({
+              name: month,
+              year: year,
+              value: 0,
+            })
+          }
         }
-        for (let i = 0; i <= 2; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          year = moment().add(1, "year").year();
-          data.push({
-            name: month,
-            year: year,
-            value: 0,
-          });
+        break
+      case 'last-year':
+        current_month = moment().utcOffset(process.env.UTC_OFFSET).month()
+        if (current_month >= 3) {
+          for (let i = 3; i <= 11; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            year = moment().subtract(1, 'year').year()
+            data.push({
+              name: month,
+              year: year,
+              value: 0,
+            })
+          }
+          for (let i = 0; i <= 2; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            year = moment().year()
+            data.push({
+              name: month,
+              year: year,
+              value: 0,
+            })
+          }
+        } else {
+          for (let i = 3; i <= 11; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            year = moment().subtract(2, 'year').year()
+            data.push({
+              name: month,
+              year: year,
+              value: 0,
+            })
+          }
+          for (let i = 0; i <= 2; i++) {
+            month = moment(i + 1, 'MM').format('MMM')
+            year = moment().subtract(1, 'year').year()
+            dataa.push({
+              name: month,
+              year: year,
+              value: 0,
+            })
+          }
         }
-      } else {
-        for (let i = 3; i <= 11; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          year = moment().subtract(1, "year").year();
-          data.push({
-            name: month,
-            year: year,
-            value: 0,
-          });
-        }
-        for (let i = 0; i <= 2; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          year = moment().year();
-          data.push({
-            name: month,
-            year: year,
-            value: 0,
-          });
-        }
-      }
-      break;
-    case "last-year":
-      current_month = moment().utcOffset(process.env.UTC_OFFSET).month();
-      if (current_month >= 3) {
-        for (let i = 3; i <= 11; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          year = moment().subtract(1, "year").year();
-          data.push({
-            name: month,
-            year: year,
-            value: 0,
-          });
-        }
-        for (let i = 0; i <= 2; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          year = moment().year();
-          data.push({
-            name: month,
-            year: year,
-            value: 0,
-          });
-        }
-      } else {
-        for (let i = 3; i <= 11; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          year = moment().subtract(2, "year").year();
-          data.push({
-            name: month,
-            year: year,
-            value: 0,
-          });
-        }
-        for (let i = 0; i <= 2; i++) {
-          month = moment(i + 1, "MM").format("MMM");
-          year = moment().subtract(1, "year").year();
-          dataa.push({
-            name: month,
-            year: year,
-            value: 0,
-          });
-        }
-      }
+    }
+    return data
+  } catch (err) {
+    throw err
   }
-  return data;
 }
