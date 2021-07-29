@@ -6,6 +6,7 @@ exports.incZoneReq = async(ip, method) => {
     }else{
         zone[ip] = { login: 0, signup: 0}
         zone[ip][method]++;
+        console.log(zone)
     }
 }
 

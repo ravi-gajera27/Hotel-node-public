@@ -42,6 +42,8 @@ exports.login = async (req, res, next) => {
     let verifyPassword = await HASH.verifyHash(data.password, password)
 
     if (!verifyPassword) {
+      console.log(req.headers['x-client-ip'] ,
+      req.connection.remoteAddress)
       await incZoneReq(req.ip, 'login');
       return res
         .status(401)

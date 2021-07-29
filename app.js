@@ -71,6 +71,7 @@ app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/utils"));
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, '/utils/templates'));
+app.set('trust proxy', true)
 
 app.get('/eod1', (req, res)=>{
   let invoice_array = [
