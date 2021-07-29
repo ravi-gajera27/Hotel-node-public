@@ -9,6 +9,7 @@ const sgMail = require('@sendgrid/mail')
 const randomstring = require('randomstring')
 const { extractErrorMessage }=require('../../utils/error')
 const logger=require('../../config/logger')
+const { incZoneReq }=require('../../utils/zone')
 sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY)
 
 exports.login = async (req, res, next) => {
@@ -16,6 +17,7 @@ exports.login = async (req, res, next) => {
     let data = req.body
     if (!data.provider) {
       if (!data.email || !data.password) {
+        await incZoneReq(req.ip, 'login');
         return res.status(400).json({
           success: false,
           message: status.BAD_REQUEST,
@@ -26,6 +28,7 @@ exports.login = async (req, res, next) => {
       let user = await usersRef.where('email', '==', data.email).limit(1).get()
 
       if (user.empty) {
+        await incZoneReq(req.ip, 'login');
         return res.status(401).json({
           success: false,
           message: status.INVALID_EMAIL,
@@ -42,6 +45,7 @@ exports.login = async (req, res, next) => {
       let verifyPassword = await HASH.verifyHash(data.password, password)
 
       if (!verifyPassword) {
+        await incZoneReq(req.ip, 'login');
         return res.status(401).json({
           success: false,
           message: status.INVALID_PASS,
@@ -168,6 +172,7 @@ exports.signup = async (req, res, next) => {
     user = await firestore.collection('users').add({
       ...data,
     })
+    await incZoneReq(req.ip, 'signup');
     await sendToken(
       {
         user_id: user.id,

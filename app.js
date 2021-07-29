@@ -98,8 +98,7 @@ app.use("/api/user/order", order);
 
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
-cron.startInvoiceCron();
-cron.startLockedCron();
+cron.startAllCron();
 
   console.log(
     "app is running",
