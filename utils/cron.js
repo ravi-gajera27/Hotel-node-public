@@ -48,7 +48,11 @@ let zoneCron = cron.schedule(process.env.ZONE_CRON, async () => {
       message: e,
     })
   }
-})
+},
+{
+  scheduled: true,
+  timezone: process.env.TIMEZONE,
+},)
 
 exports.startInvoiceCron = async () => {
   invoiceCron.start()
