@@ -42,8 +42,6 @@ exports.login = async (req, res, next) => {
     let verifyPassword = await HASH.verifyHash(data.password, password)
 
     if (!verifyPassword) {
-      console.log(req.headers['x-client-ip'] ,
-      req.connection.remoteAddress)
       await incZoneReq(req.ip, 'login');
       return res
         .status(401)
@@ -110,8 +108,8 @@ exports.signup = async (req, res, next) => {
     if (
       !data.email ||
       !data.password ||
-      !data.first_name ||
-      !data.last_name ||
+      !data.f_name ||
+      !data.l_name ||
       !data.mobile_no
     ) {
       return res
@@ -168,8 +166,8 @@ exports.addAdmin = async (req, res, next) => {
     if (
       !data.email ||
       !data.password ||
-      !data.first_name ||
-      !data.last_name ||
+      !data.f_name ||
+      !data.l_name ||
       !data.confirm_password
     ) {
       return res
@@ -275,6 +273,184 @@ exports.removeAdmin = async (req, res) => {
   } catch (err) {
     let e = extractErrorMessage(err)
     logger.error({ label: `admin auth removeAdmin ${req.user.rest_id}`, message: e })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+}
+
+exports.addCaptain = async (req, res, next) => {
+  try {
+    let data = req.body
+
+    if (data.password != data.confirm_password) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+
+    if (
+      !data.email ||
+      !data.password ||
+      !data.f_name ||
+      !data.l_name ||
+      !data.confirm_password
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+
+    if (req.user.role != 'owner' || req.user.role != 'admin') {
+      return res
+        .status(403)
+        .json({ success: false, message: status.FORBIDDEN_REQ })
+    }
+
+    let usersRef = firestore.collection('captain')
+    let user = await usersRef.where('email', '==', data.email).limit(1).get()
+
+    if (!user.empty) {
+      return res
+        .status(403)
+        .json({ success: false, message: status.EMAIL_USED })
+    }
+
+    data.password = await HASH.generateHash(data.password, 10)
+    data.created_at = moment().format('YYYY-MM-DD')
+    delete data.confirm_password
+    data.rest_id = req.user.rest_id
+    data.role = 'captain'
+    user = await firestore.collection('captain').add({ ...data })
+    res.status(200).json({ success: true, message: status.SUCCESS_ADDED })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `captain auth addCaptain ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+}
+
+exports.getCaptainList = async (req, res) => {
+  try {
+    if (req.user.role != 'owner' || req.user.role != 'admin') {
+      return res
+        .status(403)
+        .json({ success: false, message: status.FORBIDDEN_REQ })
+    }
+
+    let captainRef = await firestore.collection('captain')
+    let captain = await captainRef
+      .where('rest_id', '==', req.user.rest_id)
+      .where('role', '==', 'captain')
+      .get()
+
+    let captainList = []
+
+    captain.docs.forEach(async (doc) => {
+      let data = doc.data()
+      delete data.password
+      delete data.rest_id
+      captainList.push(data)
+    })
+
+    res.status(200).json({ success: true, data: captainList })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `captain auth getCaptainList ${req.user.rest_id}`,
+      message: e,
+    })
+  }
+}
+
+exports.removeCaptain = async (req, res) => {
+  try {
+    let email = req.params.email
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+
+    if (req.user.role != 'owner' || req.user.role != 'admin') {
+      return res
+        .status(403)
+        .json({ success: false, message: status.FORBIDDEN_REQ })
+    }
+
+    let captainRef = await firestore.collection('captain')
+    let captain = await captainRef
+      .where('email', '==', email)
+      .where('rest_id', '==', req.user.rest_id)
+      .limit(1)
+      .get()
+
+    if (captain.empty) {
+      return res
+        .status(403)
+        .json({ success: false, message: status.UNAUTHORIZED })
+    }
+
+    for (let doc of captain.docs) {
+      await firestore.collection('captain').doc(doc.id).delete()
+    }
+
+    res.status(200).json({ success: true, message: status.SUCCESS_REMOVED })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `captain auth removeCaptain ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+}
+
+exports.resetPasswordCaptain = async (req, res, next) => {
+  try {
+    let data = req.body
+
+    if (!data.cur_password || !data.new_password || !data.re_password) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+
+    if (data.new_password != data.re_password) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.PASSWORD_NOT_EQUAL })
+    }
+
+    let captain = await firestore.collection('captain').doc(req.user.id).get()
+    let pass = await HASH.verifyHash(data.cur_password, captain.data().password)
+    if (!pass) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.PASSWORD_MISMATCH })
+    }
+    let new_pass = await HASH.generateHash(data.new_password, 10)
+
+    await firestore
+      .collection('captain')
+      .doc(req.user.id)
+      .set({ password: new_pass }, { merge: true })
+    res.status(200).json({ success: true, message: status.SUCCESS_CHANGED })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `captain auth resetPassword ${req.user.rest_id}`,
+      message: e,
+    })
+
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
