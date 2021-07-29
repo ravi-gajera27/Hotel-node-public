@@ -71,6 +71,7 @@ app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/utils"));
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, '/utils/templates'));
+app.set('trust proxy', true)
 
 app.get('/eod1', (req, res)=>{
   let invoice_array = [
@@ -98,8 +99,7 @@ app.use("/api/user/order", order);
 
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
-cron.startInvoiceCron();
-cron.startLockedCron();
+cron.startAllCron();
 
   console.log(
     "app is running",

@@ -1,9 +1,10 @@
 const router = require("express").Router();
 const auth = require("../controllers/auth");
 const { protect } = require("../../middleware/adminAuth");
+const { checkForLogin, checkForSignup } = require("../../utils/zone");
 
-router.post("/login", auth.login);
-router.post("/signup", auth.signup);
+router.post("/login", checkForLogin, auth.login);
+router.post("/signup", checkForSignup,  auth.signup);
 router.get("/user", protect, auth.getUser);
 router.put("/verify-otp", protect, auth.verifyOtp);
 router.post("/rest-details", protect, auth.restaurantRegister);
