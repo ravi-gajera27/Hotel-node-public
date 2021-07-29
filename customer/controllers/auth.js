@@ -191,6 +191,7 @@ exports.signup = async (req, res, next) => {
   }
 }
 
+
 exports.getUser = async (req, res, next) => {
   firestore
     .collection('users')
