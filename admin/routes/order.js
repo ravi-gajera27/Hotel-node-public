@@ -2,6 +2,9 @@ const router = require("express").Router();
 const order = require("../controllers/order");
 const { protect } = require("../../middleware/adminAuth");
 
+
+router.post("/generate-invoice", protect, order.generateInvoice);
+
 router.put(
   "/cancel-order/:table_no/:order_id/:cid",
   protect,
@@ -22,6 +25,11 @@ router.put(
   protect,
   order.setOrderByOrderId
 );
-router.post("/generate-invoice", protect, order.generateInvoice);
+
+router.post('/:table_no', protect, order.addOrderByTableNo);
+router.get('/:table_no', protect, order.getOrderByTableNo);
+router.put('/:table_no', protect, order.setOrderByTableNo);
+router.delete('/:table_no', protect, order.cancelAllOrderByTableNo);
+
 
 module.exports = router;

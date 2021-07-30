@@ -338,7 +338,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   if (orderData.restore || orderData.cancel) {
     return res.status(403).json({
       success: false,
-      message: 'Order of this customer is already canceld',
+      message: 'Order of this customer is already canceled',
     })
   }
 
@@ -472,6 +472,7 @@ exports.checkoutCustomer = async (req, res, next) => {
       (ele) =>
         ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname,
     )
+    console.log(index, orderData.cname, orderData.cid)
     seatCust[index].checkout = true
     seatCust[index].inv_no = restData.inv_no
     seatCust[index].inv_id = inv.docId
@@ -639,6 +640,53 @@ exports.cleanUpCustomers = async (req, res) => {
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
   }
+}
+
+function generateSingleOrder(orderData) {
+  let finalInvoice = { data: [] };
+
+  for (let ele of orderData.order) {
+    if (ele.restore || ele.cancel) {
+      continue;
+    }
+    let order = { ...ele };
+
+    if (finalInvoice.data.length != 0) {
+      finalInvoice.taxable += order.taxable;
+      finalInvoice.qty += order.qty;
+      let index = finalInvoice.data.length;
+      for (let i = 0; i < order.data.length; i++) {
+        let flag = true;
+        for (let j = 0; j < index; j++) {
+          if (
+            order.data[i].name == finalInvoice.data[j].name &&
+            order.data[i].type == finalInvoice.data[j].type &&
+            order.data[i].addon.length == finalInvoice.data[j].addon.length
+          ) {
+            let check = order.data[i].addon.every(
+              (el) => finalInvoice.data[j].addon.indexOf(el) >= 0
+            );
+            if (check == true) {
+              finalInvoice.data[j].qty += order.data[i].qty;
+              finalInvoice.data[j].price += order.data[i].price;
+              flag = false;
+              break;
+            }
+          }
+        }
+        if (flag) {
+          finalInvoice.data.push(order.data[i]);
+        }
+      }
+    } else {
+      finalInvoice = JSON.parse(JSON.stringify(order));
+    }
+
+    if (orderData.unique) {
+      finalInvoice.unique = true;
+    }
+  }
+  return finalInvoice;
 }
 
 function setInvoiceNumber(data) {
