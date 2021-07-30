@@ -652,7 +652,7 @@ exports.getAdvanceStats = async (req, res, next) => {
 
       for (let invoice of data.docs) {
         for (let i of invoice.data().invoices) {
-          index = moment(i.invoice_date).weekday()
+          index = moment(i.inv_date).weekday()
           intervalData[index].value += i.total_amt
         }
       }
@@ -666,7 +666,7 @@ exports.getAdvanceStats = async (req, res, next) => {
 
       for (let invoice of data.docs) {
         for (let i of invoice.data().invoices) {
-          index = moment(i.invoice_date).format('D')
+          index = moment(i.inv_date).format('D')
           intervalData[index - 1].value += i.total_amt
         }
       }
@@ -716,7 +716,7 @@ exports.getAdvanceStats = async (req, res, next) => {
 
       for (let invoice of data.docs) {
         for (let i of invoice.data().invoices) {
-          index = moment(i.invoice_date).month()
+          index = moment(i.inv_date).month()
           intervalData[index - starting_month].value += i.total_amt
         }
       }
@@ -730,7 +730,7 @@ exports.getAdvanceStats = async (req, res, next) => {
 
       for (let invoice of data.docs) {
         for (let i of invoice.data().invoices) {
-          index = moment(i.invoice_date).month()
+          index = moment(i.inv_date).month()
           index = index < 3 ? index + 9 : index - 3
           intervalData[index].value += i.total_amt
         }
