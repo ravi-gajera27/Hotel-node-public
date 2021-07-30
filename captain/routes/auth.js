@@ -9,4 +9,6 @@ router.get('/tables', protect, auth.getTables)
 
 router.get('/user', protect, auth.getUser)
 
+router.post('/verify-session', protect, auth.verifySession)
+
 module.exports = router
