@@ -128,3 +128,15 @@
   level: 'error',
   timestamp: '2021-07-25T08:45:23.919Z'
 }
+{
+  label: 'admin custAuth checkoutCustomer AlF2j3zoh5KKUyIowNcf',
+  message: "TypeError: Cannot set property 'checkout' of undefined",
+  level: 'error',
+  timestamp: '2021-07-30T11:42:28.206Z'
+}
+{
+  label: 'admin custAuth checkoutCustomer AlF2j3zoh5KKUyIowNcf',
+  message: "TypeError: Cannot set property 'checkout' of undefined",
+  level: 'error',
+  timestamp: '2021-07-30T11:47:44.632Z'
+}
