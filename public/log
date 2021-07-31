@@ -140,3 +140,15 @@
   level: 'error',
   timestamp: '2021-07-30T11:47:44.632Z'
 }
+{
+  label: 'captain order addOrder captain: rMSITfeDlXH6EhVTuwdw rest: AlF2j3zoh5KKUyIowNcf',
+  message: 'ReferenceError: cookie is not defined',
+  level: 'error',
+  timestamp: '2021-07-31T01:52:09.905Z'
+}
+{
+  label: 'captain order addOrder captain: rMSITfeDlXH6EhVTuwdw rest: AlF2j3zoh5KKUyIowNcf',
+  message: 'Error: Value for argument "data" is not a valid Firestore document. Cannot use "undefined" as a Firestore value (found in field "cname"). If you want to ignore undefined values, enable `ignoreUndefinedProperties`.',
+  level: 'error',
+  timestamp: '2021-07-31T01:53:18.455Z'
+}

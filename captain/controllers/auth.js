@@ -134,7 +134,6 @@ exports.verifySession = async(req, res) => {
     if(cust.table == req.body.table){
       flag = false
       break;
-     
     }
   }
 
@@ -145,9 +144,10 @@ exports.verifySession = async(req, res) => {
   let id = await generateRandomString();
   let obj = {
     checkout: false,
-    name: req.body.cname,
+    cname: req.body.cname,
     cid: id,
-    table: req.body.table
+    table: req.body.table,
+    captain_id: req.user.id
   }
 
   customers.push(obj);

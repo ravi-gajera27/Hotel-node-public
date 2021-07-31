@@ -33,5 +33,7 @@ module.exports = {
   INVOICE_GEN: 'Invoice has been geenrated successfully',
   LOCKED_REST: 'Restaurant is successfully locked',
   SCAN_QR: 'Scan QR code properly',
-  REST_STEP_INCOMPLETE: 'Restaurant registration process is incomplete !'
+  REST_STEP_INCOMPLETE: 'Restaurant registration process is incomplete !',
+  INVALID_CAPTAIN: 'You are not a valid captain for this order',
+  INVALID_TABLE: 'Inavlid table no'
 };
