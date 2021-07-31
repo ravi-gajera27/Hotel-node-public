@@ -622,10 +622,12 @@ exports.cleanUpCustomers = async (req, res) => {
         { seat: [...seatCust], takeaway: [...takeawayCust] },
         { merge: true },
       )
+      if(invoice.cid.length != 12){
       await firestore
         .collection('users')
         .doc(invoice.cid)
         .set({ join: '' }, { merge: true })
+      }
       return res
         .status(200)
         .json({ success: true, message: 'Successfully Cleaned up' })

@@ -301,14 +301,14 @@ exports.addCaptain = async (req, res, next) => {
         .json({ success: false, message: status.BAD_REQUEST })
     }
 
-    if (req.user.role != 'owner' || req.user.role != 'admin') {
+    if (req.user.role != 'owner' && req.user.role != 'admin') {
       return res
         .status(403)
         .json({ success: false, message: status.FORBIDDEN_REQ })
     }
 
-    let usersRef = firestore.collection('captain')
-    let user = await usersRef.where('email', '==', data.email).limit(1).get()
+    let usersRef = firestore.collection('admin')
+    let user = await usersRef.where('email', '==', data.email).where('role', '==', 'captain').limit(1).get()
 
     if (!user.empty) {
       return res
@@ -321,7 +321,7 @@ exports.addCaptain = async (req, res, next) => {
     delete data.confirm_password
     data.rest_id = req.user.rest_id
     data.role = 'captain'
-    user = await firestore.collection('captain').add({ ...data })
+    user = await firestore.collection('admin').add({ ...data })
     res.status(200).json({ success: true, message: status.SUCCESS_ADDED })
   } catch (err) {
     let e = extractErrorMessage(err)
@@ -337,13 +337,13 @@ exports.addCaptain = async (req, res, next) => {
 
 exports.getCaptainList = async (req, res) => {
   try {
-    if (req.user.role != 'owner' || req.user.role != 'admin') {
+    if (req.user.role != 'owner' && req.user.role != 'admin') {
       return res
         .status(403)
         .json({ success: false, message: status.FORBIDDEN_REQ })
     }
 
-    let captainRef = await firestore.collection('captain')
+    let captainRef = await firestore.collection('admin')
     let captain = await captainRef
       .where('rest_id', '==', req.user.rest_id)
       .where('role', '==', 'captain')
@@ -378,16 +378,17 @@ exports.removeCaptain = async (req, res) => {
         .json({ success: false, message: status.BAD_REQUEST })
     }
 
-    if (req.user.role != 'owner' || req.user.role != 'admin') {
+    if (req.user.role != 'owner' && req.user.role != 'admin') {
       return res
         .status(403)
         .json({ success: false, message: status.FORBIDDEN_REQ })
     }
 
-    let captainRef = await firestore.collection('captain')
+    let captainRef = await firestore.collection('admin')
     let captain = await captainRef
       .where('email', '==', email)
       .where('rest_id', '==', req.user.rest_id)
+      .where('role','==', 'captain')
       .limit(1)
       .get()
 
@@ -398,7 +399,7 @@ exports.removeCaptain = async (req, res) => {
     }
 
     for (let doc of captain.docs) {
-      await firestore.collection('captain').doc(doc.id).delete()
+      await firestore.collection('admin').doc(doc.id).delete()
     }
 
     res.status(200).json({ success: true, message: status.SUCCESS_REMOVED })

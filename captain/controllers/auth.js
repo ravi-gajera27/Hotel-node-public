@@ -19,8 +19,8 @@ exports.login = async (req, res, next) => {
         .json({ success: false, message: status.BAD_REQUEST })
     }
 
-    let usersRef = firestore.collection('captain')
-    let user = await usersRef.where('email', '==', data.email).limit(1).get()
+    let usersRef = firestore.collection('admin')
+    let user = await usersRef.where('email', '==', data.email).where('role','==','captain').limit(1).get()
 
     if (user.empty) {
       await incZoneReq(req.ip, 'login')
@@ -85,7 +85,7 @@ exports.getTables = async(req, res) => {
 
 exports.getUser = async (req, res, next) => {
   firestore
-    .collection('captain')
+    .collection('admin')
     .doc(req.user.id)
     .get()
     .then((userDoc) => {
@@ -168,8 +168,8 @@ exports.forgotPasswordCheckMail = async (req, res) => {
         .json({ success: false, message: status.BAD_REQUEST })
     }
 
-    let captainRef = firestore.collection('captain')
-    let captain = await captainRef.where('email', '==', email).limit(1).get()
+    let captainRef = firestore.collection('admin')
+    let captain = await captainRef.where('email', '==', email).where('role', '==', 'captain').limit(1).get()
 
     if (captain.empty) {
       return res
@@ -225,8 +225,8 @@ exports.checkVerificationCodeForForgotPass = async (req, res) => {
         .json({ success: false, message: status.BAD_REQUEST })
     }
 
-    let captainRef = firestore.collection('captain')
-    let captain = await captainRef.where('email', '==', data.email).limit(1).get()
+    let captainRef = firestore.collection('admin')
+    let captain = await captainRef.where('email', '==', data.email).where('role', '==', 'captain').limit(1).get()
 
     if (captain.empty) {
       return res
@@ -276,8 +276,8 @@ exports.changePassword = async (req, res) => {
         .json({ success: false, message: status.PASSWORD_NOT_EQUAL })
     }
 
-    let captainRef = firestore.collection('captain')
-    let captain = await captainRef.where('email', '==', email).get()
+    let captainRef = firestore.collection('admin')
+    let captain = await captainRef.where('email', '==', email).where('role', '==', 'captain').get()
 
     if (captain.empty) {
       return res
