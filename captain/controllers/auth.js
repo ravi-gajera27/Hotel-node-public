@@ -115,6 +115,49 @@ exports.getUser = async (req, res, next) => {
     })
 }
 
+exports.verifySession = async(req, res) => {
+
+  if(!req.body.table || !req.body.cname){
+    return res.status(400).json({success: false, message: status.BAD_REQUEST})
+  }
+
+  let customersRef = await firestore
+  .collection('restaurants')
+  .doc(req.user.rest_id)
+  .collection('customers')
+  .doc('users')
+
+  let customers = (await customersRef.get()).data().seat || []
+
+  flag = true
+  for(let cust of customers){
+    if(cust.table == req.body.table){
+      flag = false
+      break;
+    }
+  }
+
+  if(!flag){
+    return res.status(403).json({success: false, message: status.SESSION_EXIST})
+  }
+
+  let id = await generateRandomString();
+  let obj = {
+    checkout: false,
+    cname: req.body.cname,
+    cid: id,
+    table: req.body.table,
+    captain_id: req.user.id
+  }
+
+  customers.push(obj);
+
+  customersRef.set({seat: [...customers]}, {merge: true}).then((e)=>{
+    return res.status(200).json({success: true, message: 'Success'})
+  })
+
+}
+
 exports.forgotPasswordCheckMail = async (req, res) => {
   try {
     let email = req.body.email
@@ -136,7 +179,7 @@ exports.forgotPasswordCheckMail = async (req, res) => {
 
     let captain_id = captain.docs[0].id
 
-    let code = await generateRandomString()
+    let code = await generateRandomStringForVerfication()
 
     const msg = {
       to: email, // Change to your recipient
@@ -183,7 +226,7 @@ exports.checkVerificationCodeForForgotPass = async (req, res) => {
     }
 
     let captainRef = firestore.collection('captain')
-    let captain = await usersRef.where('email', '==', data.email).limit(1).get()
+    let captain = await captainRef.where('email', '==', data.email).limit(1).get()
 
     if (captain.empty) {
       return res
@@ -288,6 +331,13 @@ sendToken = async (data, res) => {
 }
 
 async function generateRandomString() {
+  return await randomstring.generate({
+    length: 12,
+    charset: "alphabetic",
+  });
+}
+
+async function generateRandomStringForVerfication() {
   return await randomstring.generate({
     length: 6,
     charset: 'numeric',
