@@ -27,7 +27,7 @@ exports.protect = async (req, res, next) => {
         .status(401)
         .json({ success: false, message: status.UNAUTHORIZED });
     } else {
-      let user = await firstore.collection("captain").doc(decoded.user_id).get();
+      let user = await firstore.collection("admin").doc(decoded.user_id).get();
       if (user.exists) {
         req.user = user.data();
         req.user.id = user.id;

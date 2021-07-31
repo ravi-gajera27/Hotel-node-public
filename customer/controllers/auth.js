@@ -293,8 +293,6 @@ exports.verifySession = async (req, res, next) => {
       })
     }
 
-    let restRef = await firestore.collection(`restaurants`).doc(cookie.rest_id)
-
     let customersRef = await firestore
       .collection('restaurants')
       .doc(cookie.rest_id)
@@ -303,20 +301,11 @@ exports.verifySession = async (req, res, next) => {
 
     let users = (await customersRef.get()).data()
 
-    let data = await restRef.get()
-
-    if (!data.exists) {
-      return res.status(403).json({
-        success: false,
-        message: status.UNAUTHORIZED,
-      })
-    }
-
-    data = data.data()
-
     let seatCust = users?.seat || []
 
     let takeawayCust = users?.takeaway || []
+
+    let total_tables = users.tables
 
     if (cookie.table == 'takeaway') {
       let index = 0
@@ -417,7 +406,7 @@ exports.verifySession = async (req, res, next) => {
       }
 
       if (seatCust.length != 0) {
-        if (Number(cookie.table) > Number(data.tables)) {
+        if (Number(cookie.table) > Number(total_tables)) {
           return res.status(403).json({
             success: false,
             message: status.SCAN_QR,

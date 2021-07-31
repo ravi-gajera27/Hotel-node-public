@@ -7,7 +7,7 @@ const sgMail = require('@sendgrid/mail')
 const randomstring = require('randomstring')
 const logger = require('../../config/logger')
 const { extractErrorMessage } = require('../../utils/error')
-const { incZoneReq }=require('../../utils/zone')
+const { incZoneReq } = require('../../utils/zone')
 
 exports.login = async (req, res, next) => {
   try {
@@ -15,7 +15,7 @@ exports.login = async (req, res, next) => {
     console.log(req.body)
 
     if (!data.email || !data.password) {
-     await incZoneReq(req.ip, 'login');
+      await incZoneReq(req.ip, 'login')
       return res
         .status(400)
         .json({ success: false, message: status.BAD_REQUEST })
@@ -25,7 +25,7 @@ exports.login = async (req, res, next) => {
     let user = await usersRef.where('email', '==', data.email).limit(1).get()
 
     if (user.empty) {
-      await incZoneReq(req.ip, 'login');
+      await incZoneReq(req.ip, 'login')
       return res
         .status(401)
         .json({ success: false, message: status.INVALID_EMAIL })
@@ -42,7 +42,7 @@ exports.login = async (req, res, next) => {
     let verifyPassword = await HASH.verifyHash(data.password, password)
 
     if (!verifyPassword) {
-      await incZoneReq(req.ip, 'login');
+      await incZoneReq(req.ip, 'login')
       return res
         .status(401)
         .json({ success: false, message: status.INVALID_PASS })
@@ -93,8 +93,11 @@ exports.resetPassword = async (req, res, next) => {
     res.status(200).json({ success: true, message: status.SUCCESS_CHANGED })
   } catch (err) {
     let e = extractErrorMessage(err)
-    logger.error({ label: `admin auth resetPassword ${req.user.rest_id}`, message: e })
-    
+    logger.error({
+      label: `admin auth resetPassword ${req.user.rest_id}`,
+      message: e,
+    })
+
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -142,7 +145,7 @@ exports.signup = async (req, res, next) => {
     delete data.repassword
     data.role = 'owner'
     user = await firestore.collection('admin').add({ ...data })
-    await incZoneReq(req.ip, 'signup');
+    await incZoneReq(req.ip, 'signup')
     await sendToken({ user_id: user.id }, res)
   } catch (err) {
     let e = extractErrorMessage(err)
@@ -199,7 +202,10 @@ exports.addAdmin = async (req, res, next) => {
     res.status(200).json({ success: true, message: status.SUCCESS_ADDED })
   } catch (err) {
     let e = extractErrorMessage(err)
-    logger.error({ label: `admin auth addAdmin ${req.user.rest_id}`, message: e })
+    logger.error({
+      label: `admin auth addAdmin ${req.user.rest_id}`,
+      message: e,
+    })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -207,33 +213,36 @@ exports.addAdmin = async (req, res, next) => {
 }
 
 exports.getAdminList = async (req, res) => {
-  try{
-  if (req.user.role != 'owner') {
-    return res
-      .status(403)
-      .json({ success: false, message: status.FORBIDDEN_REQ })
+  try {
+    if (req.user.role != 'owner') {
+      return res
+        .status(403)
+        .json({ success: false, message: status.FORBIDDEN_REQ })
+    }
+
+    let adminRef = await firestore.collection('admin')
+    let admin = await adminRef
+      .where('rest_id', '==', req.user.rest_id)
+      .where('role', '==', 'admin')
+      .get()
+
+    let adminList = []
+
+    admin.forEach(async (doc) => {
+      let data = doc.data()
+      delete data.password
+      delete data.rest_id
+      adminList.push(data)
+    })
+
+    res.status(200).json({ success: true, data: adminList })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin auth getAdminList ${req.user.rest_id}`,
+      message: e,
+    })
   }
-
-  let adminRef = await firestore.collection('admin')
-  let admin = await adminRef
-    .where('rest_id', '==', req.user.rest_id)
-    .where('role', '==', 'admin')
-    .get()
-
-  let adminList = []
-
-  admin.forEach(async (doc) => {
-    let data = doc.data()
-    delete data.password
-    delete data.rest_id
-    adminList.push(data)
-  })
-
-  res.status(200).json({ success: true, data: adminList })
-}catch(err){
-  let e = extractErrorMessage(err)
-  logger.error({ label: `admin auth getAdminList ${req.user.rest_id}`, message: e })
-}
 }
 
 exports.removeAdmin = async (req, res) => {
@@ -272,7 +281,10 @@ exports.removeAdmin = async (req, res) => {
     res.status(200).json({ success: true, message: status.SUCCESS_REMOVED })
   } catch (err) {
     let e = extractErrorMessage(err)
-    logger.error({ label: `admin auth removeAdmin ${req.user.rest_id}`, message: e })
+    logger.error({
+      label: `admin auth removeAdmin ${req.user.rest_id}`,
+      message: e,
+    })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -301,14 +313,18 @@ exports.addCaptain = async (req, res, next) => {
         .json({ success: false, message: status.BAD_REQUEST })
     }
 
-    if (req.user.role != 'owner' || req.user.role != 'admin') {
+    if (req.user.role != 'owner' && req.user.role != 'admin') {
       return res
         .status(403)
         .json({ success: false, message: status.FORBIDDEN_REQ })
     }
 
-    let usersRef = firestore.collection('captain')
-    let user = await usersRef.where('email', '==', data.email).limit(1).get()
+    let usersRef = firestore.collection('admin')
+    let user = await usersRef
+      .where('email', '==', data.email)
+      .where('role', '==', 'captain')
+      .limit(1)
+      .get()
 
     if (!user.empty) {
       return res
@@ -321,7 +337,7 @@ exports.addCaptain = async (req, res, next) => {
     delete data.confirm_password
     data.rest_id = req.user.rest_id
     data.role = 'captain'
-    user = await firestore.collection('captain').add({ ...data })
+    user = await firestore.collection('admin').add({ ...data })
     res.status(200).json({ success: true, message: status.SUCCESS_ADDED })
   } catch (err) {
     let e = extractErrorMessage(err)
@@ -337,13 +353,13 @@ exports.addCaptain = async (req, res, next) => {
 
 exports.getCaptainList = async (req, res) => {
   try {
-    if (req.user.role != 'owner' || req.user.role != 'admin') {
+    if (req.user.role != 'owner' && req.user.role != 'admin') {
       return res
         .status(403)
         .json({ success: false, message: status.FORBIDDEN_REQ })
     }
 
-    let captainRef = await firestore.collection('captain')
+    let captainRef = await firestore.collection('admin')
     let captain = await captainRef
       .where('rest_id', '==', req.user.rest_id)
       .where('role', '==', 'captain')
@@ -378,16 +394,17 @@ exports.removeCaptain = async (req, res) => {
         .json({ success: false, message: status.BAD_REQUEST })
     }
 
-    if (req.user.role != 'owner' || req.user.role != 'admin') {
+    if (req.user.role != 'owner' && req.user.role != 'admin') {
       return res
         .status(403)
         .json({ success: false, message: status.FORBIDDEN_REQ })
     }
 
-    let captainRef = await firestore.collection('captain')
+    let captainRef = await firestore.collection('admin')
     let captain = await captainRef
       .where('email', '==', email)
       .where('rest_id', '==', req.user.rest_id)
+      .where('role', '==', 'captain')
       .limit(1)
       .get()
 
@@ -398,7 +415,7 @@ exports.removeCaptain = async (req, res) => {
     }
 
     for (let doc of captain.docs) {
-      await firestore.collection('captain').doc(doc.id).delete()
+      await firestore.collection('admin').doc(doc.id).delete()
     }
 
     res.status(200).json({ success: true, message: status.SUCCESS_REMOVED })
@@ -458,36 +475,39 @@ exports.resetPasswordCaptain = async (req, res, next) => {
 }
 
 exports.restaurantRegister = async (req, res, next) => {
-  try{
-  req.body.created_at = moment().format('YYYY-MM-DD')
-  req.body.owner_id = req.user.id
+  try {
+    req.body.created_at = moment().format('YYYY-MM-DD')
+    req.body.owner_id = req.user.id
 
-  if (req.user.rest_id) {
-    return res
-      .status(403)
-      .json({ success: false, message: status.ALREARY_REGISTRED })
-  }
+    if (req.user.rest_id) {
+      return res
+        .status(403)
+        .json({ success: false, message: status.ALREARY_REGISTRED })
+    }
 
-  firestore
-    .collection('restaurants')
-    .add({ ...req.body })
-    .then(async (profile) => {
-      await firestore
-        .collection('admin')
-        .doc(req.user.id)
-        .set({ rest_id: profile.id }, { merge: true })
-      data = {
-        user_id: req.user.id,
-        rest_id: profile.id,
-      }
-      sendToken(data, res)
-    })
-  }catch(err){
+    firestore
+      .collection('restaurants')
+      .add({ ...req.body })
+      .then(async (profile) => {
+        await firestore
+          .collection('admin')
+          .doc(req.user.id)
+          .set({ rest_id: profile.id }, { merge: true })
+        data = {
+          user_id: req.user.id,
+          rest_id: profile.id,
+        }
+        sendToken(data, res)
+      })
+  } catch (err) {
     let e = extractErrorMessage(err)
-    logger.error({ label: `admin auth restaurantRegister ${req.user.rest_id}`, message: e })
+    logger.error({
+      label: `admin auth restaurantRegister ${req.user.rest_id}`,
+      message: e,
+    })
     return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR })
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
 }
 
@@ -497,13 +517,24 @@ exports.updateRestaurantDetails = async (req, res, next) => {
     .doc(req.user.rest_id)
     .set({ ...req.body }, { merge: true })
     .then(async (profile) => {
+      if (req.params.tables && req.params.tables == 'tables') {
+        await firestore
+          .collection('restaurants')
+          .doc(req.user.rest_id)
+          .collection('customers')
+          .doc('users')
+          .set({ tables: req.body.tables }, { merge: true })
+      }
       return res
         .status(200)
         .json({ success: true, message: status.SUCCESS_UPDATED })
     })
     .catch((err) => {
       let e = extractErrorMessage(err)
-      logger.error({ label: `admin auth updateRestaurantDetails ${req.user.rest_id}`, message: e })
+      logger.error({
+        label: `admin auth updateRestaurantDetails ${req.user.rest_id}`,
+        message: e,
+      })
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -520,7 +551,10 @@ exports.updateStepRestaurantDetaials = async (req, res, next) => {
     })
     .catch((err) => {
       let e = extractErrorMessage(err)
-      logger.error({ label: `admin auth updateStepRestaurantDetaials ${req.user.rest_id}`, message: e })
+      logger.error({
+        label: `admin auth updateStepRestaurantDetaials ${req.user.rest_id}`,
+        message: e,
+      })
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -571,17 +605,25 @@ exports.addMenuFileRestStep = async (req, res, next) => {
         .doc('menu')
         .set({ menu: [...tempMenu] })
     }
-
+    let customersRef = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .collection('customers')
+      .doc('users')
     firestore
       .collection('restaurants')
       .doc(req.user.rest_id)
       .set({ tables: req.body.tables }, { merge: true })
       .then(async (profile) => {
+        await customersRef.set({ tables: req.body.tables }, { merge: true })
         return res.status(200).json({ success: true, message: 'Success' })
       })
   } catch (err) {
     let e = extractErrorMessage(err)
-      logger.error({ label: `admin auth addMenuFileRestStep ${req.user.rest_id}`, message: e })
+    logger.error({
+      label: `admin auth addMenuFileRestStep ${req.user.rest_id}`,
+      message: e,
+    })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -625,7 +667,10 @@ exports.getUser = async (req, res, next) => {
     })
     .catch((err) => {
       let e = extractErrorMessage(err)
-      logger.error({ label: `admin auth getUser ${req.user.rest_id}`, message: e })
+      logger.error({
+        label: `admin auth getUser ${req.user.rest_id}`,
+        message: e,
+      })
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -681,7 +726,10 @@ exports.forgotPasswordCheckMail = async (req, res) => {
     })
   } catch (err) {
     let e = extractErrorMessage(err)
-    logger.error({ label: `admin auth forgotPasswordCheckMail ${req.user.rest_id}`, message: e })
+    logger.error({
+      label: `admin auth forgotPasswordCheckMail ${req.user.rest_id}`,
+      message: e,
+    })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -724,7 +772,10 @@ exports.checkVerificationCodeForForgotPass = async (req, res) => {
       .json({ success: true, message: 'Successfully verified' })
   } catch (err) {
     let e = extractErrorMessage(err)
-    logger.error({ label: `admin auth checkVerificationCode ${req.user.rest_id}`, message: e })
+    logger.error({
+      label: `admin auth checkVerificationCode ${req.user.rest_id}`,
+      message: e,
+    })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -782,7 +833,10 @@ exports.changePassword = async (req, res) => {
       })
   } catch (err) {
     let e = extractErrorMessage(err)
-    logger.error({ label: `admin auth changepassword ${req.user.rest_id}`, message: e })
+    logger.error({
+      label: `admin auth changepassword ${req.user.rest_id}`,
+      message: e,
+    })
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
@@ -799,7 +853,10 @@ exports.verifyOtp = async (req, res, next) => {
     })
     .catch((err) => {
       let e = extractErrorMessage(err)
-      logger.error({ label: `admin auth verifyOtp ${req.user.rest_id}`, message: e })
+      logger.error({
+        label: `admin auth verifyOtp ${req.user.rest_id}`,
+        message: e,
+      })
       return res
         .status(500)
         .json({ success: false, message: status.SERVER_ERROR })
@@ -807,66 +864,69 @@ exports.verifyOtp = async (req, res, next) => {
 }
 
 exports.getRestDetails = async (req, res) => {
-  try{
-  if (!req.user.rest_id) {
-    return res.status(401).json({
-      success: false,
-      message: status.NOT_REGISTERED,
-      redirect: '/restaurant-profile-step-one',
+  try {
+    if (!req.user.rest_id) {
+      return res.status(401).json({
+        success: false,
+        message: status.NOT_REGISTERED,
+        redirect: '/restaurant-profile-step-one',
+      })
+    }
+
+    let restDetailsDoc = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .get()
+
+    if (!restDetailsDoc.exists) {
+      return res.status(401).json({
+        success: false,
+        message: status.NOT_REGISTERED,
+        redirect: '/restaurant-information',
+      })
+    }
+
+    let restData = restDetailsDoc.data()
+    if (!restData.verified) {
+      return res.status(401).json({
+        success: false,
+        message: status.NOT_VERIFIED,
+        redirect: '/restaurant-verification',
+      })
+    } else if (!restData.invoice_format) {
+      return res.status(401).json({
+        success: false,
+        message: status.REST_STEP_INCOMPLETE,
+        redirect: '/restaurant-invoice',
+      })
+    } else if (!restData.tables) {
+      return res.status(401).json({
+        success: false,
+        message: status.REST_STEP_INCOMPLETE,
+        redirect: '/restaurant-menu',
+      })
+    } else if (restData.locked) {
+      return res.status(401).json({
+        success: false,
+        message: status.LOCKED,
+        redirect: '/lock',
+      })
+    }
+
+    delete restData.verified
+    delete restData.locked
+
+    return res.status(200).json({ success: true, data: restData })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin auth getRestDetails ${req.user.rest_id}`,
+      message: e,
     })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
-
-  let restDetailsDoc = await firestore
-    .collection('restaurants')
-    .doc(req.user.rest_id)
-    .get()
-
-  if (!restDetailsDoc.exists) {
-    return res.status(401).json({
-      success: false,
-      message: status.NOT_REGISTERED,
-      redirect: '/restaurant-information',
-    })
-  }
-
-  let restData = restDetailsDoc.data()
-  if (!restData.verified) {
-    return res.status(401).json({
-      success: false,
-      message: status.NOT_VERIFIED,
-      redirect: '/restaurant-verification',
-    })
-  } else if (!restData.invoice_format) {
-    return res.status(401).json({
-      success: false,
-      message: status.REST_STEP_INCOMPLETE,
-      redirect: '/restaurant-invoice',
-    })
-  } else if (!restData.tables) {
-    return res.status(401).json({
-      success: false,
-      message: status.REST_STEP_INCOMPLETE,
-      redirect: '/restaurant-menu',
-    })
-  } else if (restData.locked) {
-    return res.status(401).json({
-      success: false,
-      message: status.LOCKED,
-      redirect: '/lock',
-    })
-  }
-
-  delete restData.verified
-  delete restData.locked
-
-  return res.status(200).json({ success: true, data: restData })
-}catch(err){
-  let e = extractErrorMessage(err)
-  logger.error({ label: `admin auth getRestDetails ${req.user.rest_id}`, message: e })
-  return res
-  .status(500)
-  .json({ success: false, message: status.SERVER_ERROR })
-}
 }
 
 sendToken = async (data, res) => {
