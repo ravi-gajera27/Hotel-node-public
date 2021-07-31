@@ -127,7 +127,12 @@ exports.verifySession = async(req, res) => {
   .collection('customers')
   .doc('users')
 
-  let customers = (await customersRef.get()).data().seat || []
+  let data = (await customersRef.get()).data()
+  let customers = data.seat || []
+
+  if(req.body.table > data.tables){
+    return res.status(400).json({success: false, message: status.INVALID_TABLE})
+  }
 
   flag = true
   for(let cust of customers){
