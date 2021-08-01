@@ -11,7 +11,7 @@ if (process.env.NODE_ENV == 'prod') {
         new transports.MongoDB({
           db: process.env.MONGODB_URL,
           level: 'info',
-          format: combine(label, timestamp(), format.json()),
+          format: combine(timestamp(), prettyPrint()),
           options: { useUnifiedTopology: true },
         }),
       ],
