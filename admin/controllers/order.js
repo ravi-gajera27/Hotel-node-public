@@ -377,211 +377,239 @@ exports.setOrderByOrderId = async (req, res, next) => {
 }
 
 exports.getOrderByTableNo = async (req, res, next) => {
-  let table_no = req.params.table_no
-  let orderRef = await firestore
-    .collection(`restaurants/${req.user.rest_id}/order`)
-    .doc(`table-${table_no}`)
-    .get()
+  try {
+    let table_no = req.params.table_no
+    let orderRef = await firestore
+      .collection(`restaurants/${req.user.rest_id}/order`)
+      .doc(`table-${table_no}`)
+      .get()
 
-  if (!orderRef.exists) {
-    return res.status(200).json({ success: true, data: { order: [], cid: '' } })
+    if (!orderRef.exists) {
+      return res
+        .status(200)
+        .json({ success: true, data: { order: [], cid: '' } })
+    }
+
+    let orderData = orderRef.data()
+
+    return res.status(200).json({
+      success: true,
+      data: { order: orderData.order, cid: orderData.cid },
+    })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin order getOrderByTableNo captain: ${req.user.id} rest: ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
   }
-
-  let orderData = orderRef.data()
-
-  return res.status(200).json({
-    success: true,
-    data: { order: orderData.order, cid: orderData.cid },
-  })
 }
 
 exports.addOrderByTableNo = async (req, res, next) => {
-  let table_no = req.params.table_no
+  try {
+    let table_no = req.params.table_no
 
-  let orderRef = firestore
-    .collection(`restaurants/${req.user.rest_id}/order`)
-    .doc(`table-${table_no}`)
+    let orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/order`)
+      .doc(`table-${table_no}`)
 
-  let customersRef = await firestore
-    .collection('restaurants')
-    .doc(req.user.rest_id)
-    .collection('customers')
-    .doc('users')
+    let customersRef = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .collection('customers')
+      .doc('users')
 
-  let id = await generateRandomString()
-  let data = (await customersRef.get()).data()
-  let customers = data.seat || []
+    let id = await generateRandomString()
+    let data = (await customersRef.get()).data()
+    let customers = data.seat || []
 
-  if (Number(data.tables) < Number(table_no)) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
-
-  for (let cust of customers) {
-    if (cust.table == table_no && cust.cname != req.user.role) {
+    if (Number(data.tables) < Number(table_no)) {
       return res
         .status(400)
-        .json({ success: false, message: status.SESSION_EXIST })
+        .json({ success: false, message: status.BAD_REQUEST })
     }
-  }
 
-  customers.push({
-    cname: req.user.role,
-    checkout: false,
-    cid: id,
-    table: table_no,
-    by: req.user.role,
-  })
+    for (let cust of customers) {
+      if (cust.table == table_no && cust.cname != req.user.role) {
+        return res
+          .status(400)
+          .json({ success: false, message: status.SESSION_EXIST })
+      }
+    }
 
-  let order_id = await generateRandomStringForOrder()
+    customers.push({
+      cname: req.user.role,
+      checkout: false,
+      cid: id,
+      table: table_no,
+      by: req.user.role,
+    })
 
-  data = {
-    data: [...req.body],
-    table: table_no,
-    date: moment().utcOffset(process.env.UTC_OFFSET).unix(),
-    qty: 0,
-    taxable: 0,
-    id: order_id,
-  }
+    let order_id = await generateRandomStringForOrder()
 
-  for (let item of req.body) {
-    data.qty += item.qty
-    data.taxable += item.price
-  }
-  let body = {
-    cname: req.user.role,
-    cid: id,
-    order: [data],
-  }
+    data = {
+      data: [...req.body],
+      table: table_no,
+      date: moment().utcOffset(process.env.UTC_OFFSET).unix(),
+      qty: 0,
+      taxable: 0,
+      id: order_id,
+    }
 
-  orderRef
-    .set(body)
-    .then(async (e) => {
+    for (let item of req.body) {
+      data.qty += item.qty
+      data.taxable += item.price
+    }
+    let body = {
+      cname: req.user.role,
+      cid: id,
+      order: [data],
+    }
+
+    orderRef.set(body).then(async (e) => {
       await customersRef.set({ seat: [...customers] }, { merge: true })
-    })
-    .catch((err) => {
       return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR })
+        .status(200)
+        .json({ success: true, message: 'Order Place Successfully' })
     })
-
-  return res
-    .status(200)
-    .json({ success: true, message: 'Order Place Successfully' })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin order addOrderByTableNo captain: ${req.user.id} rest: ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
 }
 
 exports.setOrderByTableNo = async (req, res, next) => {
-  let table_no = req.params.table_no
+  try {
+    let table_no = req.params.table_no
 
-  let orderRef = firestore
-    .collection(`restaurants/${req.user.rest_id}/order`)
-    .doc(`table-${table_no}`)
+    let orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/order`)
+      .doc(`table-${table_no}`)
 
-  let customersRef = await firestore
-    .collection('restaurants')
-    .doc(req.user.rest_id)
-    .collection('customers')
-    .doc('users')
+    let customersRef = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .collection('customers')
+      .doc('users')
 
-  let data = (await customersRef.get()).data()
+    let data = (await customersRef.get()).data()
 
-  let customers = data.seat || []
+    let customers = data.seat || []
 
-  if (Number(data.tables) < Number(table_no)) {
-    return res
-      .status(400)
-      .json({ success: false, message: status.INVALID_TABLE })
-  }
-
-  let flag = false
-
-  for (let cust of customers) {
-    if (cust.table == table_no) {
-      flag = true
-      break
+    if (Number(data.tables) < Number(table_no)) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.INVALID_TABLE })
     }
-  }
 
-  if (!flag) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
+    let flag = false
 
-  let finalOrder = req.body
-
-  let tempOrder = []
-
-  for (let order of req.body.order) {
-    qty = 0
-    taxable = 0
-    for (let item of order.data) {
-      qty += item.qty
-      taxable += item.taxable
+    for (let cust of customers) {
+      if (cust.table == table_no) {
+        flag = true
+        break
+      }
     }
-    order.qty = qty
-    order.taxable = taxable
-    order.table = table_no
-    if (!order.date) {
-      order.date = moment().utcOffset(process.env.UTC_OFFSET).unix()
-    }
-    if (!order.id) {
-      let validId = false
-      let id
-      do {
-        id = await generateRandomStringForOrder()
-        let filter = tempOrder.filter((e) => e.id == id)
-        if (filter.length == 0) {
-          validId = true
-        }
-      } while (!validId)
-      order.id = id
-    }
-    tempOrder.push({ ...order })
-  }
 
-  finalOrder.order = [...tempOrder]
-  orderRef
-    .set(finalOrder, { merge: true })
-    .then(async (e) => {
+    if (!flag) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST })
+    }
+
+    let finalOrder = req.body
+
+    let tempOrder = []
+
+    for (let order of req.body.order) {
+      qty = 0
+      taxable = 0
+      for (let item of order.data) {
+        qty += item.qty
+        taxable += item.taxable
+      }
+      order.qty = qty
+      order.taxable = taxable
+      order.table = table_no
+      if (!order.date) {
+        order.date = moment().utcOffset(process.env.UTC_OFFSET).unix()
+      }
+      if (!order.id) {
+        let validId = false
+        let id
+        do {
+          id = await generateRandomStringForOrder()
+          let filter = tempOrder.filter((e) => e.id == id)
+          if (filter.length == 0) {
+            validId = true
+          }
+        } while (!validId)
+        order.id = id
+      }
+      tempOrder.push({ ...order })
+    }
+
+    finalOrder.order = [...tempOrder]
+    orderRef.set(finalOrder, { merge: true }).then(async (e) => {
       return res
         .status(200)
         .json({ success: true, message: 'Order Successfully set' })
     })
-    .catch((err) => {
-      return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin order setOrderByTableNo captain: ${req.user.id} rest: ${req.user.rest_id}`,
+      message: e,
     })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
 }
 
 exports.cancelAllOrderByTableNo = async (req, res) => {
-  let table_no = req.params.table_no
+  try {
+    let table_no = req.params.table_no
 
-  let customersRef = await firestore
-    .collection('restaurants')
-    .doc(req.user.rest_id)
-    .collection('customers')
-    .doc('users')
+    let customersRef = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .collection('customers')
+      .doc('users')
 
-  let customers = (await customersRef.get()).data().seat || []
+    let customers = (await customersRef.get()).data().seat || []
 
-  customers = customers.filter((e) => e.table != table_no)
+    customers = customers.filter((e) => e.table != table_no)
 
-  let orderRef = firestore
-    .collection(`restaurants/${req.user.rest_id}/order`)
-    .doc(`table-${table_no}`)
+    let orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/order`)
+      .doc(`table-${table_no}`)
 
-  orderRef
-    .delete()
-    .then(async (e) => {
+    orderRef.delete().then(async (e) => {
       await customersRef.set({ seat: [...customers] }, { merge: true })
       return res
         .status(200)
         .json({ success: true, message: 'Successfully canceled' })
     })
-    .catch((err) => {
-      return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin order cancelAllOrderByTableNo captain: ${req.user.id} rest: ${req.user.rest_id}`,
+      message: e,
     })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
 }
 
 async function generateRandomString() {
