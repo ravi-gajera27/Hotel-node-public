@@ -37,7 +37,6 @@ exports.login = async (req, res, next) => {
       rest_id = doc.data().rest_id
     })
 
-    console.log(await HASH.generateHash('ravi1234',10))
     let verifyPassword = await HASH.verifyHash(data.password, password)
 
     if (!verifyPassword) {
@@ -58,29 +57,6 @@ exports.login = async (req, res, next) => {
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
   }
-}
-
-exports.getTables = async(req, res) => {
-  firestore
-  .collection('restaurants')
-  .doc(req.user.rest_id)
-  .get()
-  .then((rest_details) => { 
-    let data = rest_details.data()
-    res.status(200).json({
-      success: true,
-      data: {tables: data.tables},
-    })
-  }) .catch((err) => {
-    let e = extractErrorMessage(err)
-    logger.error({
-      label: `captain auth getTables ${req.user.id}`,
-      message: e,
-    })
-    return res
-      .status(500)
-      .json({ success: false, message: status.SERVER_ERROR })
-  })
 }
 
 exports.getUser = async (req, res, next) => {
@@ -116,7 +92,7 @@ exports.getUser = async (req, res, next) => {
 }
 
 exports.verifySession = async(req, res) => {
-
+ try{
   if(!req.body.table || !req.body.cname){
     return res.status(400).json({success: false, message: status.BAD_REQUEST})
   }
@@ -160,7 +136,16 @@ exports.verifySession = async(req, res) => {
   customersRef.set({seat: [...customers]}, {merge: true}).then((e)=>{
     return res.status(200).json({success: true, message: 'Success'})
   })
-
+ }catch (err) {
+  let e = extractErrorMessage(err)
+  logger.error({
+    label: `captain auth verifySession ${req.user.id}`,
+    message: e,
+  })
+  return res
+    .status(500)
+    .json({ success: false, message: status.SERVER_ERROR })
+}
 }
 
 exports.forgotPasswordCheckMail = async (req, res) => {
