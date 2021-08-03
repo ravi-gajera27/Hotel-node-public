@@ -8,6 +8,7 @@ const ejs = require("ejs");
 let moment = require("moment");
 const db = require("./config/db");
 const path = require("path");
+const helmet = require('helmet')
 
 
 
@@ -46,7 +47,8 @@ let whitelist = [
   "http://localhost:8100",
   "https://peraket-rms.web.app",
   "https://peraket-admin.web.app",
-  "http://192.168.0.103:4200"
+  "http://192.168.0.103:4200",
+  "https://peraket-admin-desktop-44b70.web.app",
 ];
 const corsConfig = {
   credentials: true,
@@ -69,11 +71,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors(corsConfig));
 app.use(cookieParser());
 app.use(expressFileUpload());
+app.use(helmet());
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/utils"));
 app.set("view engine", "ejs");
 app.set('views', path.join(__dirname, '/utils/templates'));
 app.set('trust proxy', true)
+
 
 app.get('/eod1', (req, res)=>{
   let invoice_array = [
