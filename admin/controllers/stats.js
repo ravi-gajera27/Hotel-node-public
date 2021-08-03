@@ -11,8 +11,8 @@ let ejs = require('ejs')
 let pdf = require('html-pdf')
 const sizeof = require('firestore-size')
 var bson = require('bson')
-const { extractErrorMessage }=require('../../utils/error')
-const logger=require('../../config/logger')
+const { extractErrorMessage } = require('../../utils/error')
+const logger = require('../../config/logger')
 
 exports.getInvoices = (req, res) => {
   firestore
@@ -1051,3 +1051,4 @@ function getMonthsOfYear(slot) {
     throw err
   }
 }
+

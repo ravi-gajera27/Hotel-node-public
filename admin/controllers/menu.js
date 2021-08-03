@@ -128,11 +128,10 @@ exports.getMenu = async (req, res, next) => {
       .doc('menu')
       .get()
 
-    let s = 0
+
     let menu = []
     if (menuDoc.exists) {
       menu = menuDoc.data().menu
-      s += sizeof(menu)
     }
 
     res.status(200).json({ success: true, data: menu })

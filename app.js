@@ -37,6 +37,7 @@ const userAdmin = require("./admin/routes/user");
 const custAdmin = require("./admin/routes/custAuth"); 
 const authCaptain = require('./captain/routes/auth')
 const orderCaptain = require('./captain/routes/order')
+const menuCaptain = require('./captain/routes/menu')
 
 let whitelist = [
   "http://localhost:4300",
@@ -96,6 +97,8 @@ app.use("/api/admin/customer", custAdmin);
 //process routes of captain
 app.use("/api/captain/auth", authCaptain);
 app.use("/api/captain/order", orderCaptain);
+app.use("/api/captain/menu", menuCaptain);
+
 
 //process routes of customer
 app.use("/api/user/auth", authUsers);
