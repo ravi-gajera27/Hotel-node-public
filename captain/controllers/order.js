@@ -31,7 +31,7 @@ exports.addOrder = async (req, res, next) => {
       let captain = true
       let customer
       for (let cust of customers) {
-        if (cust.table == table) {
+        if (Number(cust.table) == Number(table)) {
           if (cust.restore) {
             break
           }

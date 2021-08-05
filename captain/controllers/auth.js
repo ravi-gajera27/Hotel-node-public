@@ -112,7 +112,7 @@ exports.verifySession = async(req, res) => {
 
   flag = true
   for(let cust of customers){
-    if(cust.table == req.body.table){
+    if(Number(cust.table) == Number(req.body.table) && !cust.restore){
       flag = false
       break;
     }
