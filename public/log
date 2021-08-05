@@ -152,3 +152,15 @@
   level: 'error',
   timestamp: '2021-07-31T01:53:18.455Z'
 }
+{
+  label: 'admin state getCategoriesStats AlF2j3zoh5KKUyIowNcf',
+  message: 'ReferenceError: invoice is not defined',
+  level: 'error',
+  timestamp: '2021-08-05T13:48:27.235Z'
+}
+{
+  label: 'admin custAuth updateInvoice AlF2j3zoh5KKUyIowNcf',
+  message: 'Error: Argument passed in must be a single String of 12 bytes or a string of 24 hex characters',
+  level: 'error',
+  timestamp: '2021-08-05T14:01:24.484Z'
+}

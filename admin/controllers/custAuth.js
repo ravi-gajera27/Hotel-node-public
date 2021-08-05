@@ -4,6 +4,7 @@ const moment = require('moment')
 const { extractErrorMessage } = require('../../utils/error')
 const logger = require('../../config/logger')
 const { InvoiceModel }=require('../../models/invoice')
+const mongoose = require('mongoose')
 
 exports.acceptRequest = async (req, res, next) => {
   try {
@@ -720,7 +721,7 @@ exports.updateInvoice = async (req, res) => {
 
   delete invoice.order_no
 
-  InvoiceModel.findByIdAndUpdate(inv_id, invoice)
+  InvoiceModel.findByIdAndUpdate(mongoose.Types.ObjectId(inv_id), invoice)
     .then((e) => {
       return res
         .status(200)
