@@ -105,9 +105,9 @@ exports.verifySession = async(req, res) => {
 
   let data = (await customersRef.get()).data()
   let customers = data.seat || []
-
-  if(req.body.table > data.tables){
-    return res.status(400).json({success: false, message: status.INVALID_TABLE})
+ 
+  if(Number(req.body.table) > Number(data.tables)){
+      return res.status(400).json({success: false, message: status.INVALID_TABLE})
   }
 
   flag = true
