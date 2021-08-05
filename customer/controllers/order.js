@@ -6,6 +6,7 @@ let moment = require('moment')
 const { extractErrorMessage }=require('../../utils/error')
 const logger=require('../../config/logger')
 const randomstring = require('randomstring')
+const { InvoiceModel }=require('../../models/invoice')
 
 exports.addOrder = async (req, res, next) => {
   let cookie = await extractCookie(req, res)
@@ -342,38 +343,7 @@ exports.checkout = async (req, res, next) => {
         req.body.taxable + (req.body.taxable * data.tax) / 100
     }
 
-    let inv = data.inv
-    let date = moment().utcOffset(process.env.UTC_OFFSET).format('YYYY-MM-DD')
-
-    if (!inv || inv.date != date) {
-      inv = { date: date, docId: date }
-    }
-
-    let invoiceRef = firestore
-      .collection(`orders/${cookie.rest_id}/invoices`)
-      .doc(inv.docId)
-
-    let invoiceDoc = await invoiceRef.get()
-
-    let invoiceData
-    if (invoiceDoc.exists) {
-      let invoices = invoiceDoc.data().invoices
-      if (invoices.length >= 130) {
-        let split = inv.docId.split('_')
-        if (split.length != 0) {
-          inv.docId = split[0] + '_' + (Number(split[1]) + 1)
-        } else {
-          inv.docId = inv.docId + '_1'
-        }
-        invoiceData = { inv_date: date, invoices: [{ ...req.body }] }
-      } else {
-        invoices.push({ ...req.body })
-        invoiceData = { invoices: [...invoices] }
-      }
-    } else {
-      invoiceData = { inv_date: date, invoices: [{ ...req.body }] }
-    }
-
+    
     let index
     if (cookie.table == 'takeaway') {
       index = takeawayCust.findIndex(
@@ -382,8 +352,6 @@ exports.checkout = async (req, res, next) => {
       let obj = { ...takeawayCust[index] }
 
       obj.checkout = true
-      obj.inv_no = data.inv_no
-      obj.inv_id = inv.docId
       delete obj.req
 
       takeawayCust[index] = obj
@@ -392,18 +360,14 @@ exports.checkout = async (req, res, next) => {
         (ele) => ele.cid == req.user.id && ele.table == cookie.table,
       )
       seatCust[index].checkout = true
-      seatCust[index].inv_no = data.inv_no
-      seatCust[index].inv_id = inv.docId
     }
 
-    invoiceRef = firestore
-      .collection(`orders/${cookie.rest_id}/invoices`)
-      .doc(inv.docId)
-
-    data.inv = inv
-    invoiceRef
-      .set(invoiceData, { merge: true })
-      .then(async (e) => {
+    InvoiceModel.create(req.body).then(async (e)=>{
+      if(table_no == 'takeaway'){
+        takeawayCust[index].inv_id = e.id
+      }else{
+        seatCust[index].inv_id = e.id
+      }
         await orderRef.delete()
 
         await customersRef.set(

@@ -30,6 +30,7 @@
     "html-pdf": "^2.2.0",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",
+    "mongoose": "^5.13.5",
     "node-cron": "^3.0.0",
     "pngquant-bin": "^6.0.0",
     "randomstring": "^1.2.1",

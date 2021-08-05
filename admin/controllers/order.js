@@ -4,6 +4,7 @@ const { extractErrorMessage } = require('../../utils/error')
 const logger = require('../../config/logger')
 const randomstring = require('randomstring')
 const moment = require('moment')
+const { InvoiceModel }=require('../../models/invoice')
 
 exports.cancelOrder = async (req, res, next) => {
   try {
@@ -191,7 +192,7 @@ exports.restoreOrder = async (req, res, next) => {
   }
 }
 
-exports.generateInvoice = async (req, res, next) => {
+/* exports.generateInvoice = async (req, res, next) => {
   try {
     let inv_no = req.body.inv_no
     let inv_id = req.body.inv_id
@@ -252,7 +253,49 @@ exports.generateInvoice = async (req, res, next) => {
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
   }
-}
+} */
+
+exports.generateInvoice = async (req, res, next) => {
+  try {
+    let inv_id = req.params.inv_id
+
+    if (!inv_id) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST })
+    }
+
+  let invoice = await InvoiceModel.findById(inv_id);
+
+    let rest_ref = await firestore
+      .collection('restaurants')
+      .doc(req.user.rest_id)
+      .get()
+
+    rest_ref = rest_ref.data()
+
+    let rest_details = {
+      rest_name: rest_ref.rest_name,
+      rest_address: rest_ref.address,
+      gst_in: rest_ref.gst_in || '',
+    }
+
+
+    res.status(200).json({
+      success: true,
+      data: { invoice: invoice, rest_details: rest_details },
+    })
+  } catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin order generateInvoice ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
+} 
 
 exports.getOrderByOrderId = async (req, res, next) => {
   try {

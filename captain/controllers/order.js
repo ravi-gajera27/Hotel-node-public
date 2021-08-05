@@ -64,7 +64,7 @@ exports.addOrder = async (req, res, next) => {
           orderData = []
         }
   
-        if (data.cid && data.cid != customer.cid) {
+        if (!data.restore && data.cid && data.cid != customer.cid) {
           return res.status(403).json({ success: false, message: status.INVALID_TABLE })
         }
       }

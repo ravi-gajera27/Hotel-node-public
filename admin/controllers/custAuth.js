@@ -3,6 +3,7 @@ const status = require('../../utils/status')
 const moment = require('moment')
 const { extractErrorMessage } = require('../../utils/error')
 const logger = require('../../config/logger')
+const { InvoiceModel }=require('../../models/invoice')
 
 exports.acceptRequest = async (req, res, next) => {
   try {
@@ -14,17 +15,39 @@ exports.acceptRequest = async (req, res, next) => {
 
     let customers = (await custoemrsRef.get()).data().takeaway
 
-    customers.map((cust) => {
+    let customer = {};
+    let index;
+    customers.map((cust, i) => {
       if (cust.cid == req.params.cid) {
         cust.req = true
+        customer = cust
+        index = i;
       }
     })
 
-    await custoemrsRef.set({ takeaway: [...customers] }, { merge: true })
+    let userRef = await firestore.collection('users').doc(req.params.cid)
 
-    res
-      .status(200)
-      .json({ success: true, message: status.ACCEPT_REQUEST_ADMIN })
+    let userData = (await userRef.get()).data()
+
+    let join = false;
+
+    if(userData.join && userData.join != req.user.rest_id){
+      join = true
+      customers.splice(index, 1);
+    }
+
+    await custoemrsRef.set({ takeaway: [...customers] }, { merge: true }).then(async(e)=>{
+      if(join){
+        res
+        .status(200)
+        .json({ success: true, message: status.SESSION_EXIST_REST })
+      }else{
+        await userRef.set({ join: req.user.rest_id }, { merge: true })
+        res
+        .status(200)
+        .json({ success: true, message: status.ACCEPT_REQUEST_ADMIN })
+      }
+    })
   } catch (err) {
     let e = extractErrorMessage(err)
     logger.error({
@@ -48,10 +71,6 @@ exports.rejectRequest = async (req, res, next) => {
     let customers = (await customersRef.get()).data().takeaway
 
     customers = customers.filter((cust) => cust.cid != req.params.cid)
-
-    let userRef = await firestore.collection('users').doc(req.params.cid)
-
-    await userRef.set({ join: '' }, { merge: true })
 
     await customersRef.set({ takeaway: [...customers] }, { merge: true })
 
@@ -174,10 +193,12 @@ exports.removeCustomer = async (req, res, next) => {
     await orderRef
       .set({ restore: true }, { merge: true })
       .then(async (e) => {
-        await firestore
-          .collection('users')
-          .doc(`${cid}`)
-          .set({ join: '' }, { merge: true })
+        if(order.cid.length != 12){
+          await firestore
+            .collection('users')
+            .doc(invoice.cid)
+            .set({ join: '' }, { merge: true })
+          }
 
         return res.status(200).json({
           success: true,
@@ -258,11 +279,12 @@ exports.restoreCustomer = async (req, res, next) => {
     await customersRef
       .set({ takeaway: [...customers] }, { merge: true })
       .then(async (e) => {
-        await firestore
-          .collection('users')
-          .doc(`${cid}`)
-          .set({ join: req.user.rest_id }, { merge: true })
-
+        if(order.cid.length != 12){
+          await firestore
+            .collection('users')
+            .doc(invoice.cid)
+            .set({ join: req.user.rest_id }, { merge: true })
+          }
         res.status(200).json({ success: true, message: status.RESTORED })
       })
       .catch((err) => {
@@ -292,7 +314,7 @@ exports.restoreCustomer = async (req, res, next) => {
   }
 }
 
-exports.checkoutCustomer = async (req, res, next) => {
+/* exports.checkoutCustomer = async (req, res, next) => {
   try{
   let table_no = req.params.table_no
   let cid = req.params.cid
@@ -507,6 +529,184 @@ exports.checkoutCustomer = async (req, res, next) => {
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR })
   }
+} */
+
+exports.checkoutCustomer = async (req, res, next) => {
+  try{
+  let table_no = req.params.table_no
+  let cid = req.params.cid
+
+  if (!table_no || !cid) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
+  }
+
+  let customerRef = firestore
+    .collection(`restaurants/${req.user.rest_id}/customers`)
+    .doc('users')
+
+  let customers = await customerRef.get()
+  let seatCust = customers.data()?.seat || []
+  let takeawayCust = customers.data()?.takeaway || []
+
+  let orderRef
+  if (table_no == 'takeaway') {
+    orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/torder`)
+      .doc(`${cid}`)
+  } else {
+    orderRef = firestore
+      .collection(`restaurants/${req.user.rest_id}/order`)
+      .doc(`table-${table_no}`)
+  }
+
+  let orderDoc = await orderRef.get()
+  let orderData = orderDoc.data()
+
+  if (!orderDoc.exists || !orderData.cid || orderData.order.length == 0) {
+    return res
+      .status(403)
+      .json({ success: false, message: 'Customer is not ordered yet' })
+  }
+
+  if (orderData.cid != cid) {
+    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
+  }
+
+  let finalInvoice = { data: [] }
+
+  if (orderData.restore || orderData.cancel) {
+    return res.status(403).json({
+      success: false,
+      message: 'Order of this customer is already canceled',
+    })
+  }
+
+  for (let ele of orderData.order) {
+    if (ele.restore || ele.cancel) {
+      continue
+    }
+    let order = { ...ele }
+
+    if (finalInvoice.data.length != 0) {
+      finalInvoice.taxable += order.taxable
+      finalInvoice.qty += order.qty
+      let index = finalInvoice.data.length
+      for (let i = 0; i < order.data.length; i++) {
+        let flag = true
+        for (let j = 0; j < index; j++) {
+          if (
+            order.data[i].name == finalInvoice.data[j].name &&
+            order.data[i].type == finalInvoice.data[j].type &&
+            order.data[i].addon.length == finalInvoice.data[j].addon.length
+          ) {
+            let check = order.data[i].addon.every(
+              (el) => finalInvoice.data[j].addon.indexOf(el) >= 0,
+            )
+            if (check == true) {
+              finalInvoice.data[j].qty += order.data[i].qty
+              finalInvoice.data[j].price += order.data[i].price
+              flag = false
+              break
+            }
+          }
+        }
+        if (flag) {
+          finalInvoice.data.push(order.data[i])
+        }
+      }
+    } else {
+      delete order.id
+      delete order.inst
+      finalInvoice = JSON.parse(JSON.stringify(order))
+    }
+
+    if (res.unique) {
+      finalInvoice.unique = true
+    }
+  }
+
+  let restRef = await firestore.collection('restaurants').doc(req.user.rest_id)
+
+  let rest_details = await restRef.get()
+
+  let restData = rest_details.data()
+  restData = await setInvoiceNumber(restData)
+  if(!restData){
+    return res
+    .status(500)
+    .json({ success: false, message: status.SERVER_ERROR })
+  }
+
+  finalInvoice.cid = cid
+  finalInvoice.cname = orderData.cname
+  finalInvoice.table = table_no
+  finalInvoice.inv_no = restData.inv_no
+  finalInvoice.clean = false
+  delete finalInvoice.date
+  delete finalInvoice.qty
+  finalInvoice.inv_date = moment()
+    .utcOffset(process.env.UTC_OFFSET)
+    .format('YYYY-MM-DD')
+  finalInvoice.time = moment().utcOffset(process.env.UTC_OFFSET).format('HH:mm')
+  finalInvoice.tax = Number(restData.tax)
+
+  if (restData.taxInc) {
+    finalInvoice.total_amt = finalInvoice.taxable
+    finalInvoice.taxable = (finalInvoice.taxable * 100) / (100 + restData.tax)
+    finalInvoice.taxInc = true
+  } else {
+    finalInvoice.total_amt =
+      finalInvoice.taxable + (finalInvoice.taxable * restData.tax) / 100
+  }
+
+  let index
+  if (table_no == 'takeaway') {
+    index = takeawayCust.findIndex(
+      (ele) =>
+        ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname,
+    )
+    let obj = { ...takeawayCust[index] }
+
+    obj.checkout = true
+    delete obj.req
+
+    takeawayCust[index] = obj
+  } else {
+    index = seatCust.findIndex(
+      (ele) =>
+        ele.cid == cid && ele.table == table_no && ele.cname == orderData.cname,
+    )
+    console.log(index, orderData.cname, orderData.cid)
+    seatCust[index].checkout = true
+  }
+
+ InvoiceModel.create(finalInvoice).then(async (e)=>{
+  if(table_no == 'takeaway'){
+    takeawayCust[index].inv_id = e.id
+  }else{
+    seatCust[index].inv_id = e.id
+  }
+      await orderRef.delete()
+
+      await customerRef.set(
+        { seat: [...seatCust], takeaway: [...takeawayCust] },
+        { merge: true },
+      )
+      await restRef.set(restData, { merge: true })
+      return res
+        .status(200)
+        .json({ success: true, message: 'Successfully checkout' })
+    })
+  }catch (err) {
+    let e = extractErrorMessage(err)
+    logger.error({
+      label: `admin custAuth checkoutCustomer ${req.user.rest_id}`,
+      message: e,
+    })
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR })
+  }
 }
 
 exports.updateInvoice = async (req, res) => {
@@ -520,27 +720,7 @@ exports.updateInvoice = async (req, res) => {
 
   delete invoice.order_no
 
-  let invoiceRef = firestore
-    .collection(`orders/${req.user.rest_id}/invoices`)
-    .doc(inv_id)
-
-  let invoiceDoc = await invoiceRef.get()
-
-  let invoices = invoiceDoc.data().invoices
-
-  let index = invoices
-    .map((e) => {
-      return e.inv_no
-    })
-    .indexOf(invoice.inv_no)
-
-  if (index == -1) {
-    return res.status(400).json({ success: false, message: status.BAD_REQUEST })
-  }
-  invoices[index] = invoice
-
-  await invoiceRef
-    .set({ invoices: [...invoices] }, { merge: true })
+  InvoiceModel.findByIdAndUpdate(inv_id, invoice)
     .then((e) => {
       return res
         .status(200)
@@ -563,7 +743,7 @@ exports.cleanUpCustomers = async (req, res) => {
   try{
   let invoice = req.body
   let inv_id = req.params.inv_id
-  invoice.inv_id = inv_id
+  invoice.rest_id = req.user.rest_id
 
   if (!invoice.cid || !invoice.table || !inv_id) {
     return res.status(400).json({ success: false, message: status.BAD_REQUEST })
@@ -595,7 +775,7 @@ exports.cleanUpCustomers = async (req, res) => {
   delete invoice.order_no
   delete invoice.clean
 
-  let invoiceRef = firestore
+/*   let invoiceRef = firestore
     .collection(`orders/${req.user.rest_id}/invoices`)
     .doc(inv_id)
 
@@ -613,11 +793,9 @@ exports.cleanUpCustomers = async (req, res) => {
     console.log('bad index')
     return res.status(400).json({ success: false, message: status.BAD_REQUEST })
   }
-  invoices[index] = invoice
+  invoices[index] = invoice */
 
-  await invoiceRef
-    .set({ invoices: [...invoices] }, { merge: true })
-    .then(async (e) => {
+  InvoiceModel.findByIdAndUpdate(inv_id, invoice).then(async (e) => {
       await customerRef.set(
         { seat: [...seatCust], takeaway: [...takeawayCust] },
         { merge: true },

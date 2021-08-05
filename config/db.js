@@ -1,11 +1,20 @@
-const admin = require('firebase-admin');
+const admin = require("firebase-admin");
+const mongoose = require("mongoose");
+
 exports.InitializeDatabase = async () => {
-  var serviceAccount = require('../peraket-rms-firebase-adminsdk.json');
-  return new Promise((resolve, reject) => {
+  var serviceAccount = require("../peraket-rms-firebase-adminsdk.json");
+  return new Promise(async (resolve, reject) => {
     try {
-      admin.initializeApp({
+      await admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
+
+      await mongoose.connect(process.env.MONGODB_URL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useFindAndModify: true,
+      });
+
       resolve(true);
     } catch (e) {
       resolve(true);
@@ -15,5 +24,5 @@ exports.InitializeDatabase = async () => {
 };
 
 exports.firestore = () => {
-  return admin.firestore()
+  return admin.firestore();
 };

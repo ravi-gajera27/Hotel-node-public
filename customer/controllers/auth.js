@@ -488,7 +488,10 @@ exports.verifySession = async (req, res, next) => {
       }
     }
 
-    user.join = cookie.rest_id
+    if(cookie.table != 'takeaway'){
+      user.join = cookie.rest_id
+    }
+   
 
     customersRef.set(
       { seat: [...seatCust], takeaway: [...takeawayCust] },

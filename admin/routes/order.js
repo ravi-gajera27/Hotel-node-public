@@ -3,7 +3,7 @@ const order = require("../controllers/order");
 const { protect } = require("../../middleware/adminAuth");
 
 
-router.post("/generate-invoice", protect, order.generateInvoice);
+router.get("/generate-invoice/:inv_id", protect, order.generateInvoice);
 
 router.put(
   "/cancel-order/:table_no/:order_id/:cid",
