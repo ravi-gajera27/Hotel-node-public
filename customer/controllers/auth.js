@@ -340,9 +340,7 @@ exports.verifySession = async (req, res, next) => {
             }
             if (ele.req) {
               return res.status(200).json({
-                success: true,
-                request: true,
-                message: status.REQUEST_SENT,
+                success: true
               })
             } else if (!ele.req) {
               return res.status(403).json({

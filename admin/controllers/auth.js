@@ -847,7 +847,7 @@ exports.verifyOtp = async (req, res, next) => {
   await firestore
     .collection('admin')
     .doc(req.user.id)
-    .set({ verifyOtp: true }, { merge: true })
+    .set({ verify_otp: true }, { merge: true })
     .then((user) => {
       res.status(200).json({ success: true })
     })
