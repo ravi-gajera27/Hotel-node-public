@@ -49,7 +49,7 @@ let whitelist = [
   "https://peraket-admin.web.app",
   "http://192.168.0.103:4200",
   "https://peraket-admin-desktop-44b70.web.app",
-  "https://perket-rms-captain.web.app"
+  "https://peraket-rms-captain.web.app"
 ];
 const corsConfig = {
   credentials: true,
