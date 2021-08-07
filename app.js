@@ -38,7 +38,8 @@ const userAdmin = require("./admin/routes/user");
 const custAdmin = require("./admin/routes/custAuth"); 
 const authCaptain = require('./captain/routes/auth')
 const orderCaptain = require('./captain/routes/order')
-const menuCaptain = require('./captain/routes/menu')
+const menuCaptain = require('./captain/routes/menu');
+const { Hash } = require('crypto');
 
 let whitelist = [
   "http://localhost:4300",
@@ -109,11 +110,12 @@ app.use("/api/captain/menu", menuCaptain);
 app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
+let hash = require('./utils/encryption')
 
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
 cron.startAllCron();
-
+console.log(hash.generateHash('@pera@ket@dev@3', 10))
   console.log(
     "app is running",
     moment().format("DD-MM-YYYY"),

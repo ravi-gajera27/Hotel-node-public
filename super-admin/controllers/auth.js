@@ -7,6 +7,7 @@ const sgMail = require('@sendgrid/mail')
 const randomstring = require('randomstring')
 const { extractErrorMessage }=require('../../utils/error')
 const logger=require('../../config/logger')
+const { incZoneReq } = require('../../utils/zone')
 sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY)
 
 exports.login = async (req, res, next) => {
@@ -30,13 +31,14 @@ exports.login = async (req, res, next) => {
         .json({ success: false, message: status.INVALID_EMAIL })
     }
 
-    let password, id, rest_id
+    let password
+    let id
 
     user.forEach((doc) => {
       password = doc.data().password
       id = doc.id
-      rest_id = doc.data().rest_id
     })
+   
 
     let verifyPassword = await HASH.verifyHash(data.password, password)
 
@@ -46,16 +48,12 @@ exports.login = async (req, res, next) => {
         .status(401)
         .json({ success: false, message: status.INVALID_PASS })
     } else {
-      if (rest_id) {
         await sendToken({ user_id: id }, res)
-      } else {
-        await sendToken({ user_id: id }, res)
-      }
     }
   } catch (err) {
     let e = extractErrorMessage(err)
     logger.error({
-      label: `super-admin auth login ${req.user.id}`,
+      label: `super-admin auth login`,
       message: e,
     })
     return res
@@ -65,6 +63,7 @@ exports.login = async (req, res, next) => {
 }
 
 sendToken = async (data, res) => {
+  console.log(data)
   let token = await TOKEN.generateToken(data)
   return res.status(200).json({ success: true, token: token })
 }

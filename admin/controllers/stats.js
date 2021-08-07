@@ -215,7 +215,7 @@ exports.downloadEodPdf = async (req, res) => {
     let date = req.params.date;
 
     let invoices = await InvoiceModel.find({
-      $and: [{ rest_id: req.user.rest_id, inv_date: date }],
+      $and: [{ rest_id: req.user.rest_id },{ inv_date: date }],
     });
 
     let data = rest_details.data();
@@ -368,11 +368,16 @@ exports.getBasicsByInterval = async (req, res, next) => {
 
     let start_date = interval[0];
     let end_date = interval[1];
+    console.log(start_date, end_date);
     InvoiceModel.find({
       $and: [
         {
           rest_id: req.user.rest_id,
+        },
+        {
           inv_date: { $gte: start_date },
+        },
+        {
           inv_date: { $lte: end_date },
         },
       ],
@@ -494,7 +499,11 @@ exports.getInvoicesByInterval = async (req, res, next) => {
       $and: [
         {
           rest_id: req.user.rest_id,
+        },
+        {
           inv_date: { $gte: start_date },
+        },
+        {
           inv_date: { $lte: end_date },
         },
       ],
@@ -575,7 +584,11 @@ exports.getCategoriesStats = async (req, res, next) => {
       $and: [
         {
           rest_id: req.user.rest_id,
+        },
+        {
           inv_date: { $gte: start_date },
+        },
+        {
           inv_date: { $lte: end_date },
         },
       ],
@@ -646,7 +659,11 @@ exports.getAdvanceStats = async (req, res, next) => {
         $and: [
           {
             rest_id: req.user.rest_id,
+          },
+          {
             inv_date: { $gte: start_date },
+          },
+          {
             inv_date: { $lte: end_date },
           },
         ],
@@ -662,7 +679,11 @@ exports.getAdvanceStats = async (req, res, next) => {
         $and: [
           {
             rest_id: req.user.rest_id,
+          },
+          {
             inv_date: { $gte: start_date },
+          },
+          {
             inv_date: { $lte: end_date },
           },
         ],
@@ -687,7 +708,11 @@ exports.getAdvanceStats = async (req, res, next) => {
         $and: [
           {
             rest_id: req.user.rest_id,
+          },
+          {
             inv_date: { $gte: start_date },
+          },
+          {
             inv_date: { $lte: end_date },
           },
         ],
@@ -715,7 +740,11 @@ exports.getAdvanceStats = async (req, res, next) => {
         $and: [
           {
             rest_id: req.user.rest_id,
+          },
+          {
             inv_date: { $gte: start_date },
+          },
+          {
             inv_date: { $lte: end_date },
           },
         ],
@@ -730,7 +759,11 @@ exports.getAdvanceStats = async (req, res, next) => {
         $and: [
           {
             rest_id: req.user.rest_id,
+          },
+          {
             inv_date: { $gte: start_date },
+          },
+          {
             inv_date: { $lte: end_date },
           },
         ],

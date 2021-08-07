@@ -43,10 +43,13 @@ exports.getRestaurantsRequestList = async (req, res) => {
 };
 
 exports.verifyRestaurantById = async (req, res) => {
-  let id = req.params.id;
+  let rest_id = req.params.rest_id;
+  if(!rest_id){
+    return res.status(400).json({success: false, message: status.BAD_REQUEST})
+  }
   restRef = await firestore
     .collection("restaurants")
-    .doc(id)
+    .doc(rest_id)
     .set({ verified: true }, { merge: true })
     .then((e) => {
       res.status(200).json({ success: true, message: "Successfully Verified" });
