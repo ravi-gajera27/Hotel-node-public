@@ -338,7 +338,7 @@ exports.verifySession = async (req, res, next) => {
               flag = 1
               break
             }
-            if (ele.req) {
+           /*  if (ele.req) {
               return res.status(200).json({
                 success: true
               })
@@ -347,7 +347,7 @@ exports.verifySession = async (req, res, next) => {
                 success: false,
                 message: status.REQUEST_SENT_ALLREADAY,
               })
-            } else if (ele.checkout) {
+            }  */ if (ele.checkout) {
               return res.status(403).json({
                 success: false,
                 message: status.CHECKOUTED,
