@@ -215,7 +215,8 @@ exports.downloadEodPdf = async (req, res) => {
     let date = req.params.date;
 
     let invoices = await InvoiceModel.find({
-      $and: [{ rest_id: req.user.rest_id },{ inv_date: date }],
+      rest_id: req.user.rest_id,
+      inv_date: date
     });
 
     let data = rest_details.data();
@@ -370,17 +371,9 @@ exports.getBasicsByInterval = async (req, res, next) => {
     let end_date = interval[1];
     console.log(start_date, end_date);
     InvoiceModel.find({
-      $and: [
-        {
-          rest_id: req.user.rest_id,
-        },
-        {
-          inv_date: { $gte: start_date },
-        },
-        {
-          inv_date: { $lte: end_date },
-        },
-      ],
+      rest_id: req.user.rest_id,
+      inv_date: { $gte: start_date },
+      inv_date: { $lte: end_date },
     }).then((invoiceRef) => {
       let itemsArray = [];
       let total_taxable = 0;
@@ -496,17 +489,9 @@ exports.getInvoicesByInterval = async (req, res, next) => {
     let end_date = interval[1];
 
     InvoiceModel.find({
-      $and: [
-        {
-          rest_id: req.user.rest_id,
-        },
-        {
-          inv_date: { $gte: start_date },
-        },
-        {
-          inv_date: { $lte: end_date },
-        },
-      ],
+      rest_id: req.user.rest_id,
+      inv_date: { $gte: start_date },
+      inv_date: { $lte: end_date },
     }).then((data) => {
       let invoices = [];
       for (let i of data) {
@@ -581,17 +566,9 @@ exports.getCategoriesStats = async (req, res, next) => {
     let end_date = interval[1];
 
     let data = await InvoiceModel.find({
-      $and: [
-        {
-          rest_id: req.user.rest_id,
-        },
-        {
-          inv_date: { $gte: start_date },
-        },
-        {
-          inv_date: { $lte: end_date },
-        },
-      ],
+      rest_id: req.user.rest_id,
+      inv_date: { $gte: start_date },
+      inv_date: { $lte: end_date },
     });
 
     let invoices = [];
@@ -656,17 +633,9 @@ exports.getAdvanceStats = async (req, res, next) => {
     if (slot == "this-week") {
       intervalData = await getSlotBetweenInterval(slot, "", "");
       let data = await InvoiceModel.find({
-        $and: [
-          {
-            rest_id: req.user.rest_id,
-          },
-          {
-            inv_date: { $gte: start_date },
-          },
-          {
-            inv_date: { $lte: end_date },
-          },
-        ],
+        rest_id: req.user.rest_id,
+        inv_date: { $gte: start_date },
+        inv_date: { $lte: end_date },
       });
 
       for (let i of data) {
@@ -676,17 +645,9 @@ exports.getAdvanceStats = async (req, res, next) => {
     } else if (slot.includes("month")) {
       intervalData = await getSlotBetweenInterval(slot, "", "");
       let data = await InvoiceModel.find({
-        $and: [
-          {
-            rest_id: req.user.rest_id,
-          },
-          {
-            inv_date: { $gte: start_date },
-          },
-          {
-            inv_date: { $lte: end_date },
-          },
-        ],
+        rest_id: req.user.rest_id,
+        inv_date: { $gte: start_date },
+        inv_date: { $lte: end_date },
       });
 
       for (let i of data) {
@@ -705,17 +666,9 @@ exports.getAdvanceStats = async (req, res, next) => {
         rest_details.close_time
       );
       let data = await InvoiceModel.find({
-        $and: [
-          {
-            rest_id: req.user.rest_id,
-          },
-          {
-            inv_date: { $gte: start_date },
-          },
-          {
-            inv_date: { $lte: end_date },
-          },
-        ],
+        rest_id: req.user.rest_id,
+        inv_date: { $gte: start_date },
+        inv_date: { $lte: end_date },
       });
 
       for (let i of data) {
@@ -737,17 +690,9 @@ exports.getAdvanceStats = async (req, res, next) => {
       intervalData = slotData[0];
       let starting_month = slotData[1];
       let data = await InvoiceModel.find({
-        $and: [
-          {
-            rest_id: req.user.rest_id,
-          },
-          {
-            inv_date: { $gte: start_date },
-          },
-          {
-            inv_date: { $lte: end_date },
-          },
-        ],
+        rest_id: req.user.rest_id,
+        inv_date: { $gte: start_date },
+        inv_date: { $lte: end_date },
       });
       for (let i of data.docs) {
         index = moment(i.inv_date).month();
@@ -756,17 +701,9 @@ exports.getAdvanceStats = async (req, res, next) => {
     } else if (slot == "last-year" || slot == "this-year") {
       intervalData = await getMonthsOfYear(slot);
       let data = await InvoiceModel.find({
-        $and: [
-          {
-            rest_id: req.user.rest_id,
-          },
-          {
-            inv_date: { $gte: start_date },
-          },
-          {
-            inv_date: { $lte: end_date },
-          },
-        ],
+        rest_id: req.user.rest_id,
+      inv_date: { $gte: start_date },
+      inv_date: { $lte: end_date },
       });
 
       for (let i of data) {

@@ -48,17 +48,9 @@ exports.generateInvoiceByRestId = async (req, res) => {
       .format("YYYY-MM-DD");
 
       let invoices = await InvoiceModel.find({
-        $and: [
-          {
-            rest_id: req.user.rest_id,
-          },
-          {
-            inv_date: { $gte: start_date },
-          },
-          {
-            inv_date: { $lte: end_date },
-          },
-        ],
+        rest_id: req.user.rest_id,
+        inv_date: { $gte: start_date },
+        inv_date: { $lte: end_date },
       });
 
     let restDoc = await firestore.collection(`restaurants`).doc(rest_id).get();
@@ -169,17 +161,9 @@ exports.generateInvoice = async () => {
       let rest_details = rest.data();
 
       let invoices = await InvoiceModel.find({
-        $and: [
-          {
-            rest_id: req.user.rest_id,
-          },
-          {
-            inv_date: { $gte: start_date },
-          },
-          {
-            inv_date: { $lte: end_date },
-          },
-        ],
+        rest_id: req.user.rest_id,
+        inv_date: { $gte: start_date },
+        inv_date: { $lte: end_date },
       });
 
       let earning = 0;

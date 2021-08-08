@@ -363,7 +363,7 @@ exports.checkout = async (req, res, next) => {
     }
 
     InvoiceModel.create(req.body).then(async (e)=>{
-      if(table_no == 'takeaway'){
+      if(cookie.table == 'takeaway'){
         takeawayCust[index].inv_id = e.id
       }else{
         seatCust[index].inv_id = e.id
