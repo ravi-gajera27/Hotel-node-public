@@ -8,9 +8,8 @@ const ejs = require("ejs");
 let moment = require("moment");
 const db = require("./config/db");
 const path = require("path");
-const helmet = require('helmet')
-
-
+const helmet = require("helmet");
+const payment = require("./config/payment");
 
 //initialize server
 let app = express();
@@ -21,13 +20,19 @@ DbInitialize = async () => {
 };
 DbInitialize();
 
-require('./config/mail');
+//initialize payment getway
+InitializePaymentGetway = async () => {
+  await payment.InitializePaymentGetway();
+};
+InitializePaymentGetway();
 
-const cron = require('./utils/cron');
+require("./config/mail");
+
+const cron = require("./utils/cron");
 
 // listing routes
-const authSuperAdmin = require('./super-admin/routes/auth')
-const restSuperAdmin = require('./super-admin/routes/restaurants')
+const authSuperAdmin = require("./super-admin/routes/auth");
+const restSuperAdmin = require("./super-admin/routes/restaurants");
 const authAdmin = require("./admin/routes/auth");
 const authUsers = require("./customer/routes/auth");
 const order = require("./customer/routes/order");
@@ -35,11 +40,12 @@ const orderAdmin = require("./admin/routes/order");
 const menuAdmin = require("./admin/routes/menu");
 const statsAdmin = require("./admin/routes/stats");
 const userAdmin = require("./admin/routes/user");
-const custAdmin = require("./admin/routes/custAuth"); 
-const authCaptain = require('./captain/routes/auth')
-const orderCaptain = require('./captain/routes/order')
-const menuCaptain = require('./captain/routes/menu');
-const { Hash } = require('crypto');
+const custAdmin = require("./admin/routes/custAuth");
+const paymentAdmin = require('./admin/routes/payment');
+const authCaptain = require("./captain/routes/auth");
+const orderCaptain = require("./captain/routes/order");
+const menuCaptain = require("./captain/routes/menu");
+
 
 let whitelist = [
   "http://localhost:4300",
@@ -48,9 +54,9 @@ let whitelist = [
   "http://localhost:8100",
   "https://peraket-rms.web.app",
   "https://peraket-admin.web.app",
-  "http://192.168.0.103:4200",
+  "http://192.168.0.108:4200",
   "https://peraket-admin-desktop-44b70.web.app",
-  "https://peraket-rms-captain.web.app"
+  "https://peraket-rms-captain.web.app",
 ];
 const corsConfig = {
   credentials: true,
@@ -77,16 +83,23 @@ app.use(helmet());
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/utils"));
 app.set("view engine", "ejs");
-app.set('views', path.join(__dirname, '/utils/templates'));
-app.set('trust proxy', true)
+app.set("views", path.join(__dirname, "/utils/templates"));
+app.set("trust proxy", true);
 
-
-app.get('/eod1', (req, res)=>{
+app.get("/eod1", (req, res) => {
   let invoice_array = [
-    {cname: 'Ravi', invoice_id: '1234', gross: 2000, tax: 100, total_amt: 2050, cash: 2050, settle:{method: 'card', amount: 0}}
-  ]
-  res.render('eod1',{invoice_array: invoice_array})
-})
+    {
+      cname: "Ravi",
+      invoice_id: "1234",
+      gross: 2000,
+      tax: 100,
+      total_amt: 2050,
+      cash: 2050,
+      settle: { method: "card", amount: 0 },
+    },
+  ];
+  res.render("eod1", { invoice_array: invoice_array });
+});
 
 // process routes of super-admin
 app.use("/api/super-admin/auth", authSuperAdmin);
@@ -99,26 +112,26 @@ app.use("/api/admin/menu", menuAdmin);
 app.use("/api/admin/stats", statsAdmin);
 app.use("/api/admin/user", userAdmin);
 app.use("/api/admin/customer", custAdmin);
+app.use('/api/admin/payment', paymentAdmin);
 
 //process routes of captain
 app.use("/api/captain/auth", authCaptain);
 app.use("/api/captain/order", orderCaptain);
 app.use("/api/captain/menu", menuCaptain);
 
-
 //process routes of customer
 app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
-let hash = require('./utils/encryption')
+let hash = require("./utils/encryption");
 
 //running app on specific port
 app.listen(process.env.PORT || 5000, () => {
-cron.startAllCron();
-console.log(hash.generateHash('@pera@ket@dev@3', 10))
+  cron.startAllCron();
+
   console.log(
     "app is running",
     moment().format("DD-MM-YYYY"),
-    moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A"),
+    moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A")
   );
 });

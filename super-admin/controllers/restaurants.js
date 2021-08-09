@@ -23,6 +23,21 @@ exports.getRestaurantsList = async (req, res) => {
   res.status(200).json({ success: true, data: rest_list });
 };
 
+exports.getRestaurantById = async (req, res) => {
+  let rest_id = req.params.rest_id;
+  if(!rest_id){
+  return res.status(400).json({message: status.BAD_REQUEST, success: false})
+}
+  let restRef = await firestore
+    .collection("restaurants")
+    .doc(rest_id)
+    .get();
+
+  let rest_details = restRef.data();
+
+  res.status(200).json({ success: true, data: rest_details });
+};
+
 exports.getRestaurantsRequestList = async (req, res) => {
   let restRef = await firestore
     .collection("restaurants")

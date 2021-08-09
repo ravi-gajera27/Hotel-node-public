@@ -5,4 +5,6 @@ const { protect } = require('../../middleware/superAdminAuth')
 router.get('/', protect, rest.getRestaurantsList);
 router.get('/request', protect, rest.getRestaurantsRequestList);
 router.put('/verify/:id', protect, rest.verifyRestaurantById);
+router.get('/:rest_id', protect, rest.verifyRestaurantById);
+
 module.exports = router
