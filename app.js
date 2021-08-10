@@ -33,6 +33,7 @@ const cron = require("./utils/cron");
 // listing routes
 const authSuperAdmin = require("./super-admin/routes/auth");
 const restSuperAdmin = require("./super-admin/routes/restaurants");
+const paymentSuperAdmin = require('./super-admin/routes/payment');
 const authAdmin = require("./admin/routes/auth");
 const authUsers = require("./customer/routes/auth");
 const order = require("./customer/routes/order");
@@ -104,6 +105,7 @@ app.get("/eod1", (req, res) => {
 // process routes of super-admin
 app.use("/api/super-admin/auth", authSuperAdmin);
 app.use("/api/super-admin/restaurant", restSuperAdmin);
+app.use("/api/super-admin/payment", paymentSuperAdmin);
 
 //process routes of admin
 app.use("/api/admin/auth", authAdmin);
