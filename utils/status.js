@@ -32,6 +32,7 @@ module.exports = {
   ALREARY_REGISTRED: 'You have already registred restaurant',
   INVOICE_GEN: 'Invoice has been geenrated successfully',
   LOCKED_REST: 'Restaurant is successfully locked',
+  UNLOCKED_REST:'Restaurant is successfully unlocked', 
   SCAN_QR: 'Scan QR code properly',
   REST_STEP_INCOMPLETE: 'Restaurant registration process is incomplete !',
   INVALID_CAPTAIN: 'You are not a valid captain for this order',
