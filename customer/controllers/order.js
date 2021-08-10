@@ -354,7 +354,7 @@ exports.checkout = async (req, res, next) => {
             );
             let obj = { ...takeawayCust[index] };
             obj.checkout = true;
-            obj.inv_id = e.id
+            obj.inv_id = e.id;
             delete obj.req;
             takeawayCust[index] = obj;
           } else {

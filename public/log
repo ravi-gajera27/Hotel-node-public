@@ -194,3 +194,9 @@
   level: 'error',
   timestamp: '2021-08-10T06:09:44.519Z'
 }
+{
+  label: 'customer order addOrder cust: SoBrkgpiYiy2M9IJO07J rest: undefined',
+  message: 'Error: Value for argument "documentPath" is not a valid resource path. Path must be a non-empty string.',
+  level: 'error',
+  timestamp: '2021-08-10T08:19:27.011Z'
+}

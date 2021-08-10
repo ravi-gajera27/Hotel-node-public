@@ -499,7 +499,7 @@ exports.checkoutCustomer = async (req, res, next) => {
 
     InvoiceModel.create(finalInvoice).then(async (e) => {
       await firestore.runTransaction(async (t) => {
-        let customers = (await t.get(customerRef)).data();
+        let customers = (await t.get(customerRef))
         let seatCust = customers.data()?.seat || [];
         let takeawayCust = customers.data()?.takeaway || [];
 
