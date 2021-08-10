@@ -170,3 +170,27 @@
   level: 'error',
   timestamp: '2021-08-07T06:34:46.232Z'
 }
+{
+  label: 'customer auth verifySession AlF2j3zoh5KKUyIowNcf',
+  message: 'ReferenceError: req is not defined',
+  level: 'error',
+  timestamp: '2021-08-10T05:46:17.356Z'
+}
+{
+  label: 'customer auth verifySession AlF2j3zoh5KKUyIowNcf',
+  message: 'TypeError: transaction.then is not a function',
+  level: 'error',
+  timestamp: '2021-08-10T05:49:37.025Z'
+}
+{
+  label: 'customer auth verifySession AlF2j3zoh5KKUyIowNcf',
+  message: "TypeError: Cannot read property 'success' of undefined",
+  level: 'error',
+  timestamp: '2021-08-10T05:50:57.417Z'
+}
+{
+  label: 'customer auth verifySession AlF2j3zoh5KKUyIowNcf',
+  message: "TypeError: Cannot read property 'tables' of undefined",
+  level: 'error',
+  timestamp: '2021-08-10T06:09:44.519Z'
+}
