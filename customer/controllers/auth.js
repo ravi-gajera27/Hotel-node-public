@@ -364,7 +364,7 @@ function setCustomerOntable(seatCust, takeawayCust, total_tables, cookie, user) 
     let index = 0;
     let flag = 0;
     for (let user of seatCust) {
-      if (user.cid == req.user.id) {
+      if (user.cid == user.id) {
         if (user.restore) {
           flag = 1;
           break;

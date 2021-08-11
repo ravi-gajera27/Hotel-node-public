@@ -200,3 +200,15 @@
   level: 'error',
   timestamp: '2021-08-10T08:19:27.011Z'
 }
+{
+  label: 'admin menu addMenuFile cRtfyfUpGLC53qA1mCbI',
+  message: 'TypeError: req.body is not iterable',
+  level: 'error',
+  timestamp: '2021-08-11T06:47:55.764Z'
+}
+{
+  label: 'customer auth verifySession cRtfyfUpGLC53qA1mCbI',
+  message: 'ReferenceError: req is not defined',
+  level: 'error',
+  timestamp: '2021-08-11T11:15:49.735Z'
+}

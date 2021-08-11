@@ -8,7 +8,7 @@ const randomstring = require('randomstring')
 const logger = require('../../config/logger')
 const { extractErrorMessage } = require('../../utils/error')
 const { incZoneReq } = require('../../utils/zone')
-
+const size = require('firestore-size')
 exports.login = async (req, res, next) => {
   try {
     let data = req.body
@@ -660,6 +660,7 @@ exports.getUser = async (req, res, next) => {
           delete data.rest_id
           data.rest = true
         }
+        console.log(data)
         res.status(200).json({ success: true, data: data })
       } else {
         res.status(401).json({ success: false, redirect: '/login' })
@@ -887,6 +888,7 @@ exports.getRestDetails = async (req, res) => {
     }
 
     let restData = restDetailsDoc.data()
+    console.log('size',size(restData))
     if (!restData.verified) {
       return res.status(401).json({
         success: false,
