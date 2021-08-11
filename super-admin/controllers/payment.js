@@ -111,7 +111,7 @@ exports.restaurantLockedAPI = async (req, res) => {
   }
 };
 
-exports.restaurantLockedByRestId = async (req, res) => {
+exports.restaurantLockByRestId = async (req, res) => {
   let rest_id = req.params.rest_id;
   try {
     if (!rest_id) {
@@ -138,7 +138,33 @@ exports.restaurantLockedByRestId = async (req, res) => {
       .json({ success: false, message: status.SERVER_ERROR });
   }
 };
+exports.restaurantUnLockByRestId = async (req, res) => {
+  let rest_id = req.params.rest_id;
+  try {
+    if (!rest_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST });
+    }
 
+    await firestore
+      .collection("restaurants")
+      .doc(rest_id)
+      .set({ locked: false }, { merge: true })
+      .then((e) => {
+        res.status(200).json({ success: true, message: status.UNLOCKED_REST });
+      });
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `super-admin payment restaurantLockedByRestId  user: ${req.user.id} rest: ${rest_id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
 exports.generateInvoice = async () => {
   try {
     let collection = await firestore
