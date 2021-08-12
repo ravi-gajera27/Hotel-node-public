@@ -16,16 +16,24 @@ exports.acceptRequest = async (req, res, next) => {
 
     await firestore
       .runTransaction(async (t) => {
-        let customers = (await t.get(custoemrsRef)).data().takeaway;
-        let customer;
+        let takeawayCust = (await t.get(custoemrsRef)).data().takeaway || [];
         let index;
-        customers.map((cust, i) => {
+        let flag = false;
+        takeawayCust.map((cust, i) => {
           if (cust.cid == req.params.cid) {
             cust.req = true;
-            customer = cust;
             index = i;
+            flag = true;
           }
         });
+
+        if (!flag) {
+          return Promise.resolve({
+            success: false,
+            status: 400,
+            message: status.BAD_REQUEST,
+          });
+        }
 
         let userRef = await firestore.collection("users").doc(req.params.cid);
 
@@ -35,22 +43,28 @@ exports.acceptRequest = async (req, res, next) => {
 
         if (userData.join && userData.join != req.user.rest_id) {
           join = true;
-          customers.splice(index, 1);
+          takeawayCust.splice(index, 1);
         }
 
         await t.set(custoemrsRef, { takeaway: takeawayCust }, { merge: true });
-        return Promise.resolve({ join: join });
+        return Promise.resolve({ success: true, join: join });
       })
       .then(async (promise) => {
-        if (promise.join) {
-          return res
-            .status(200)
-            .json({ success: true, message: status.SESSION_EXIST_REST });
+        if (promise.success) {
+          if (promise.join) {
+            return res
+              .status(403)
+              .json({ success: false, message: status.SESSION_EXIST_REST });
+          } else {
+            await userRef.set({ join: req.user.rest_id }, { merge: true });
+            return res
+              .status(200)
+              .json({ success: true, message: status.ACCEPT_REQUEST_ADMIN });
+          }
         } else {
-          await userRef.set({ join: req.user.rest_id }, { merge: true });
           return res
-            .status(200)
-            .json({ success: true, message: status.ACCEPT_REQUEST_ADMIN });
+            .status(promise.status)
+            .json({ success: false, message: promise.message });
         }
       });
   } catch (err) {
@@ -75,20 +89,37 @@ exports.rejectRequest = async (req, res, next) => {
 
     firestore
       .runTransaction(async (t) => {
-        let customers = (await t.get(customersRef)).data().takeaway;
+        let takeawayCust = (await t.get(customersRef)).data().takeaway || [];
 
-        customers = customers.filter((cust) => cust.cid != req.params.cid);
+        let tempTakeawayCust = takeawayCust.filter(
+          (cust) => cust.cid != req.params.cid
+        );
+
+        if (tempTakeawayCust.length == takeawayCust) {
+          return Promise.resolve({
+            success: false,
+            status: 400,
+            message: status.BAD_REQUEST,
+          });
+        }
 
         await t.set(
           customersRef,
-          { takeaway: [...customers] },
+          { takeaway: [...tempTakeawayCust] },
           { merge: true }
         );
+        return Promise.resolve({ success: true });
       })
-      .then((e) => {
-        return res
-          .status(200)
-          .json({ success: true, message: status.REJECT_REQUEST_ADMIN });
+      .then((promise) => {
+        if (promise.success) {
+          return res
+            .status(200)
+            .json({ success: true, message: status.REJECT_REQUEST_ADMIN });
+        } else {
+          return res
+            .status(promise.status)
+            .json({ success: false, message: promise.message });
+        }
       });
   } catch (err) {
     let e = extractErrorMessage(err);
@@ -119,9 +150,19 @@ exports.blockCustomer = async (req, res, next) => {
 
     firestore
       .runTransaction(async (t) => {
-        let customers = (await t.get(customersRef)).data().takeaway;
+        let takeawayCust = (await t.get(customersRef)).data().takeaway || [];
 
-        customers = customers.filter((cust) => cust.cid != req.params.cid);
+        let tempTakeawayCust = takeawayCust.filter(
+          (cust) => cust.cid != req.params.cid
+        );
+
+        if (tempTakeawayCust.length == takeawayCust) {
+          return Promise.resolve({
+            success: false,
+            status: 400,
+            message: status.BAD_REQUEST,
+          });
+        }
 
         let blocked = moment()
           .utcOffset(process.env.UTC_OFFSET)
@@ -129,16 +170,24 @@ exports.blockCustomer = async (req, res, next) => {
 
         await t.set(
           customersRef,
-          { takeaway: [...customers] },
+          { takeaway: [...tempTakeawayCust] },
           { merge: true }
         );
 
         await t.set(userRef, { blocked: blocked, join: "" }, { merge: true });
+
+        return Promise.resolve({ success: true });
       })
-      .then((e) => {
-        return res
-          .status(200)
-          .json({ success: true, message: status.REJECT_REQUEST_ADMIN });
+      .then((promise) => {
+        if (promise.success) {
+          return res
+            .status(200)
+            .json({ success: true, message: status.REJECT_REQUEST_ADMIN });
+        } else {
+          return res
+            .status(promise.status)
+            .json({ success: false, message: promise.message });
+        }
       });
   } catch (err) {
     let e = extractErrorMessage(err);
@@ -499,7 +548,7 @@ exports.checkoutCustomer = async (req, res, next) => {
 
     InvoiceModel.create(finalInvoice).then(async (e) => {
       await firestore.runTransaction(async (t) => {
-        let customers = (await t.get(customerRef))
+        let customers = await t.get(customerRef);
         let seatCust = customers.data()?.seat || [];
         let takeawayCust = customers.data()?.takeaway || [];
 
@@ -605,14 +654,13 @@ exports.cleanUpCustomers = async (req, res) => {
     delete invoice.order_no;
     delete invoice.clean;
 
-
     InvoiceModel.findByIdAndUpdate(inv_id, invoice).then(async (e) => {
-      await firestore.runTransaction(async t => {
+      await firestore.runTransaction(async (t) => {
         let customers = await t.get(customerRef);
 
         let seatCust = customers.data()?.seat || [];
         let takeawayCust = customers.data()?.takeaway || [];
-    
+
         if (invoice.table == "takeaway") {
           takeawayCust = takeawayCust.filter(
             (ele) => ele.cid != invoice.cid && ele.table != invoice.table
@@ -623,9 +671,14 @@ exports.cleanUpCustomers = async (req, res) => {
           );
         }
 
-        await t.set(customerRef, {seat: [...seatCust], takeaway: [...takeawayCust]}, {merge: true})
-      })
+        await t.set(
+          customerRef,
+          { seat: [...seatCust], takeaway: [...takeawayCust] },
+          { merge: true }
+        );
+      });
       if (invoice.cid.length != 12) {
+        console.log("cid:", invoice.cid);
         await firestore
           .collection("users")
           .doc(invoice.cid)
