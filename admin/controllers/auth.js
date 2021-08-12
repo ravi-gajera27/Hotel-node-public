@@ -495,7 +495,7 @@ exports.restaurantRegister = async (req, res, next) => {
           .set({ rest_id: profile.id }, { merge: true })
         data = {
           user_id: req.user.id,
-          rest_id: profile.id,
+          rest_id: profile.id
         }
         sendToken(data, res)
       })

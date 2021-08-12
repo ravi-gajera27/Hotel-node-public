@@ -7,12 +7,20 @@ const { InvoiceModel } = require("../../models/invoice");
 const mongoose = require("mongoose");
 
 exports.acceptRequest = async (req, res, next) => {
+  if (!req.params.cid) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
+  }
   try {
     let custoemrsRef = await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
       .collection("customers")
       .doc("users");
+
+      let userRef = await firestore.collection("users").doc(req.params.cid);
+
 
     await firestore
       .runTransaction(async (t) => {
@@ -34,8 +42,6 @@ exports.acceptRequest = async (req, res, next) => {
             message: status.BAD_REQUEST,
           });
         }
-
-        let userRef = await firestore.collection("users").doc(req.params.cid);
 
         let userData = (await t.get(userRef)).data();
 
@@ -80,6 +86,11 @@ exports.acceptRequest = async (req, res, next) => {
 };
 
 exports.rejectRequest = async (req, res, next) => {
+  if (!req.params.cid) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
+  }
   try {
     let customersRef = await firestore
       .collection("restaurants")

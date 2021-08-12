@@ -212,3 +212,9 @@
   level: 'error',
   timestamp: '2021-08-11T11:15:49.735Z'
 }
+{
+  label: 'admin custAuth acceptRequest cRtfyfUpGLC53qA1mCbI',
+  message: 'ReferenceError: userRef is not defined',
+  level: 'error',
+  timestamp: '2021-08-12T06:24:50.120Z'
+}
