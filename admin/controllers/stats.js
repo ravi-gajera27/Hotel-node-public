@@ -216,7 +216,7 @@ exports.downloadEodPdf = async (req, res) => {
 
     let invoices = await InvoiceModel.find({
       rest_id: req.user.rest_id,
-      inv_date: date
+      inv_date: date,
     });
 
     let data = rest_details.data();
@@ -577,7 +577,6 @@ exports.getCategoriesStats = async (req, res, next) => {
       i.id = i._id;
       invoices.push(i);
       for (let ele of i.data) {
-        console.log(ele, categories[`${ele.category}`]);
         if (categories[`${ele.category}`] == undefined) {
           continue;
         }
@@ -665,18 +664,22 @@ exports.getAdvanceStats = async (req, res, next) => {
         rest_details.open_time,
         rest_details.close_time
       );
+      console.log(intervalData);
       let data = await InvoiceModel.find({
         rest_id: req.user.rest_id,
         inv_date: { $gte: start_date },
         inv_date: { $lte: end_date },
       });
-
       for (let i of data) {
         if (i.time) {
           index = intervalData.findIndex(
-            (e) => i.time >= e.open_t && i.time < e.close_t
+            (e) =>
+              Number(i.time.split(":")[0]) >= Number(e.open_t.split(":")[0]) &&
+              Number(i.time.split(":")[0]) < Number(e.close_t.split(":")[0])
           );
-          console.log(index);
+
+          console.log(index, i.time);
+
           if (index == -1) {
             if (i.time > rest_details.close_time)
               index = intervalData.length - 1;
@@ -702,8 +705,8 @@ exports.getAdvanceStats = async (req, res, next) => {
       intervalData = await getMonthsOfYear(slot);
       let data = await InvoiceModel.find({
         rest_id: req.user.rest_id,
-      inv_date: { $gte: start_date },
-      inv_date: { $lte: end_date },
+        inv_date: { $gte: start_date },
+        inv_date: { $lte: end_date },
       });
 
       for (let i of data) {
