@@ -404,7 +404,7 @@ exports.restoreCustomer = async (req, res, next) => {
 
           await firestore
             .collection("users")
-            .doc(invoice.cid)
+            .doc(cid)
             .set({ join: req.user.rest_id }, { merge: true });
 
           return res
