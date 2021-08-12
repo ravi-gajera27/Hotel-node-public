@@ -19,8 +19,7 @@ exports.acceptRequest = async (req, res, next) => {
       .collection("customers")
       .doc("users");
 
-      let userRef = await firestore.collection("users").doc(req.params.cid);
-
+    let userRef = await firestore.collection("users").doc(req.params.cid);
 
     await firestore
       .runTransaction(async (t) => {
@@ -231,8 +230,6 @@ exports.removeCustomer = async (req, res, next) => {
       .collection("customers")
       .doc("users");
 
-    let customers;
-
     if (table_no == "takeaway") {
       orderRef = firestore
         .collection(`restaurants/${req.user.rest_id}/torder`)
@@ -244,11 +241,13 @@ exports.removeCustomer = async (req, res, next) => {
     }
 
     await firestore.runTransaction(async (t) => {
+      let customers = (await t.get(customersRef)).data();
+      let takeawayCust = customers.takeaway || [];
+      let seatCust = customers.seat || [];
       if (table_no == "takeaway") {
-        customers = (await t.get(customersRef)).data().takeaway || [];
         let newCustomers = [];
 
-        for (let cust of customers) {
+        for (let cust of takeawayCust) {
           if (cust.restore) {
             continue;
           }
@@ -257,18 +256,21 @@ exports.removeCustomer = async (req, res, next) => {
           }
           newCustomers.push(cust);
         }
+
+        seatCust = seatCust.filter((e) => !e.restore);
+
         await t.set(
           customersRef,
           {
-            takeaway: newCustomers,
+            takeaway: [...newCustomers],
+            seat: [...seatCust],
           },
           { merge: true }
         );
       } else {
-        customers = (await t.get(customersRef)).data().seat || [];
         let newCustomers = [];
 
-        for (let cust of customers) {
+        for (let cust of seatCust) {
           if (cust.restore) {
             continue;
           }
@@ -277,10 +279,13 @@ exports.removeCustomer = async (req, res, next) => {
           }
           newCustomers.push(cust);
         }
+        takeawayCust = takeawayCust.filter((e) => !e.restore);
+
         await t.set(
           customersRef,
           {
-            seat: newCustomers,
+            seat: [...newCustomers],
+            takeaway: [...takeawayCust],
           },
           { merge: true }
         );
@@ -304,11 +309,12 @@ exports.removeCustomer = async (req, res, next) => {
         });
       });
     } else {
-      await firestore
-        .collection("users")
-        .doc(`${cid}`)
-        .set({ join: "" }, { merge: true });
-
+      if (cid.length != 12) {
+        await firestore
+          .collection("users")
+          .doc(`${cid}`)
+          .set({ join: "" }, { merge: true });
+      }
       return res.status(200).json({
         success: true,
         message: `Sessoin from table-${table_no} is successfully terminated`,
@@ -402,10 +408,12 @@ exports.restoreCustomer = async (req, res, next) => {
             await orderRef.set({ restore: false }, { merge: true });
           }
 
-          await firestore
-            .collection("users")
-            .doc(cid)
-            .set({ join: req.user.rest_id }, { merge: true });
+          if (cid.length != 12) {
+            await firestore
+              .collection("users")
+              .doc(cid)
+              .set({ join: req.user.rest_id }, { merge: true });
+          }
 
           return res
             .status(200)
