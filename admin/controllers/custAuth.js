@@ -192,7 +192,7 @@ exports.blockCustomer = async (req, res, next) => {
         if (promise.success) {
           return res
             .status(200)
-            .json({ success: true, message: status.REJECT_REQUEST_ADMIN });
+            .json({ success: true, message: status.BLOCK_REQUEST_ADMIN });
         } else {
           return res
             .status(promise.status)
@@ -582,9 +582,8 @@ exports.checkoutCustomer = async (req, res, next) => {
           let obj = { ...takeawayCust[index] };
 
           obj.checkout = true;
-          obj.id = e.id;
+          obj.inv_id = e.id;
           delete obj.req;
-
           takeawayCust[index] = obj;
         } else {
           index = seatCust.findIndex(
