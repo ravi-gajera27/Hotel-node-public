@@ -105,7 +105,7 @@ exports.rejectRequest = async (req, res, next) => {
           (cust) => cust.cid != req.params.cid
         );
 
-        if (tempTakeawayCust.length == takeawayCust) {
+        if (tempTakeawayCust.length == takeawayCust.length) {
           return Promise.resolve({
             success: false,
             status: 400,
@@ -166,7 +166,7 @@ exports.blockCustomer = async (req, res, next) => {
           (cust) => cust.cid != req.params.cid
         );
 
-        if (tempTakeawayCust.length == takeawayCust) {
+        if (tempTakeawayCust.length == takeawayCust.length) {
           return Promise.resolve({
             success: false,
             status: 400,
