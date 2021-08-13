@@ -686,9 +686,7 @@ exports.getAdvanceStats = async (req, res, next) => {
         let time = Number(i.time.split(":")[0]);
         if (i.time) {
           index = intervalData.findIndex(
-            (e) =>
-              time >= Number(e.open_t.split(":")[0]) &&
-              time < Number(e.close_t.split(":")[0])
+            (e) => time >= e.open_t && time < e.close_t
           );
 
           console.log(index, i.time);
@@ -765,8 +763,8 @@ function getSlotBetweenInterval(interval, start, end) {
             o[1] = ":00";
             let temp = {
               name: name,
-              open_t: start,
-              close_t: Number(o[0]) + 2 + ":00",
+              open_t: Number(o[0]),
+              close_t: Number(o[0]) + 2,
               value: 0,
             };
             o[0] = Number(o[0]) + 2;
@@ -781,8 +779,8 @@ function getSlotBetweenInterval(interval, start, end) {
           ).format("h A")}`;
           let temp = {
             name: name,
-            open_t: `${o[0]}:00`,
-            close_t: `${Number(o[0]) + 2}:00`,
+            open_t: Number(o[0]),
+            close_t: Number(o[0]) + 2,
             value: 0,
           };
           o[0] = Number(o[0]) + 2;
@@ -805,8 +803,8 @@ function getSlotBetweenInterval(interval, start, end) {
 
           let temp = {
             name: name,
-            open_t: `${o[0]}:00`,
-            close_t: `${end}`,
+            open_t: Number(o[0]),
+            close_t: Number(c[0]),
             value: 0,
           };
           data.push(temp);

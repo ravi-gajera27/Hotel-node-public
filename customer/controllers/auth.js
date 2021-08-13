@@ -422,7 +422,7 @@ function setCustomerOntable(seatCust, takeawayCust, total_tables, cookie, user) 
 
     for (let user of takeawayCust) {
       if (user.cid == user.id) {
-        if (user.restore) {
+        if (user.restore || !user.req) {
           flag = 1;
           break;
         } else {

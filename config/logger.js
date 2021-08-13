@@ -11,7 +11,7 @@ if (process.env.NODE_ENV == 'prod') {
         new transports.MongoDB({
           db: process.env.MONGODB_URL,
           level: 'info',
-          format: combine(timestamp(), prettyPrint()),
+          format: combine(timestamp(), label(), prettyPrint()),
           options: { useUnifiedTopology: true },
         }),
       ],
@@ -25,7 +25,7 @@ if (process.env.NODE_ENV == 'prod') {
   try {
     logger = createLogger({
       level: 'info',
-      format: combine(timestamp(), prettyPrint()),
+      format: combine(timestamp(), label(), prettyPrint()),
       transports: [
         new transports.File({ filename: 'public/log' }),
         new transports.Console(),
