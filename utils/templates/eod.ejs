@@ -447,7 +447,7 @@
               <td><%= item.inv_no %></td>
               <td><%= item.cname %></td>
               <td><%= item.gross.toFixed(2) %></td>
-              <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>
+              <td><%= item.dis ? item.dis.toFixed(2) : '-' %></td>
               <td><%= item.tax.toFixed(2) %></td>
               <td><%= item.total_amt.toFixed(2) %></td>
               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>
@@ -497,13 +497,6 @@
             </tr>
             <% let i=0;for(let item of topPerformer) { %>
             <tr>
-<<<<<<< HEAD
-              <td>1</td>
-              <td>Palak Panner</td>
-              <td>Panner(veg)</td>
-              <td>141</td>
-            </tr>
-=======
               <td><%= ++i %></td>
               <td><%= item.name %></td>
               <td><%= item.category %></td>
@@ -512,7 +505,6 @@
             </tr>
             <% if(i==5) break; } %>
            
->>>>>>> origin
           </table>
         </section>
 

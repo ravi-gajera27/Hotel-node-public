@@ -224,3 +224,177 @@
   level: 'error',
   timestamp: '2021-08-13T05:57:08.874Z'
 }
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:13:38.325Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:16:46.551Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:465\n' +
+    '    463|             <th><%= total.total_cust %></th>\r\n' +
+    '    464|             <th><%=total.total_gross.toFixed(2) %></th>\r\n' +
+    ' >> 465|             <th><%=total.total_discount.toFixed(2)  %></th>\r\n' +
+    '    466|             <th><%=total.total_tax.toFixed(2)  %></th>\r\n' +
+    '    467|             <th><%=total.total_net.toFixed(2)  %></th>\r\n' +
+    '    468|             <th><%=total.total_cash.toFixed(2)  %></th>\r\n' +
+    '\n' +
+    'total.total_discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:18:06.158Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:465\n' +
+    '    463|             <th><%= total.total_cust %></th>\r\n' +
+    '    464|             <th><%=total.total_gross.toFixed(2) %></th>\r\n' +
+    ' >> 465|             <th><%=total.total_discount.toFixed(2)  %></th>\r\n' +
+    '    466|             <th><%=total.total_tax.toFixed(2)  %></th>\r\n' +
+    '    467|             <th><%=total.total_net.toFixed(2)  %></th>\r\n' +
+    '    468|             <th><%=total.total_cash.toFixed(2)  %></th>\r\n' +
+    '\n' +
+    'total.total_discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:18:39.373Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:23:37.788Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:24:14.970Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:25:33.453Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:27:08.931Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:28:18.932Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:29:04.715Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:31:58.644Z'
+}
+{
+  label: undefined,
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\eod.ejs:450\n' +
+    '    448|               <td><%= item.cname %></td>\r\n' +
+    '    449|               <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    " >> 450|               <td><%= item.discount ? item.discount.toFixed(2) : '-' %></td>\r\n" +
+    '    451|               <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    452|               <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    "    453|               <td><%= item.cash ? item.cash.toFixed(2) : '-' %></td>\r\n" +
+    '\n' +
+    'item.discount.toFixed is not a function',
+  level: 'error',
+  timestamp: '2021-08-13T09:33:42.736Z'
+}
+{
+  label: undefined,
+  message: 'Error: Value for argument "value" is not a valid query constraint. Cannot use "undefined" as a Firestore value. If you want to ignore undefined values, enable `ignoreUndefinedProperties`.',
+  level: 'error',
+  timestamp: '2021-08-13T09:42:50.167Z'
+}

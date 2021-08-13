@@ -46,12 +46,10 @@ exports.getHomeForOwner = async (req, res) => {
 
     let seatOrderRef = await firestore
       .collection(`restaurants/${req.user.rest_id}/order`)
-      .where("restore", "!=", true)
       .get();
 
     let takeawayOrderRef = await firestore
       .collection(`restaurants/${req.user.rest_id}/torder`)
-      .where("restore", "!=", true)
       .get();
 
     let customersRef = await firestore
@@ -88,11 +86,33 @@ exports.getHomeForOwner = async (req, res) => {
       Number(rest_details.tables) - obj.total_occupied - obj.total_checkout;
 
     if (!seatOrderRef.empty) {
-      obj.seat_order = seatOrderRef.docs.length;
+      for (let doc of seatOrderRef.docs) {
+        let data = doc.data();
+        if (data.restore || data.cancel) {
+          continue;
+        }
+        for (let order of data.order) {
+          if (order.restore || order.cancel) {
+            continue;
+          }
+          obj.seat_order++;
+        }
+      }
     }
 
     if (!takeawayOrderRef.empty) {
-      obj.takeaway_order = takeawayOrderRef.docs.length;
+      for (let doc of takeawayOrderRef.docs) {
+        let data = doc.data();
+        if (data.restore || data.cancel) {
+          continue;
+        }
+        for (let order of data.order) {
+          if (order.restore || order.cancel) {
+            continue;
+          }
+          obj.takeaway_order++;
+        }
+      }
     }
 
     res.status(200).json({ success: true, data: obj });
@@ -257,7 +277,7 @@ exports.downloadEodPdf = async (req, res) => {
       tempInvoice.gross = tempInvoice.taxable;
       total.total_gross += tempInvoice.gross;
       if (tempInvoice.discount) {
-        tempInvoice.discount = tempInvoice.discount.includes("%")
+        tempInvoice.dis = tempInvoice.discount.includes("%")
           ? Number(
               (tempInvoice.taxable *
                 Number(tempInvoice.discount.split("%")[0])) /
@@ -265,13 +285,13 @@ exports.downloadEodPdf = async (req, res) => {
             )
           : Number(tempInvoice.discount);
       } else {
-        tempInvoice.discount = 0;
+        tempInvoice.dis = 0;
       }
-      total.total_discount += tempInvoice.discount || 0;
+      total.total_discount += Number(tempInvoice.dis) || 0;
 
       tempInvoice.tax =
         Number(tempInvoice.taxable - tempInvoice.discount) *
-        (tempInvoice.tax / 100);
+        (Number(tempInvoice.tax) / 100);
       total.total_tax += tempInvoice.tax;
 
       total.total_net += tempInvoice.total_amt;
@@ -293,7 +313,6 @@ exports.downloadEodPdf = async (req, res) => {
           total.total_online += tempInvoice.online;
           break;
       }
-
       invoice_array.push(tempInvoice);
     }
 
@@ -424,7 +443,7 @@ exports.getBasicsByInterval = async (req, res, next) => {
         } else {
           tempInvoice.discount = 0;
         }
-        total.total_discount += tempInvoice.discount || 0;
+        total.total_discount += Number(tempInvoice.discount) || 0;
 
         tempInvoice.tax =
           Number(tempInvoice.taxable - tempInvoice.discount) *
