@@ -369,12 +369,14 @@ exports.getBasicsByInterval = async (req, res, next) => {
 
     let start_date = interval[0];
     let end_date = interval[1];
-    console.log(start_date, end_date);
     InvoiceModel.find({
-      rest_id: req.user.rest_id,
-      inv_date: { $gte: start_date },
-      inv_date: { $lte: end_date },
+      $and: [
+        { rest_id: req.user.rest_id },
+        { inv_date: { $gte: start_date } },
+        { inv_date: { $lte: end_date } },
+      ],
     }).then((invoiceRef) => {
+      console.log(invoiceRef);
       let itemsArray = [];
       let total_taxable = 0;
       let total = {
@@ -489,9 +491,11 @@ exports.getInvoicesByInterval = async (req, res, next) => {
     let end_date = interval[1];
 
     InvoiceModel.find({
-      rest_id: req.user.rest_id,
-      inv_date: { $gte: start_date },
-      inv_date: { $lte: end_date },
+      $and: [
+        { rest_id: req.user.rest_id },
+        { inv_date: { $gte: start_date } },
+        { inv_date: { $lte: end_date } },
+      ],
     }).then((data) => {
       let invoices = [];
       for (let i of data) {
@@ -566,9 +570,11 @@ exports.getCategoriesStats = async (req, res, next) => {
     let end_date = interval[1];
 
     let data = await InvoiceModel.find({
-      rest_id: req.user.rest_id,
-      inv_date: { $gte: start_date },
-      inv_date: { $lte: end_date },
+      $and: [
+        { rest_id: req.user.rest_id },
+        { inv_date: { $gte: start_date } },
+        { inv_date: { $lte: end_date } },
+      ],
     });
 
     let invoices = [];
@@ -632,9 +638,11 @@ exports.getAdvanceStats = async (req, res, next) => {
     if (slot == "this-week") {
       intervalData = await getSlotBetweenInterval(slot, "", "");
       let data = await InvoiceModel.find({
-        rest_id: req.user.rest_id,
-        inv_date: { $gte: start_date },
-        inv_date: { $lte: end_date },
+        $and: [
+          { rest_id: req.user.rest_id },
+          { inv_date: { $gte: start_date } },
+          { inv_date: { $lte: end_date } },
+        ],
       });
 
       for (let i of data) {
@@ -644,9 +652,11 @@ exports.getAdvanceStats = async (req, res, next) => {
     } else if (slot.includes("month")) {
       intervalData = await getSlotBetweenInterval(slot, "", "");
       let data = await InvoiceModel.find({
-        rest_id: req.user.rest_id,
-        inv_date: { $gte: start_date },
-        inv_date: { $lte: end_date },
+        $and: [
+          { rest_id: req.user.rest_id },
+          { inv_date: { $gte: start_date } },
+          { inv_date: { $lte: end_date } },
+        ],
       });
 
       for (let i of data) {
@@ -666,16 +676,19 @@ exports.getAdvanceStats = async (req, res, next) => {
       );
       console.log(intervalData);
       let data = await InvoiceModel.find({
-        rest_id: req.user.rest_id,
-        inv_date: { $gte: start_date },
-        inv_date: { $lte: end_date },
+        $and: [
+          { rest_id: req.user.rest_id },
+          { inv_date: { $gte: start_date } },
+          { inv_date: { $lte: end_date } },
+        ],
       });
       for (let i of data) {
+        let time = Number(i.time.split(":")[0]);
         if (i.time) {
           index = intervalData.findIndex(
             (e) =>
-              Number(i.time.split(":")[0]) >= Number(e.open_t.split(":")[0]) &&
-              Number(i.time.split(":")[0]) < Number(e.close_t.split(":")[0])
+              time >= Number(e.open_t.split(":")[0]) &&
+              time < Number(e.close_t.split(":")[0])
           );
 
           console.log(index, i.time);
@@ -693,9 +706,11 @@ exports.getAdvanceStats = async (req, res, next) => {
       intervalData = slotData[0];
       let starting_month = slotData[1];
       let data = await InvoiceModel.find({
-        rest_id: req.user.rest_id,
-        inv_date: { $gte: start_date },
-        inv_date: { $lte: end_date },
+        $and: [
+          { rest_id: req.user.rest_id },
+          { inv_date: { $gte: start_date } },
+          { inv_date: { $lte: end_date } },
+        ],
       });
       for (let i of data.docs) {
         index = moment(i.inv_date).month();
@@ -704,9 +719,11 @@ exports.getAdvanceStats = async (req, res, next) => {
     } else if (slot == "last-year" || slot == "this-year") {
       intervalData = await getMonthsOfYear(slot);
       let data = await InvoiceModel.find({
-        rest_id: req.user.rest_id,
-        inv_date: { $gte: start_date },
-        inv_date: { $lte: end_date },
+        $and: [
+          { rest_id: req.user.rest_id },
+          { inv_date: { $gte: start_date } },
+          { inv_date: { $lte: end_date } },
+        ],
       });
 
       for (let i of data) {
