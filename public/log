@@ -398,3 +398,27 @@
   level: 'error',
   timestamp: '2021-08-13T09:42:50.167Z'
 }
+{
+  label: undefined,
+  message: "TypeError: Cannot read property 'length' of undefined",
+  level: 'error',
+  timestamp: '2021-08-14T06:11:28.916Z'
+}
+{
+  label: undefined,
+  message: "TypeError: Cannot read property 'length' of undefined",
+  level: 'error',
+  timestamp: '2021-08-14T06:11:47.014Z'
+}
+{
+  label: 'admin order addOrderByTableNo captain: 05fV63eJLBTJHpEbx97f rest: cRtfyfUpGLC53qA1mCbI',
+  message: 'ReferenceError: table is not defined',
+  level: 'error',
+  timestamp: '2021-08-14T08:52:28.374Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: 05fV63eJLBTJHpEbx97f rest: cRtfyfUpGLC53qA1mCbI',
+  message: "ReferenceError: Cannot access 'data' before initialization",
+  level: 'error',
+  timestamp: '2021-08-14T08:54:48.956Z'
+}

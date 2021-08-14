@@ -296,7 +296,7 @@ exports.removeCustomer = async (req, res, next) => {
 
     if (order.exists) {
       await orderRef.set({ restore: true }, { merge: true }).then(async (e) => {
-        if (order.cid.length != 12) {
+        if (cid.length != 12) {
           await firestore
             .collection("users")
             .doc(invoice.cid)
@@ -404,6 +404,7 @@ exports.restoreCustomer = async (req, res, next) => {
             .json({ success: false, message: status.BAD_REQUEST });
         } else {
           let order = await orderRef.get();
+          console.log(order.exists, order.data(), cid)
           if (order.exists && order.data().cid == cid) {
             await orderRef.set({ restore: false }, { merge: true });
           }

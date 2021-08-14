@@ -430,16 +430,19 @@ exports.getOrderByTableNo = async (req, res, next) => {
       .get();
 
     if (!orderRef.exists) {
-      return res
-        .status(200)
-        .json({ success: true, data: { order: [], cid: "" } });
+      return res.status(200).json({ success: true, data: { order: [] } });
     }
 
     let orderData = orderRef.data();
 
+    let order = [];
+    if (!orderData.restore) {
+      order = [...orderData.order];
+    }
+
     return res.status(200).json({
       success: true,
-      data: { order: orderData.order, cid: orderData.cid },
+      data: { order: order },
     });
   } catch (err) {
     let e = extractErrorMessage(err);
@@ -456,6 +459,13 @@ exports.getOrderByTableNo = async (req, res, next) => {
 exports.addOrderByTableNo = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
+    let cid = req.params.cid;
+
+    if (!table_no) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST });
+    }
 
     let orderRef = firestore
       .collection(`restaurants/${req.user.rest_id}/order`)
@@ -467,17 +477,10 @@ exports.addOrderByTableNo = async (req, res, next) => {
       .collection("customers")
       .doc("users");
 
-    let data = (await customersRef.get()).data();
     let id = await generateRandomString();
-    if (Number(data.tables) < Number(table_no)) {
-      return res
-        .status(400)
-        .json({ success: false, message: status.BAD_REQUEST });
-    }
-
     let order_id = await generateRandomStringForOrder();
 
-    data = {
+    let data = {
       data: [...req.body],
       table: table_no,
       date: moment().utcOffset(process.env.UTC_OFFSET).unix(),
@@ -490,43 +493,83 @@ exports.addOrderByTableNo = async (req, res, next) => {
       data.qty += item.qty;
       data.taxable += item.price;
     }
-    let body = {
-      cname: req.user.role,
-      cid: id,
-      order: [data],
-    };
 
-    orderRef.set(body).then(async (e) => {
-      await firestore.runTransaction(async (t) => {
+    let body = {};
+    if (cid) {
+      body = {
+        cid: cid,
+        order: [{ ...data }],
+      };
+    } else {
+      body = {
+        cname: req.user.role,
+        cid: id,
+        order: [{ ...data }],
+      };
+    }
+
+    await firestore
+      .runTransaction(async (t) => {
         let data = (await t.get(customersRef)).data();
         let customers = data.seat || [];
+        let customer;
+
+        if (Number(data.tables) < Number(table_no)) {
+          return Promise.resolve({
+            success: false,
+            statu: 400,
+            message: status.BAD_REQUEST,
+          });
+        }
 
         for (let cust of customers) {
-          if (cust.table == table_no && cust.cname != req.user.role) {
-            return res
-              .status(400)
-              .json({ success: false, message: status.SESSION_EXIST });
+          if (cust.table == table_no) {
+            customer = cust;
+          }
+          if (
+            cust.table == table_no &&
+            (cust.cname != req.user.role || cust.cid != cid)
+          ) {
+            return Promise.resolve({
+              success: false,
+              statu: 403,
+              message: status.SESSION_EXIST,
+            });
           }
         }
 
-        customers.push({
-          cname: req.user.role,
-          checkout: false,
-          cid: id,
-          table: table_no,
-          by: req.user.role,
-        });
+        if (customer) {
+          body.cname = customer.cname;
+        }
 
-        await t.set(customersRef, { seat: [...customers] }, { merge: true });
+        if (!cid) {
+          customers.push({
+            cname: req.user.role,
+            checkout: false,
+            cid: id,
+            table: table_no,
+          });
+          await t.set(customersRef, { seat: [...customers] }, { merge: true });
+        }
+
+        return Promise.resolve({ success: true });
+      })
+      .then(async (promise) => {
+        if (promise.success) {
+          await orderRef.set(body);
+          return res
+            .status(200)
+            .json({ success: true, message: "Order Place Successfully" });
+        } else {
+          return res
+            .status(promise.status)
+            .json({ success: false, message: promise.message });
+        }
       });
-      return res
-        .status(200)
-        .json({ success: true, message: "Order Place Successfully" });
-    });
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `admin order addOrderByTableNo captain: ${req.user.id} rest: ${req.user.rest_id}`,
+      label: `admin order addOrderByTableNo admin: ${req.user.id} rest: ${req.user.rest_id}`,
       message: e,
     });
     return res
@@ -583,7 +626,7 @@ exports.setOrderByTableNo = async (req, res, next) => {
       taxable = 0;
       for (let item of order.data) {
         qty += item.qty;
-        taxable += item.taxable;
+        taxable += item.price;
       }
       order.qty = qty;
       order.taxable = taxable;
@@ -627,6 +670,13 @@ exports.setOrderByTableNo = async (req, res, next) => {
 exports.cancelAllOrderByTableNo = async (req, res) => {
   try {
     let table_no = req.params.table_no;
+    let cid = req.params.cid;
+
+    if (!table_no || !cid) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST });
+    }
 
     let customersRef = await firestore
       .collection("restaurants")
@@ -638,12 +688,18 @@ exports.cancelAllOrderByTableNo = async (req, res) => {
       .collection(`restaurants/${req.user.rest_id}/order`)
       .doc(`table-${table_no}`);
 
+    if (cid.length != 12) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Successfully canceled" });
+    }
+
     orderRef.delete().then(async (e) => {
       await firestore.runTransaction(async (t) => {
         let customers = (await t.get(customersRef)).data().seat || [];
-  
+
         customers = customers.filter((e) => e.table != table_no);
-  
+
         await t.set(customersRef, { seat: [...customers] });
       });
       return res

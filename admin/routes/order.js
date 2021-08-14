@@ -26,10 +26,11 @@ router.put(
   order.setOrderByOrderId
 );
 
+router.post('/:table_no/:cid', protect, order.addOrderByTableNo);
 router.post('/:table_no', protect, order.addOrderByTableNo);
 router.get('/:table_no', protect, order.getOrderByTableNo);
 router.put('/:table_no', protect, order.setOrderByTableNo);
-router.delete('/:table_no', protect, order.cancelAllOrderByTableNo);
+router.delete('/:table_no/:cid', protect, order.cancelAllOrderByTableNo);
 
 
 module.exports = router;
