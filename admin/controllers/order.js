@@ -700,7 +700,7 @@ exports.cancelAllOrderByTableNo = async (req, res) => {
 
         customers = customers.filter((e) => e.table != table_no);
 
-        await t.set(customersRef, { seat: [...customers] });
+        await t.set(customersRef, { seat: [...customers] }, { merge: true });
       });
       return res
         .status(200)

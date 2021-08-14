@@ -483,6 +483,20 @@ exports.checkoutCustomer = async (req, res, next) => {
       });
     }
 
+    let restore = 0;
+
+    for(let order of orderData.order){
+      if(order.restore || order.cancel){
+        restore++
+      }
+    }
+
+    if(restore == orderData.order.length){
+      return res
+      .status(403)
+      .json({ success: false, message: "All orders of customer is already canceled" });
+    }
+
     for (let ele of orderData.order) {
       if (ele.restore || ele.cancel) {
         continue;
