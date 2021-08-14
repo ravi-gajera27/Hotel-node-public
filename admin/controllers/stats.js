@@ -141,33 +141,18 @@ exports.downloadInvoicePdf = async (req, res) => {
       .collection("restaurants")
       .doc(req.user.rest_id)
       .get();
-    /* 
-    let invoiceRef = await firestore
-      .collection('orders')
-      .doc(req.user.rest_id)
-      .collection('invoices')
-      .doc(inv_id)
-      .get()
 
-    let invoices = invoiceRef.data().invoices
-
-    let index = invoices
-      .map((e) => {
-        return e.inv_no
-      })
-      .indexOf(inv_no)
-    if (index == -1) {
-      return res
-        .status(400)
-        .json({ success: false, message: status.BAD_REQUEST })
-    }
-    let invoice = invoices[index]*/
     let data = rest_details.data();
 
     let invoice = await InvoiceModel.findById(inv_id);
 
     let userRef = await firestore.collection("users").doc(invoice.cid).get();
-    let user = userRef.data();
+    let user;
+    if (!userRef.exists) {
+      user = { name: invoice.canme, mobile_no: "", email: "" };
+    } else {
+      user = userRef.data();
+    }
 
     var fileName = `invoice-${invoice.cid}.pdf`;
 
@@ -182,6 +167,7 @@ exports.downloadInvoicePdf = async (req, res) => {
       },
       (err, data) => {
         if (err) {
+          console.log(err);
           throw err;
         } else {
           let options = {
@@ -193,6 +179,7 @@ exports.downloadInvoicePdf = async (req, res) => {
 
           pdf.create(data, options).toFile(output_path, function (err, data) {
             if (err) {
+              console.log(err);
               throw err;
             } else {
               fs.readFile(output_path, function (err, data) {
@@ -521,7 +508,6 @@ exports.getInvoicesByInterval = async (req, res, next) => {
         if (i.clean == false) {
           continue;
         }
-        i.id = i._id;
         invoices.push(i);
       }
       res.status(200).json({ success: true, data: invoices });

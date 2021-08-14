@@ -4,7 +4,7 @@ const { protect } = require('../../middleware/adminAuth')
 
 router.get('/invoices', protect, stats.getInvoices)
 router.get('/invoices/:interval', protect, stats.getInvoicesByInterval)
-router.post('/download-invoice', protect, stats.downloadInvoicePdf)
+router.get('/download-invoice/:inv_id', protect, stats.downloadInvoicePdf)
 router.get('/generate-eod/:date', protect, stats.downloadEodPdf)
 router.get('/category/:interval', protect, stats.getCategoriesStats)
 router.get('/advance/:slot/:interval', protect, stats.getAdvanceStats)
