@@ -299,7 +299,7 @@ exports.removeCustomer = async (req, res, next) => {
         if (cid.length != 12) {
           await firestore
             .collection("users")
-            .doc(invoice.cid)
+            .doc(cid)
             .set({ join: "" }, { merge: true });
         }
 
