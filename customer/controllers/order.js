@@ -71,9 +71,8 @@ exports.addOrder = async (req, res, next) => {
         restorAble = true;
         orderData = [];
       }
-
-      if (data.cid && data.cid != req.user.id) {
-        res.status(403).json({ success: false, message: status.SESSION_EXIST });
+      else if (data.cid && data.cid != req.user.id) {
+       return res.status(403).json({ success: false, message: status.SESSION_EXIST });
       }
     }
 
