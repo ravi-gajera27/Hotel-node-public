@@ -715,7 +715,7 @@ exports.getAdvanceStats = async (req, res, next) => {
           { inv_date: { $lte: end_date } },
         ],
       });
-      for (let i of data.docs) {
+      for (let i of data) {
         index = moment(i.inv_date).month();
         intervalData[index - starting_month].value += i.total_amt;
       }

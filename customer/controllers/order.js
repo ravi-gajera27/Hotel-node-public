@@ -81,6 +81,7 @@ exports.addOrder = async (req, res, next) => {
     req.body.table = cookie.table;
 
     if (orderData.length == 0) {
+      req.body.id = await generateRandomString();
       if (restorAble) {
         send_data = {
           cid: req.user.id,
@@ -89,7 +90,6 @@ exports.addOrder = async (req, res, next) => {
           restore: false,
         };
       } else {
-        req.body.id = await generateRandomString();
         send_data = {
           cid: req.user.id,
           cname: req.user.name,

@@ -64,3 +64,27 @@
   level: 'error',
   timestamp: '2021-08-15T05:51:14.796Z'
 }
+{
+  label: 'admin state getAdvanceStats cRtfyfUpGLC53qA1mCbI',
+  message: 'TypeError: data.docs is not iterable',
+  level: 'error',
+  timestamp: '2021-08-26T10:09:24.831Z'
+}
+{
+  label: 'admin state getAdvanceStats cRtfyfUpGLC53qA1mCbI',
+  message: 'TypeError: data.docs is not iterable',
+  level: 'error',
+  timestamp: '2021-08-26T10:10:43.712Z'
+}
+{
+  label: 'admin state getAdvanceStats cRtfyfUpGLC53qA1mCbI',
+  message: 'TypeError: data.docs is not iterable',
+  level: 'error',
+  timestamp: '2021-08-26T10:13:32.264Z'
+}
+{
+  label: 'admin state getAdvanceStats cRtfyfUpGLC53qA1mCbI',
+  message: 'TypeError: data.docs is not iterable',
+  level: 'error',
+  timestamp: '2021-08-26T10:13:38.793Z'
+}

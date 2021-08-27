@@ -870,7 +870,7 @@ exports.getRestDetails = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: status.NOT_REGISTERED,
-        redirect: '/restaurant-profile-step-one',
+        redirect: '/restaurant-information',
       })
     }
 
