@@ -114,8 +114,18 @@ exports.verifySession = async (req, res) => {
       .runTransaction(async (t) => {
         let data = (await t.get(customersRef)).data();
         let customers = data.seat || [];
-
-        if (Number(req.body.table) > Number(data.tables)) {
+        let total_tables = 0;
+        if (req.body.type) {
+          let index = data.type
+            .map((e) => {
+              return e.value;
+            })
+            .indexOf(type);
+          total_tables = data.type[index].tables;
+        } else {
+          total_tables = data.tables;
+        }
+        if (Number(req.body.table) > Number(total_tables)) {
           return Promise.resolve({
             success: false,
             status: 400,
@@ -124,10 +134,23 @@ exports.verifySession = async (req, res) => {
         }
 
         flag = true;
-        for (let cust of customers) {
-          if (Number(cust.table) == Number(req.body.table) && !cust.restore) {
-            flag = false;
-            break;
+        if (req.body.type) {
+          for (let cust of customers) {
+            if (
+              Number(cust.table) == Number(req.body.table) &&
+              cust.type == req.body.type &&
+              !cust.restore
+            ) {
+              flag = false;
+              break;
+            }
+          }
+        } else {
+          for (let cust of customers) {
+            if (Number(cust.table) == Number(req.body.table) && !cust.restore) {
+              flag = false;
+              break;
+            }
           }
         }
 
@@ -140,13 +163,25 @@ exports.verifySession = async (req, res) => {
         }
 
         let id = await generateRandomString();
-        let obj = {
-          checkout: false,
-          cname: req.body.cname,
-          cid: id,
-          table: req.body.table,
-          captain_id: req.user.id,
-        };
+        let obj = {};
+        if (req.body.type) {
+          obj = {
+            checkout: false,
+            cname: req.body.cname,
+            cid: id,
+            table: req.body.table,
+            captain_id: req.user.id,
+            type: req.body.type,
+          };
+        } else {
+          let obj = {
+            checkout: false,
+            cname: req.body.cname,
+            cid: id,
+            table: req.body.table,
+            captain_id: req.user.id,
+          };
+        }
 
         customers.push(obj);
 

@@ -215,6 +215,7 @@ exports.removeCustomer = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
     let cid = req.params.cid;
+    let type = req.params.type;
 
     if (!table_no || !cid) {
       return res
@@ -235,9 +236,15 @@ exports.removeCustomer = async (req, res, next) => {
         .collection(`restaurants/${req.user.rest_id}/torder`)
         .doc(`${cid}`);
     } else {
-      orderRef = firestore
-        .collection(`restaurants/${req.user.rest_id}/order`)
-        .doc(`table-${table_no}`);
+      if (type) {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`${type}-table-${table_no}`);
+      } else {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`table-${table_no}`);
+      }
     }
 
     await firestore.runTransaction(async (t) => {
@@ -336,6 +343,7 @@ exports.restoreCustomer = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
     let cid = req.params.cid;
+    let type = req.params.type;
 
     if (!table_no || !cid) {
       return res
@@ -360,10 +368,15 @@ exports.restoreCustomer = async (req, res, next) => {
       customers = (await customersRef.get()).data().takeaway || [];
     } else {
       customers = (await customersRef.get()).data().seat || [];
-
-      orderRef = firestore
-        .collection(`restaurants/${req.user.rest_id}/order`)
-        .doc(`table-${table_no}`);
+      if (type) {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`${type}-table-${table_no}`);
+      } else {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`table-${table_no}`);
+      }
     }
 
     firestore
@@ -404,7 +417,7 @@ exports.restoreCustomer = async (req, res, next) => {
             .json({ success: false, message: status.BAD_REQUEST });
         } else {
           let order = await orderRef.get();
-          console.log(order.exists, order.data(), cid)
+          console.log(order.exists, order.data(), cid);
           if (order.exists && order.data().cid == cid) {
             await orderRef.set({ restore: false }, { merge: true });
           }
@@ -437,6 +450,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
     let cid = req.params.cid;
+    let type = req.parms.type;
 
     if (!table_no || !cid) {
       return res
@@ -454,9 +468,15 @@ exports.checkoutCustomer = async (req, res, next) => {
         .collection(`restaurants/${req.user.rest_id}/torder`)
         .doc(`${cid}`);
     } else {
-      orderRef = firestore
-        .collection(`restaurants/${req.user.rest_id}/order`)
-        .doc(`table-${table_no}`);
+      if (type) {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`${type}-table-${table_no}`);
+      } else {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`table-${table_no}`);
+      }
     }
 
     let orderDoc = await orderRef.get();
@@ -485,16 +505,19 @@ exports.checkoutCustomer = async (req, res, next) => {
 
     let restore = 0;
 
-    for(let order of orderData.order){
-      if(order.restore || order.cancel){
-        restore++
+    for (let order of orderData.order) {
+      if (order.restore || order.cancel) {
+        restore++;
       }
     }
 
-    if(restore == orderData.order.length){
+    if (restore == orderData.order.length) {
       return res
-      .status(403)
-      .json({ success: false, message: "All orders of customer is already canceled" });
+        .status(403)
+        .json({
+          success: false,
+          message: "All orders of customer is already canceled",
+        });
     }
 
     for (let ele of orderData.order) {
@@ -558,6 +581,9 @@ exports.checkoutCustomer = async (req, res, next) => {
     finalInvoice.cid = cid;
     finalInvoice.cname = orderData.cname;
     finalInvoice.table = table_no;
+    if (type) {
+      finalInvoice.type = type;
+    }
     finalInvoice.inv_no = restData.inv_no;
     finalInvoice.clean = false;
     delete finalInvoice.date;
@@ -601,12 +627,22 @@ exports.checkoutCustomer = async (req, res, next) => {
           delete obj.req;
           takeawayCust[index] = obj;
         } else {
-          index = seatCust.findIndex(
-            (ele) =>
-              ele.cid == cid &&
-              ele.table == table_no &&
-              ele.cname == orderData.cname
-          );
+          if (type) {
+            index = seatCust.findIndex(
+              (ele) =>
+                ele.cid == cid &&
+                ele.table == table_no &&
+                ele.type == type &&
+                ele.cname == orderData.cname
+            );
+          } else {
+            index = seatCust.findIndex(
+              (ele) =>
+                ele.cid == cid &&
+                ele.table == table_no &&
+                ele.cname == orderData.cname
+            );
+          }
           seatCust[index].checkout = true;
           seatCust[index].inv_id = e.id;
         }
@@ -672,6 +708,7 @@ exports.cleanUpCustomers = async (req, res) => {
   try {
     let invoice = req.body;
     let inv_id = req.params.inv_id;
+    let type = req.body.type;
     invoice.rest_id = req.user.rest_id;
 
     if (!invoice.cid || !invoice.table || !inv_id) {
@@ -699,9 +736,16 @@ exports.cleanUpCustomers = async (req, res) => {
             (ele) => ele.cid != invoice.cid && ele.table != invoice.table
           );
         } else {
-          seatCust = seatCust.filter(
-            (ele) => ele.cid != invoice.cid && ele.table != invoice.table
-          );
+          if(type){
+            seatCust = seatCust.filter(
+              (ele) => ele.cid != invoice.cid && ele.table != invoice.table && ele.type != type
+            );
+          }else{
+            seatCust = seatCust.filter(
+              (ele) => ele.cid != invoice.cid && ele.table != invoice.table 
+            );
+          }
+         
         }
 
         await t.set(

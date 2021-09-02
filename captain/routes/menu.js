@@ -4,4 +4,5 @@ const { protect } = require('../../middleware/adminAuth')
 
 router.get('/', protect, menu.getMenu)
 
+
 module.exports = router

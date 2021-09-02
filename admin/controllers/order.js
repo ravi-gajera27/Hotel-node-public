@@ -11,6 +11,7 @@ exports.cancelOrder = async (req, res, next) => {
     let table_no = req.params.table_no;
     let order_id = req.params.order_id;
     let cid = req.params.cid;
+    let type = req.params.type;
     let restoreOrder = req.body?.restoreOrder;
 
     if (!table_no || !order_id || !cid) {
@@ -32,13 +33,25 @@ exports.cancelOrder = async (req, res, next) => {
         restoreOrder.table_no != cid
       ) {
         restoreOrderRef = firestore
-          .collection(`restaurants/${req.user.rest_id}/torder`)
-          .doc(`${restoreOrder.table_no}`);
+        .collection(`restaurants/${req.user.rest_id}/order`)
+        .doc(
+          `${
+            restoreOrder.type
+              ? restoreOrder.type + "-table-" + restoreOrder.table_no
+              : "table-" + restoreOrder.table_no
+          }`
+        );
       }
     } else {
-      orderRef = firestore
-        .collection(`restaurants/${req.user.rest_id}/order`)
-        .doc(`table-${table_no}`);
+      if (type) {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`${type}-table-${table_no}`);
+      } else {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`table-${table_no}`);
+      }
 
       if (
         restoreOrder.table_no &&
@@ -47,7 +60,13 @@ exports.cancelOrder = async (req, res, next) => {
       ) {
         restoreOrderRef = firestore
           .collection(`restaurants/${req.user.rest_id}/order`)
-          .doc(`table-${restoreOrder.table_no}`);
+          .doc(
+            `${
+              restoreOrder.type
+                ? restoreOrder.type + "-table-" + restoreOrder.table_no
+                : "table-" + restoreOrder.table_no
+            }`
+          );
       }
     }
 
@@ -133,6 +152,7 @@ exports.restoreOrder = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
     let order_id = req.params.order_id;
+    let type = req.params.type;
     let cid = req.params.cid;
 
     if (!table_no || !order_id || !cid) {
@@ -148,9 +168,15 @@ exports.restoreOrder = async (req, res, next) => {
         .collection(`restaurants/${req.user.rest_id}/torder`)
         .doc(`${cid}`);
     } else {
-      orderRef = firestore
-        .collection(`restaurants/${req.user.rest_id}/order`)
-        .doc(`table-${table_no}`);
+      if (type) {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`${type}-table-${table_no}`);
+      } else {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`table-${table_no}`);
+      }
     }
 
     let orderData = await orderRef.get();
@@ -303,6 +329,7 @@ exports.getOrderByOrderId = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
     let order_id = req.params.order_id;
+    let type = req.params.type;
     let cid = req.params.cid;
 
     if (!table_no || !order_id || !cid) {
@@ -318,9 +345,15 @@ exports.getOrderByOrderId = async (req, res, next) => {
         .collection(`restaurants/${req.user.rest_id}/torder`)
         .doc(`${cid}`);
     } else {
-      orderRef = firestore
-        .collection(`restaurants/${req.user.rest_id}/order`)
-        .doc(`table-${table_no}`);
+      if (type) {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`${type}-table-${table_no}`);
+      } else {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`table-${table_no}`);
+      }
     }
 
     let orderData = await orderRef.get();
@@ -363,6 +396,7 @@ exports.setOrderByOrderId = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
     let order_id = req.params.order_id;
+    let type = req.params.type;
     let cid = req.params.cid;
 
     if (!table_no || !order_id || !cid) {
@@ -377,9 +411,15 @@ exports.setOrderByOrderId = async (req, res, next) => {
         .collection(`restaurants/${req.user.rest_id}/torder`)
         .doc(`${cid}`);
     } else {
-      orderRef = firestore
-        .collection(`restaurants/${req.user.rest_id}/order`)
-        .doc(`table-${table_no}`);
+      if (type) {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`${type}-table-${table_no}`);
+      } else {
+        orderRef = firestore
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(`table-${table_no}`);
+      }
     }
 
     let orderData = await orderRef.get();
@@ -424,10 +464,17 @@ exports.setOrderByOrderId = async (req, res, next) => {
 exports.getOrderByTableNo = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
-    let orderRef = await firestore
-      .collection(`restaurants/${req.user.rest_id}/order`)
-      .doc(`table-${table_no}`)
-      .get();
+    let type = req.params.type;
+    let orderRef;
+    if (type) {
+      orderRef = firestore
+        .collection(`restaurants/${req.user.rest_id}/order`)
+        .doc(`${type}-table-${table_no}`);
+    } else {
+      orderRef = firestore
+        .collection(`restaurants/${req.user.rest_id}/order`)
+        .doc(`table-${table_no}`);
+    }
 
     if (!orderRef.exists) {
       return res.status(200).json({ success: true, data: { order: [] } });
@@ -460,16 +507,23 @@ exports.addOrderByTableNo = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
     let cid = req.params.cid;
+    let type = req.params.type;
 
     if (!table_no) {
       return res
         .status(400)
         .json({ success: false, message: status.BAD_REQUEST });
     }
-
-    let orderRef = firestore
-      .collection(`restaurants/${req.user.rest_id}/order`)
-      .doc(`table-${table_no}`);
+    let orderRef;
+    if (type) {
+      orderRef = firestore
+        .collection(`restaurants/${req.user.rest_id}/order`)
+        .doc(`${type}-table-${table_no}`);
+    } else {
+      orderRef = firestore
+        .collection(`restaurants/${req.user.rest_id}/order`)
+        .doc(`table-${table_no}`);
+    }
 
     let customersRef = await firestore
       .collection("restaurants")
@@ -499,12 +553,14 @@ exports.addOrderByTableNo = async (req, res, next) => {
       body = {
         cid: cid,
         order: [{ ...data }],
+        type: type || ''
       };
     } else {
       body = {
         cname: req.user.role,
         cid: id,
         order: [{ ...data }],
+        type: type || ''
       };
     }
 
@@ -513,8 +569,18 @@ exports.addOrderByTableNo = async (req, res, next) => {
         let data = (await t.get(customersRef)).data();
         let customers = data.seat || [];
         let customer;
-
-        if (Number(data.tables) < Number(table_no)) {
+        let tables = 0;
+        if (type) {
+          let index = data.type
+            .map((e) => {
+              return e.value;
+            })
+            .indexOf(type);
+          tables = data.type[index].tables;
+        } else {
+          tables = data.tables;
+        }
+        if (Number(tables) < Number(table_no)) {
           return Promise.resolve({
             success: false,
             statu: 400,
@@ -523,18 +589,35 @@ exports.addOrderByTableNo = async (req, res, next) => {
         }
 
         for (let cust of customers) {
-          if (cust.table == table_no) {
-            customer = cust;
-          }
-          if (
-            cust.table == table_no &&
-            (cust.cname != req.user.role || cust.cid != cid)
-          ) {
-            return Promise.resolve({
-              success: false,
-              statu: 403,
-              message: status.SESSION_EXIST,
-            });
+          if (type) {
+            if (cust.table == table_no && cust.type == type) {
+              customer = cust;
+            }
+            if (
+              cust.table == table_no &&
+              cust.type == type &&
+              (cust.cname != req.user.role || cust.cid != cid)
+            ) {
+              return Promise.resolve({
+                success: false,
+                statu: 403,
+                message: status.SESSION_EXIST,
+              });
+            }
+          } else {
+            if (cust.table == table_no) {
+              customer = cust;
+            }
+            if (
+              cust.table == table_no &&
+              (cust.cname != req.user.role || cust.cid != cid)
+            ) {
+              return Promise.resolve({
+                success: false,
+                statu: 403,
+                message: status.SESSION_EXIST,
+              });
+            }
           }
         }
 
@@ -543,12 +626,22 @@ exports.addOrderByTableNo = async (req, res, next) => {
         }
 
         if (!cid) {
-          customers.push({
-            cname: req.user.role,
-            checkout: false,
-            cid: id,
-            table: table_no,
-          });
+          if (type) {
+            customers.push({
+              cname: req.user.role,
+              checkout: false,
+              cid: id,
+              table: table_no,
+              type: type,
+            });
+          } else {
+            customers.push({
+              cname: req.user.role,
+              checkout: false,
+              cid: id,
+              table: table_no,
+            });
+          }
           await t.set(customersRef, { seat: [...customers] }, { merge: true });
         }
 
@@ -581,10 +674,18 @@ exports.addOrderByTableNo = async (req, res, next) => {
 exports.setOrderByTableNo = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
+    let type = req.params.type;
 
-    let orderRef = firestore
-      .collection(`restaurants/${req.user.rest_id}/order`)
-      .doc(`table-${table_no}`);
+    let orderRef;
+    if (type) {
+      orderRef = firestore
+        .collection(`restaurants/${req.user.rest_id}/order`)
+        .doc(`${type}-table-${table_no}`);
+    } else {
+      orderRef = firestore
+        .collection(`restaurants/${req.user.rest_id}/order`)
+        .doc(`table-${table_no}`);
+    }
 
     let customersRef = await firestore
       .collection("restaurants")
@@ -595,8 +696,18 @@ exports.setOrderByTableNo = async (req, res, next) => {
     let data = (await customersRef.get()).data();
 
     let customers = data.seat || [];
-
-    if (Number(data.tables) < Number(table_no)) {
+    let tables = 0;
+    if (type) {
+      let index = data.type
+        .map((e) => {
+          return e.value;
+        })
+        .indexOf(type);
+      tables = data.type[index].tables;
+    } else {
+      tables = data.tables;
+    }
+    if (Number(tables) < Number(table_no)) {
       return res
         .status(400)
         .json({ success: false, message: status.INVALID_TABLE });
@@ -605,9 +716,16 @@ exports.setOrderByTableNo = async (req, res, next) => {
     let flag = false;
 
     for (let cust of customers) {
-      if (cust.table == table_no) {
-        flag = true;
-        break;
+      if (type) {
+        if (cust.table == table_no && cust.type == type) {
+          flag = true;
+          break;
+        }
+      } else {
+        if (cust.table == table_no) {
+          flag = true;
+          break;
+        }
       }
     }
 
@@ -671,6 +789,7 @@ exports.cancelAllOrderByTableNo = async (req, res) => {
   try {
     let table_no = req.params.table_no;
     let cid = req.params.cid;
+    let type = req.params.type;
 
     if (!table_no || !cid) {
       return res
@@ -684,9 +803,16 @@ exports.cancelAllOrderByTableNo = async (req, res) => {
       .collection("customers")
       .doc("users");
 
-    let orderRef = firestore
-      .collection(`restaurants/${req.user.rest_id}/order`)
-      .doc(`table-${table_no}`);
+    let orderRef;
+    if (type) {
+      orderRef = firestore
+        .collection(`restaurants/${req.user.rest_id}/order`)
+        .doc(`${type}-table-${table_no}`);
+    } else {
+      orderRef = firestore
+        .collection(`restaurants/${req.user.rest_id}/order`)
+        .doc(`table-${table_no}`);
+    }
 
     if (cid.length != 12) {
       return res
@@ -697,9 +823,13 @@ exports.cancelAllOrderByTableNo = async (req, res) => {
     orderRef.delete().then(async (e) => {
       await firestore.runTransaction(async (t) => {
         let customers = (await t.get(customersRef)).data().seat || [];
-
-        customers = customers.filter((e) => e.table != table_no);
-
+        if (type) {
+          customers = customers.filter(
+            (e) => e.table != table_no && e.type == type
+          );
+        } else {
+          customers = customers.filter((e) => e.table != table_no);
+        }
         await t.set(customersRef, { seat: [...customers] }, { merge: true });
       });
       return res

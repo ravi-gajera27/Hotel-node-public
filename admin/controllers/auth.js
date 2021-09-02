@@ -563,7 +563,7 @@ exports.updateStepRestaurantDetaials = async (req, res, next) => {
 
 exports.addMenuFileRestStep = async (req, res, next) => {
   try {
-    if (!req.body.tables) {
+    if (!req.body.restType) {
       return res
         .status(400)
         .json({ success: false, message: status.BAD_REQUEST })
@@ -613,9 +613,9 @@ exports.addMenuFileRestStep = async (req, res, next) => {
     firestore
       .collection('restaurants')
       .doc(req.user.rest_id)
-      .set({ tables: req.body.tables }, { merge: true })
+      .set({ type: req.body.restType }, { merge: true })
       .then(async (profile) => {
-        await customersRef.set({ tables: req.body.tables }, { merge: true })
+        await customersRef.set({ type: req.body.restType }, { merge: true })
         return res.status(200).json({ success: true, message: 'Success' })
       })
   } catch (err) {
@@ -660,7 +660,7 @@ exports.getUser = async (req, res, next) => {
           delete data.rest_id
           data.rest = true
         }
-        console.log(data)
+     
         res.status(200).json({ success: true, data: data })
       } else {
         res.status(401).json({ success: false, redirect: '/login' })
@@ -888,7 +888,7 @@ exports.getRestDetails = async (req, res) => {
     }
 
     let restData = restDetailsDoc.data()
-    console.log('size',size(restData))
+      
     if (!restData.verified) {
       return res.status(401).json({
         success: false,
@@ -917,6 +917,13 @@ exports.getRestDetails = async (req, res) => {
 
     delete restData.verified
     delete restData.locked
+
+  /*   restData.type = [
+      {name: 'AC', value: 'ac'},
+      {name: 'NAC', value: 'nac'},
+      {name: 'Garden', value: 'ga'},
+      {name: 'Terrace', value: 'te'}
+    ] */
 
     return res.status(200).json({ success: true, data: restData })
   } catch (err) {

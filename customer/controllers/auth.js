@@ -297,56 +297,67 @@ exports.verifySession = async (req, res, next) => {
       .collection("customers")
       .doc("users");
 
-      await firestore.runTransaction(async (t) => {
-      let doc = await t.get(customersRef);
-      let users = doc.data();
-      let seatCust = users?.seat || [];
-      let takeawayCust = users?.takeaway || [];
-      let total_tables = users.tables;
-      let user = { id: req.user.id, name: req.user.name }
-      let promise = await setCustomerOntable(
-        seatCust,
-        takeawayCust,
-        total_tables,
-        cookie,
-        user
-      );
+    await firestore
+      .runTransaction(async (t) => {
+        let doc = await t.get(customersRef);
+        let users = doc.data();
+        let seatCust = users?.seat || [];
+        let takeawayCust = users?.takeaway || [];
+        let total_tables = 0;
+        if (cookie.type) {
+          let index = users.type
+            .map((e) => {
+              return e.value;
+            })
+            .indexOf(cookie.type);
+          total_tables = users.type[index].tables;
+        } else {
+          total_tables = users.tables;
+        }
+        let user = { id: req.user.id, name: req.user.name };
+        let promise = await setCustomerOntable(
+          seatCust,
+          takeawayCust,
+          total_tables,
+          cookie,
+          user
+        );
 
-      if (promise.success && !promise.status) {
-        await t.set(customersRef, {
-          seat: promise.seatCust,
-          takeaway: promise.takeawayCust,
-          tables: total_tables,
-        });
-      }
-     return Promise.resolve(promise);
-    }).then(async (promise) => {
-      if (promise.success && promise.status == 200) {
-        return res.status(200).json({ success: true });
-      } else if (!promise.success) {
-        return res
-          .status(promise.status)
-          .json({ success: false, message: promise.message });
-      }
+        if (promise.success && !promise.status) {
+          await t.set(customersRef, {
+            seat: promise.seatCust,
+            takeaway: promise.takeawayCust,
+          }, {merge: true});
+        }
+        return Promise.resolve(promise);
+      })
+      .then(async (promise) => {
+        if (promise.success && promise.status == 200) {
+          return res.status(200).json({ success: true });
+        } else if (!promise.success) {
+          return res
+            .status(promise.status)
+            .json({ success: false, message: promise.message });
+        }
 
-      if (cookie.table != "takeaway") {
-        await firestore
-          .collection("users")
-          .doc(req.user.id)
-          .set({ join: cookie.rest_id }, { merge: true });
-      }
+        if (cookie.table != "takeaway") {
+          await firestore
+            .collection("users")
+            .doc(req.user.id)
+            .set({ join: cookie.rest_id }, { merge: true });
+        }
 
-      if (cookie.table == "takeaway") {
+        if (cookie.table == "takeaway") {
+          return res.status(200).json({
+            success: true,
+            request: true,
+            message: status.REQUEST_SENT,
+          });
+        }
         return res.status(200).json({
           success: true,
-          request: true,
-          message: status.REQUEST_SENT,
         });
-      }
-      return res.status(200).json({
-        success: true,
       });
-    });
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
@@ -359,7 +370,13 @@ exports.verifySession = async (req, res, next) => {
   }
 };
 
-function setCustomerOntable(seatCust, takeawayCust, total_tables, cookie, user) {
+function setCustomerOntable(
+  seatCust,
+  takeawayCust,
+  total_tables,
+  cookie,
+  user
+) {
   if (cookie.table == "takeaway") {
     let index = 0;
     let flag = 0;
@@ -463,21 +480,31 @@ function setCustomerOntable(seatCust, takeawayCust, total_tables, cookie, user) 
             return { status: 403, success: false, message: status.OCCUPIED };
           }
         } else if (Number(ele.table) == Number(cookie.table)) {
-          if (!ele.restore) {
-            return {
-              status: 403,
-              success: false,
-              message: status.SESSION_EXIST,
-            };
+          if (cookie.type) {
+            if (cookie.type == ele.type || !ele.restore) {
+              return {
+                status: 403,
+                success: false,
+                message: status.SESSION_EXIST,
+              };
+            }
           } else {
-            restCust = true;
-            ele = {
-              table: cookie.table,
-              cid: user.id,
-              cname: user.name,
-              checkout: false,
-            };
-            break;
+            if (!ele.restore) {
+              return {
+                status: 403,
+                success: false,
+                message: status.SESSION_EXIST,
+              };
+            } else {
+              restCust = true;
+              ele = {
+                table: cookie.table,
+                cid: user.id,
+                cname: user.name,
+                checkout: false,
+              };
+              break;
+            }
           }
         }
         index++;
@@ -490,28 +517,61 @@ function setCustomerOntable(seatCust, takeawayCust, total_tables, cookie, user) 
         delete cust.restore;
         seatCust[index] = cust;
       } else if (restCust) {
-        let cust = {
+        let cust = {};
+        if (cookie.type) {
+          cust = {
+            table: cookie.table,
+            cid: user.id,
+            cname: user.name,
+            checkout: false,
+            type: cookie.type,
+          };
+        } else {
+          cust = {
+            table: cookie.table,
+            cid: user.id,
+            cname: user.name,
+            checkout: false,
+          };
+        }
+        seatCust[index] = cust;
+      } else {
+        if (cookie.type) {
+          seatCust.push({
+            table: cookie.table,
+            cid: user.id,
+            cname: user.name,
+            checkout: false,
+            type: cookie.type,
+          });
+        } else {
+          seatCust.push({
+            table: cookie.table,
+            cid: user.id,
+            cname: user.name,
+            checkout: false,
+          });
+        }
+      }
+    } else {
+      let obj = {};
+
+      if (cookie.type) {
+        obj = {
+          table: cookie.table,
+          cid: user.id,
+          cname: user.name,
+          checkout: false,
+          type: cookie.type,
+        };
+      } else {
+        obj = {
           table: cookie.table,
           cid: user.id,
           cname: user.name,
           checkout: false,
         };
-        seatCust[index] = cust;
-      } else {
-        seatCust.push({
-          table: cookie.table,
-          cid: user.id,
-          cname: user.name,
-          checkout: false,
-        });
       }
-    } else {
-      let obj = {
-        table: cookie.table,
-        cid: user.id,
-        cname: user.name,
-        checkout: false,
-      };
       seatCust = [{ ...obj }];
     }
   }

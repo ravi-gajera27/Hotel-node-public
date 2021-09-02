@@ -69,7 +69,13 @@ exports.getHomeForOwner = async (req, res) => {
     };
 
     let rest_details = rest_details_ref.data();
-    obj.total_table = Number(rest_details.tables);
+    if (rest_details.type) {
+      for (let t of rest_details.type) {
+        obj.total_table += Number(t.tables);
+      }
+    } else {
+      obj.total_table = Number(rest_details.tables);
+    }
 
     for (let data of seatCust) {
       if (data.restore) {
@@ -83,7 +89,7 @@ exports.getHomeForOwner = async (req, res) => {
     }
 
     obj.total_vaccant =
-      Number(rest_details.tables) - obj.total_occupied - obj.total_checkout;
+      obj.total_table - obj.total_occupied - obj.total_checkout;
 
     if (!seatOrderRef.empty) {
       for (let doc of seatOrderRef.docs) {

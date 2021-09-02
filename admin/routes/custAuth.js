@@ -22,5 +22,20 @@ router.delete(
   protect,
   custAuth.removeCustomer
 );
+router.get(
+  "/restore-customer/:table_no/:cid/:type",
+  protect,
+  custAuth.restoreCustomer
+);
+router.get(
+  "/checkout-customer/:table_no/:cid/:type",
+  protect,
+  custAuth.checkoutCustomer
+);
+router.delete(
+  "/remove-customer/:table_no/:cid/:type",
+  protect,
+  custAuth.removeCustomer
+);
 
 module.exports = router;

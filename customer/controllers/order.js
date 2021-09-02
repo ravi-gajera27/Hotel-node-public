@@ -32,16 +32,25 @@ exports.addOrder = async (req, res, next) => {
 
       customers = customerRef.data().takeaway;
     } else {
-      orderRef = await firestore
-        .collection(`restaurants/${cookie.rest_id}/order/`)
-        .doc(`table-${cookie.table}`);
-
+      if (cookie.type) {
+        orderRef = await firestore
+          .collection(`restaurants/${cookie.rest_id}/order/`)
+          .doc(`${cookie.type}-table-${cookie.table}`);
+      } else {
+        orderRef = await firestore
+          .collection(`restaurants/${cookie.rest_id}/order/`)
+          .doc(`table-${cookie.table}`);
+      }
       customers = customerRef.data().seat;
     }
 
     let valid = false;
     for (let cust of customers) {
-      if (cust.table == cookie.table && cust.cid == req.user.id) {
+      if (
+        cust.table == cookie.table && cust.cid == req.user.id && cookie.type
+          ? cookie.type == cust.type
+          : true
+      ) {
         if (cust.restore) {
           break;
         }
@@ -70,9 +79,10 @@ exports.addOrder = async (req, res, next) => {
       if (data.restore) {
         restorAble = true;
         orderData = [];
-      }
-      else if (data.cid && data.cid != req.user.id) {
-       return res.status(403).json({ success: false, message: status.SESSION_EXIST });
+      } else if (data.cid && data.cid != req.user.id) {
+        return res
+          .status(403)
+          .json({ success: false, message: status.SESSION_EXIST });
       }
     }
 
@@ -87,12 +97,14 @@ exports.addOrder = async (req, res, next) => {
           cid: req.user.id,
           cname: req.user.name,
           order: [{ ...req.body }],
+          type: cookie.type || '',
           restore: false,
         };
       } else {
         send_data = {
           cid: req.user.id,
           cname: req.user.name,
+          type: cookie.type || '',
           order: [{ ...req.body }],
         };
       }
@@ -171,9 +183,15 @@ exports.getOrder = async (req, res, next) => {
       .collection(`restaurants/${cookie.rest_id}/torder/`)
       .doc(`${req.user.id}`);
   } else {
-    orderRef = await firestore
-      .collection(`restaurants/${cookie.rest_id}/order/`)
-      .doc(`table-${cookie.table}`);
+    if (cookie.type) {
+      orderRef = await firestore
+        .collection(`restaurants/${cookie.rest_id}/order/`)
+        .doc(`${cookie.type}-table-${cookie.table}`);
+    } else {
+      orderRef = await firestore
+        .collection(`restaurants/${cookie.rest_id}/order/`)
+        .doc(`table-${cookie.table}`);
+    }
   }
 
   let order = await orderRef.get();
@@ -204,9 +222,15 @@ exports.checkout = async (req, res, next) => {
         .collection(`restaurants/${cookie.rest_id}/torder/`)
         .doc(`${req.user.id}`);
     } else {
-      orderRef = await firestore
-        .collection(`restaurants/${cookie.rest_id}/order/`)
-        .doc(`table-${cookie.table}`);
+      if (cookie.type) {
+        orderRef = await firestore
+          .collection(`restaurants/${cookie.rest_id}/order/`)
+          .doc(`${cookie.type}-table-${cookie.table}`);
+      } else {
+        orderRef = await firestore
+          .collection(`restaurants/${cookie.rest_id}/order/`)
+          .doc(`table-${cookie.table}`);
+      }
     }
 
     let orderExist = await orderRef.get();
@@ -316,6 +340,9 @@ exports.checkout = async (req, res, next) => {
     req.body.cname = req.user.name;
     req.body.table = cookie.table;
     req.body.inv_no = set_invoice_no;
+    if (cookie.type) {
+      req.body.type = cookie.type;
+    }
     req.body.clean = false;
     delete req.body.date;
     delete req.body.qty;
@@ -357,8 +384,10 @@ exports.checkout = async (req, res, next) => {
             delete obj.req;
             takeawayCust[index] = obj;
           } else {
-            index = seatCust.findIndex(
-              (ele) => ele.cid == req.user.id && ele.table == cookie.table
+            index = seatCust.findIndex((ele) =>
+              ele.cid == req.user.id && ele.table == cookie.table && cookie.type
+                ? cookie.type == ele.type
+                : true
             );
             seatCust[index].checkout = true;
             seatCust[index].inv_id = e.id;
