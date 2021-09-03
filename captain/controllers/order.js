@@ -93,6 +93,7 @@ exports.addOrder = async (req, res, next) => {
           cname: customer.cname,
           order: [{ ...req.body }],
           restore: false,
+          type: type || ''
         };
       } else {
         req.body.id = await generateRandomString();
@@ -118,6 +119,7 @@ exports.addOrder = async (req, res, next) => {
       send_data = orderData;
       send_data = { order: [...send_data] };
     }
+    
     orderRef.set(send_data, { merge: true }).then(async (order) => {
       return res
         .status(200)
