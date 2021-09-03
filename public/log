@@ -562,3 +562,9 @@
   level: 'error',
   timestamp: '2021-09-02T12:02:08.755Z'
 }
+{
+  label: 'admin menu getMenu cRtfyfUpGLC53qA1mCbI',
+  message: 'ReferenceError: le2 is not defined',
+  level: 'error',
+  timestamp: '2021-09-03T04:00:54.235Z'
+}
