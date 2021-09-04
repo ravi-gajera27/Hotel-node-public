@@ -568,3 +568,9 @@
   level: 'error',
   timestamp: '2021-09-03T04:00:54.235Z'
 }
+{
+  label: 'customer auth verifySession cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: ele is not defined',
+  level: 'error',
+  timestamp: '2021-09-04T10:01:01.119Z'
+}

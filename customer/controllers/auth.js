@@ -10,6 +10,7 @@ const randomstring = require("randomstring");
 const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
 const { incZoneReq } = require("../../utils/zone");
+const e = require("express");
 sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY);
 
 exports.login = async (req, res, next) => {
@@ -324,10 +325,14 @@ exports.verifySession = async (req, res, next) => {
         );
 
         if (promise.success && !promise.status) {
-          await t.set(customersRef, {
-            seat: promise.seatCust,
-            takeaway: promise.takeawayCust,
-          }, {merge: true});
+          await t.set(
+            customersRef,
+            {
+              seat: promise.seatCust,
+              takeaway: promise.takeawayCust,
+            },
+            { merge: true }
+          );
         }
         return Promise.resolve(promise);
       })
@@ -465,6 +470,19 @@ function setCustomerOntable(
       index = 0;
       flag = 0;
       restCust = false;
+
+      let tempIndex = seatCust.findIndex(
+        (ele) =>
+          ele.cid == user.id &&
+          ele.restore &&
+          (Number(ele.table) != Number(cookie.table) ||
+            (ele.type ? ele.type != cookie.type : false))
+      );
+
+      if (tempIndex != -1) {
+        seatCust.splice(tempIndex, 1);
+      }
+
       for (let ele of seatCust) {
         if (ele.cid == user.id) {
           if (ele.restore) {
@@ -481,12 +499,17 @@ function setCustomerOntable(
           }
         } else if (Number(ele.table) == Number(cookie.table)) {
           if (cookie.type) {
-            if (cookie.type == ele.type || !ele.restore) {
-              return {
-                status: 403,
-                success: false,
-                message: status.SESSION_EXIST,
-              };
+            if (cookie.type == ele.type) {
+              if (ele.restore) {
+                restCust = true;
+                break;
+              } else {
+                return {
+                  status: 403,
+                  success: false,
+                  message: status.SESSION_EXIST,
+                };
+              }
             }
           } else {
             if (!ele.restore) {
@@ -497,12 +520,6 @@ function setCustomerOntable(
               };
             } else {
               restCust = true;
-              ele = {
-                table: cookie.table,
-                cid: user.id,
-                cname: user.name,
-                checkout: false,
-              };
               break;
             }
           }
