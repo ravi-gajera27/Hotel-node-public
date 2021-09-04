@@ -654,7 +654,7 @@ exports.getUser = async (req, res, next) => {
           if (restRef.invoice_format) {
             data.invoice = true
           }
-          if (restRef.tables) {
+          if (restRef.tables || restRef.type.length >= 0) {
             data.table = true
           }
           delete data.rest_id
@@ -901,7 +901,7 @@ exports.getRestDetails = async (req, res) => {
         message: status.REST_STEP_INCOMPLETE,
         redirect: '/restaurant-invoice',
       })
-    } else if (!restData.tables) {
+    } else if (!restData.tables && !restData.type) {
       return res.status(401).json({
         success: false,
         message: status.REST_STEP_INCOMPLETE,
