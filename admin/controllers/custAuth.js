@@ -735,12 +735,15 @@ exports.cleanUpCustomers = async (req, res) => {
           );
         } else {
           if (type) {
-            seatCust = seatCust.filter(
+            let index = seatCust.findIndex(
               (ele) =>
-                ele.cid != invoice.cid &&
-                ele.table != invoice.table &&
-                ele.type != type
+                ele.cid == invoice.cid &&
+                ele.table == invoice.table &&
+                ele.type == type
             );
+            if (index != -1) {
+              seatCust.splice(index, 1);
+            }
           } else {
             seatCust = seatCust.filter(
               (ele) => ele.cid != invoice.cid && ele.table != invoice.table

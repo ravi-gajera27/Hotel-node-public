@@ -586,3 +586,75 @@
   level: 'error',
   timestamp: '2021-09-04T15:57:42.370Z'
 }
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:22:10.095Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:25:06.977Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:28:24.836Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:28:57.317Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:31:40.176Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:33:18.123Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:33:53.044Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:34:07.596Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:34:33.827Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:35:02.481Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:36:03.418Z'
+}
+{
+  label: 'admin order addOrderByTableNo admin: OYcTwYU0X2jqWhO99BpC rest: cH3za13VsMr0oAnqMT0x',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-09-04T17:36:32.196Z'
+}

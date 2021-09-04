@@ -33,14 +33,14 @@ exports.cancelOrder = async (req, res, next) => {
         restoreOrder.table_no != cid
       ) {
         restoreOrderRef = firestore
-        .collection(`restaurants/${req.user.rest_id}/order`)
-        .doc(
-          `${
-            restoreOrder.type
-              ? restoreOrder.type + "-table-" + restoreOrder.table_no
-              : "table-" + restoreOrder.table_no
-          }`
-        );
+          .collection(`restaurants/${req.user.rest_id}/order`)
+          .doc(
+            `${
+              restoreOrder.type
+                ? restoreOrder.type + "-table-" + restoreOrder.table_no
+                : "table-" + restoreOrder.table_no
+            }`
+          );
       }
     } else {
       if (type) {
@@ -465,6 +465,7 @@ exports.getOrderByTableNo = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
     let type = req.params.type;
+
     let orderRef;
     if (type) {
       orderRef = firestore
@@ -475,6 +476,8 @@ exports.getOrderByTableNo = async (req, res, next) => {
         .collection(`restaurants/${req.user.rest_id}/order`)
         .doc(`table-${table_no}`);
     }
+
+    orderRef = await orderRef.get();
 
     if (!orderRef.exists) {
       return res.status(200).json({ success: true, data: { order: [] } });
@@ -494,7 +497,7 @@ exports.getOrderByTableNo = async (req, res, next) => {
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `admin order getOrderByTableNo captain: ${req.user.id} rest: ${req.user.rest_id}`,
+      label: `admin order getOrderByTableNo rest: ${req.user.rest_id}`,
       message: e,
     });
     return res
@@ -553,14 +556,14 @@ exports.addOrderByTableNo = async (req, res, next) => {
       body = {
         cid: cid,
         order: [{ ...data }],
-        type: type || ''
+        type: type || "",
       };
     } else {
       body = {
         cname: req.user.role,
         cid: id,
         order: [{ ...data }],
-        type: type || ''
+        type: type || "",
       };
     }
 
@@ -576,6 +579,7 @@ exports.addOrderByTableNo = async (req, res, next) => {
               return e.value;
             })
             .indexOf(type);
+
           tables = data.type[index].tables;
         } else {
           tables = data.tables;
@@ -588,19 +592,22 @@ exports.addOrderByTableNo = async (req, res, next) => {
           });
         }
 
+        console.log("1");
         for (let cust of customers) {
           if (type) {
-            if (cust.table == table_no && cust.type == type) {
+            if (Number(cust.table) == Number(table_no) && cust.type == type) {
               customer = cust;
             }
             if (
               cust.table == table_no &&
               cust.type == type &&
-              (cust.cname != req.user.role || cust.cid != cid)
+              cust.cname != req.user.role &&
+              cust.cid != cid
             ) {
+              console.log("2", cust);
               return Promise.resolve({
                 success: false,
-                statu: 403,
+                status: 403,
                 message: status.SESSION_EXIST,
               });
             }
