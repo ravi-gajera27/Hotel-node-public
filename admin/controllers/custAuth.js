@@ -450,7 +450,7 @@ exports.checkoutCustomer = async (req, res, next) => {
   try {
     let table_no = req.params.table_no;
     let cid = req.params.cid;
-    let type = req.parms.type;
+    let type = req.params.type || "";
 
     if (!table_no || !cid) {
       return res
@@ -512,12 +512,10 @@ exports.checkoutCustomer = async (req, res, next) => {
     }
 
     if (restore == orderData.order.length) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "All orders of customer is already canceled",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "All orders of customer is already canceled",
+      });
     }
 
     for (let ele of orderData.order) {
@@ -736,16 +734,18 @@ exports.cleanUpCustomers = async (req, res) => {
             (ele) => ele.cid != invoice.cid && ele.table != invoice.table
           );
         } else {
-          if(type){
+          if (type) {
             seatCust = seatCust.filter(
-              (ele) => ele.cid != invoice.cid && ele.table != invoice.table && ele.type != type
+              (ele) =>
+                ele.cid != invoice.cid &&
+                ele.table != invoice.table &&
+                ele.type != type
             );
-          }else{
+          } else {
             seatCust = seatCust.filter(
-              (ele) => ele.cid != invoice.cid && ele.table != invoice.table 
+              (ele) => ele.cid != invoice.cid && ele.table != invoice.table
             );
           }
-         
         }
 
         await t.set(

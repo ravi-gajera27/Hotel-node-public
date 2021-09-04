@@ -574,3 +574,15 @@
   level: 'error',
   timestamp: '2021-09-04T10:01:01.119Z'
 }
+{
+  label: 'admin custAuth checkoutCustomer cH3za13VsMr0oAnqMT0x',
+  message: "TypeError: Cannot read property 'type' of undefined",
+  level: 'error',
+  timestamp: '2021-09-04T15:50:09.030Z'
+}
+{
+  label: 'admin custAuth checkoutCustomer cH3za13VsMr0oAnqMT0x',
+  message: "TypeError: Cannot read property 'type' of undefined",
+  level: 'error',
+  timestamp: '2021-09-04T15:57:42.370Z'
+}

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const InvoiceSchema = new mongoose.Schema({
   rest_id: String,
@@ -14,7 +14,8 @@ const InvoiceSchema = new mongoose.Schema({
   taxable: Number,
   time: String,
   total_amt: Number,
-  settle: { credit: Number, method: String}
+  type: String,
+  settle: { credit: Number, method: String },
 });
 
-module.exports.InvoiceModel = mongoose.model('invoices', InvoiceSchema);
+module.exports.InvoiceModel = mongoose.model("invoices", InvoiceSchema);

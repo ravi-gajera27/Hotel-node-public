@@ -97,14 +97,14 @@ exports.addOrder = async (req, res, next) => {
           cid: req.user.id,
           cname: req.user.name,
           order: [{ ...req.body }],
-          type: cookie.type || '',
+          type: cookie.type || "",
           restore: false,
         };
       } else {
         send_data = {
           cid: req.user.id,
           cname: req.user.name,
-          type: cookie.type || '',
+          type: cookie.type || "",
           order: [{ ...req.body }],
         };
       }
@@ -384,11 +384,13 @@ exports.checkout = async (req, res, next) => {
             delete obj.req;
             takeawayCust[index] = obj;
           } else {
-            index = seatCust.findIndex((ele) =>
-              ele.cid == req.user.id && ele.table == cookie.table && cookie.type
-                ? cookie.type == ele.type
-                : true
+            index = seatCust.findIndex(
+              (ele) =>
+                ele.cid == req.user.id &&
+                ele.table == cookie.table &&
+                (cookie.type ? cookie.type == ele.type : true)
             );
+
             seatCust[index].checkout = true;
             seatCust[index].inv_id = e.id;
           }
