@@ -23,11 +23,11 @@ exports.addOrder = async (req, res, next) => {
     let orderRef;
     if (type) {
       orderRef = await firestore
-        .collection(`restaurants/${cookie.rest_id}/order/`)
-        .doc(`${type}-table-${cookie.table}`);
+        .collection(`restaurants/${req.user.rest_id}/order/`)
+        .doc(`${type}-table-${table}`);
     } else {
       orderRef = await firestore
-        .collection(`restaurants/${cookie.rest_id}/order/`)
+        .collection(`restaurants/${req.user.rest_id}/order/`)
         .doc(`table-${table}`);
     }
 

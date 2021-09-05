@@ -658,3 +658,15 @@
   level: 'error',
   timestamp: '2021-09-04T17:36:32.196Z'
 }
+{
+  label: 'captain order addOrder captain: F8JBGXua3x8FlYBeyRPG rest: cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: cookie is not defined',
+  level: 'error',
+  timestamp: '2021-09-05T05:35:12.155Z'
+}
+{
+  label: 'captain order addOrder captain: F8JBGXua3x8FlYBeyRPG rest: cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: cookie is not defined',
+  level: 'error',
+  timestamp: '2021-09-05T05:36:43.286Z'
+}
