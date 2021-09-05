@@ -120,7 +120,7 @@ exports.verifySession = async (req, res) => {
             .map((e) => {
               return e.value;
             })
-            .indexOf(type);
+            .indexOf(req.body.type);
           total_tables = data.type[index].tables;
         } else {
           total_tables = data.tables;
