@@ -670,3 +670,39 @@
   level: 'error',
   timestamp: '2021-09-05T05:36:43.286Z'
 }
+{
+  label: 'admin menu addMenu cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: data is not defined',
+  level: 'error',
+  timestamp: '2021-09-06T04:12:43.640Z'
+}
+{
+  label: 'admin menu addMenu cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: data is not defined',
+  level: 'error',
+  timestamp: '2021-09-06T04:13:26.891Z'
+}
+{
+  label: 'admin menu addMenu cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: data is not defined',
+  level: 'error',
+  timestamp: '2021-09-06T04:15:22.412Z'
+}
+{
+  label: 'admin menu addMenu cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: data is not defined',
+  level: 'error',
+  timestamp: '2021-09-06T04:17:13.296Z'
+}
+{
+  label: 'admin menu addMenu cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: data is not defined',
+  level: 'error',
+  timestamp: '2021-09-06T04:17:51.920Z'
+}
+{
+  label: 'admin menu addMenu cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: data is not defined',
+  level: 'error',
+  timestamp: '2021-09-06T04:18:37.118Z'
+}
