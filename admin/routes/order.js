@@ -45,6 +45,11 @@ router.put(
   protect,
   order.setOrderByOrderId
 );
+router.put(
+  "/set-order-id/:table_no/:order_id/:cid",
+  protect,
+  order.setOrderByOrderId
+);
 
 router.post(
   "/add-order-table-cid/:table_no/:cid",
