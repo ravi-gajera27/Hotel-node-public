@@ -1,4 +1,4 @@
-const firstore = require("../../config/db").firestore();
+const firestore = require("../../config/db").firestore();
 const status = require("../../utils/status");
 const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
@@ -12,6 +12,8 @@ const sizeof = require("firestore-size");
 var credentials = require("../../peraket-rms-google-drive.json");
 const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
+const { off } = require("process");
+
 let scopes = ["https://www.googleapis.com/auth/drive"];
 
 let oAuthClient = new google.auth.JWT(
@@ -39,7 +41,7 @@ oAuthClient.authorize((err, token) => {
 });
 
 exports.getCategory = async (req, res, next) => {
-  await firstore
+  await firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
     .collection("categories")
@@ -69,7 +71,7 @@ exports.getCategory = async (req, res, next) => {
 };
 
 exports.addCategory = async (req, res, next) => {
-  await firstore
+  await firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
     .collection("categories")
@@ -94,7 +96,7 @@ exports.addCategory = async (req, res, next) => {
 };
 
 exports.setCategory = async (req, res, next) => {
-  await firstore
+  await firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
     .collection("categories")
@@ -121,7 +123,7 @@ exports.setCategory = async (req, res, next) => {
 
 exports.getMenu = async (req, res, next) => {
   try {
-    let menuDoc = await firstore
+    let menuDoc = await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
       .collection("menu")
@@ -150,7 +152,11 @@ exports.addMenu = async (req, res, next) => {
   try {
     let data = JSON.parse(req.body.data);
     if (req.files && req.files.menu_pic != "undefined") {
-      let { success, err, id } = await extractImage(req, res);
+      let { success, err, id } = await extractImage(
+        req,
+        res,
+        process.env.MENU_DRIVE_PARENT
+      );
       if (success) {
         data.img_url = id;
       } else {
@@ -158,7 +164,7 @@ exports.addMenu = async (req, res, next) => {
       }
     }
 
-    let menuRef = await firstore
+    let menuRef = await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
       .collection("menu")
@@ -213,7 +219,7 @@ exports.addMenu = async (req, res, next) => {
 
 exports.addMenuFile = async (req, res, next) => {
   try {
-    let menuRef = await firstore
+    let menuRef = await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
       .collection("menu")
@@ -264,16 +270,8 @@ exports.addMenuFile = async (req, res, next) => {
 exports.updateMenu = async (req, res, next) => {
   try {
     let data = JSON.parse(req.body.data);
-    if (req.files && req.files.menu_pic != "undefined") {
-      let { success, err, id } = await extractImage(req, res);
-      if (success) {
-        data.img_url = id;
-      } else {
-        return res.status(500).json({ success: false, message: err });
-      }
-    }
 
-    let menuRef = await firstore
+    let menuRef = await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
       .collection("menu")
@@ -295,6 +293,26 @@ exports.updateMenu = async (req, res, next) => {
         .json({ success: false, message: status.BAD_REQUEST });
     }
 
+    if (req.files && req.files.menu_pic != "undefined") {
+      if (menu[index].img_url) {
+        await removeImage(menu[index].img_url);
+      }
+      let { success, err, id } = await extractImage(
+        req,
+        res,
+        process.env.MENU_DRIVE_PARENT
+      );
+      if (success) {
+        data.img_url = id;
+      } else {
+        return res.status(500).json({ success: false, message: err });
+      }
+    }
+
+    if (data.type && data.type.length >= 2) {
+      delete data.price;
+      delete data.disPrice;
+    }
     menu[index] = data;
 
     await menuRef.set({ menu: [...menu] }).then((e) => {
@@ -316,7 +334,7 @@ exports.deleteMenu = async (req, res, next) => {
   try {
     let id = req.params.id;
 
-    let menuRef = await firstore
+    let menuRef = await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
       .collection("menu")
@@ -359,9 +377,50 @@ exports.deleteMenu = async (req, res, next) => {
   }
 };
 
-extractImage = async (req, res) => {
+exports.updateLogo = async (req, res) => {
+  try {
+    let restDoc = firestore.collection("restaurants").doc(req.user.rest_id);
+    let restDetails = await restDoc.get();
+
+    restDetails = restDetails.data();
+
+    if (req.files && req.files.logo != "undefined") {
+      if (restDetails.logo) {
+        await removeImage(restDetails.logo);
+      }
+      let { success, err, id } = await extractImage(
+        req,
+        res,
+        process.env.LOGO_DRIVE_PARENT
+      );
+      if (success) {
+        await restDoc.set({ logo: id }, { merge: true });
+        return res
+          .status(200)
+          .json({ success: true, message: "Successfully changed", logo: id });
+      } else {
+        return res.status(500).json({ success: false, message: err });
+      }
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please upload logo" });
+    }
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `admin menu updateLogo ${req.user.rest_id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
+extractImage = async (req, res, parent) => {
   return new Promise(async (resolve, reject) => {
-    photo = req.files.menu_pic;
+    photo = req.files.menu_pic || req.files.logo;
 
     if (!photo.mimetype.startsWith("image")) {
       resolve({ success: false, message: "Please upload an valid image file" });
@@ -378,12 +437,13 @@ extractImage = async (req, res) => {
         resolve({ success: false, message: "Problem with image upload" });
       } else {
         let img = await compressImage(path_name);
-        if (!img.success) {
+        console.log(img);
+        if (!img) {
           return resolve(img);
         }
         const fileMetadata = {
           name: photo.name,
-          parents: [`${process.env.DRIVE_PARENT}`],
+          parents: [`${parent}`],
         };
         const media = {
           mimeType: photo.mimetype,

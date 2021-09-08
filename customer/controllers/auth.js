@@ -759,6 +759,23 @@ exports.changePassword = async (req, res) => {
   }
 };
 
+exports.getLogoUrl = async (req, res) => {
+  let cookie = await extractCookie(req, res);
+  console.log(cookie)
+  if (!cookie.rest_id) {
+    return res.status(400);
+  } else {
+    let restDoc = await firestore
+      .collection("restaurants")
+      .doc(cookie.rest_id)
+      .get();
+
+    let data = restDoc.data();
+    console.log(data.logo)
+    return res.status(200).json({ success: true, logo: data.logo || "" });
+  }
+};
+
 sendToken = async (data, res) => {
   let token = await TOKEN.generateToken(data);
   return res.status(200).json({

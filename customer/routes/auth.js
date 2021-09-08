@@ -8,6 +8,7 @@ router.post('/signup', checkForSignup, auth.signup)
 router.get('/user', protect, auth.getUser)
 router.get('/verify-session', protect, auth.verifySession)
 router.put('/verify-otp', protect, auth.verifyOtp)
+router.get('/get-logo-url', auth.getLogoUrl)
 router.put("/forgot-password", auth.forgotPasswordCheckMail);
 router.put(
   "/forgot-password/verification-code",
