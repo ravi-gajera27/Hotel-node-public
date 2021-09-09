@@ -663,7 +663,7 @@ exports.getUser = async (req, res, next) => {
           if (restRef.invoice_format) {
             data.invoice = true;
           }
-          if (restRef.tables || restRef.type.length >= 0) {
+          if (restRef.tables || restRef.type?.length >= 0) {
             data.table = true;
           }
           delete data.rest_id;
