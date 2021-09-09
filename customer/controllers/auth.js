@@ -341,7 +341,7 @@ exports.verifySession = async (req, res, next) => {
       })
       .then(async (promise) => {
         if (promise.success && promise.status == 200) {
-          return res.status(200).json({ success: true });
+          return res.status(200).json({ success: true, take_menu: take_menu });
         } else if (!promise.success) {
           return res
             .status(promise.status)

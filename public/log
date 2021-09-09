@@ -1,0 +1,18 @@
+{
+  label: 'admin menu googleDrive auth',
+  message: 'FetchError: request to https://www.googleapis.com/oauth2/v4/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com',
+  level: 'error',
+  timestamp: '2021-09-09T10:25:08.558Z'
+}
+{
+  label: 'admin menu googleDrive auth',
+  message: 'FetchError: request to https://www.googleapis.com/oauth2/v4/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com',
+  level: 'error',
+  timestamp: '2021-09-09T10:25:33.120Z'
+}
+{
+  label: 'admin menu googleDrive auth',
+  message: 'FetchError: request to https://www.googleapis.com/oauth2/v4/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com',
+  level: 'error',
+  timestamp: '2021-09-09T10:26:18.677Z'
+}

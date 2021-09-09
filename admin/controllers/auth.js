@@ -611,6 +611,13 @@ exports.addMenuFileRestStep = async (req, res, next) => {
         .doc("menu")
         .set({ menu: [...tempMenu] });
     }
+    let typeObject = {};
+    if (req.body.restType.length < 2) {
+      typeObject.type = req.body.restType;
+    } else {
+      typeObject.type = req.body.restType;
+      typeObject.take_menu = req.body.restType[0].value;
+    }
     let customersRef = await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
@@ -619,12 +626,9 @@ exports.addMenuFileRestStep = async (req, res, next) => {
     firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
-      .set(
-        { type: req.body.restType, take_menu: req.body.restType[0].value },
-        { merge: true }
-      )
+      .set({ ...typeObject }, { merge: true })
       .then(async (profile) => {
-        await customersRef.set({ type: req.body.restType,  take_menu: req.body.restType[0].value }, { merge: true });
+        await customersRef.set({ ...typeObject }, { merge: true });
         return res.status(200).json({ success: true, message: "Success" });
       });
   } catch (err) {

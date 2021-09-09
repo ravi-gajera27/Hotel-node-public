@@ -12,7 +12,6 @@ const sizeof = require("firestore-size");
 var credentials = require("../../peraket-rms-google-drive.json");
 const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
-const { off } = require("process");
 
 let scopes = ["https://www.googleapis.com/auth/drive"];
 
@@ -29,7 +28,7 @@ oAuthClient.authorize((err, token) => {
   if (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `admin menu googleDrive auth ${req.user.rest_id}`,
+      label: `admin menu googleDrive auth`,
       message: e,
     });
   } else {
