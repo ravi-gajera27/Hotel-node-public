@@ -298,12 +298,15 @@ exports.verifySession = async (req, res, next) => {
       .collection("customers")
       .doc("users");
 
+    let take_menu;
+
     await firestore
       .runTransaction(async (t) => {
         let doc = await t.get(customersRef);
         let users = doc.data();
         let seatCust = users?.seat || [];
         let takeawayCust = users?.takeaway || [];
+        take_menu = users?.take_menu;
         let total_tables = 0;
         if (cookie.type) {
           let index = users.type
@@ -356,6 +359,7 @@ exports.verifySession = async (req, res, next) => {
           return res.status(200).json({
             success: true,
             request: true,
+            take_menu: take_menu,
             message: status.REQUEST_SENT,
           });
         }
@@ -761,7 +765,7 @@ exports.changePassword = async (req, res) => {
 
 exports.getLogoUrl = async (req, res) => {
   let cookie = await extractCookie(req, res);
-  console.log(cookie)
+  console.log(cookie);
   if (!cookie.rest_id) {
     return res.status(400);
   } else {
@@ -771,7 +775,7 @@ exports.getLogoUrl = async (req, res) => {
       .get();
 
     let data = restDoc.data();
-    console.log(data.logo)
+    console.log(data.logo);
     return res.status(200).json({ success: true, logo: data.logo || "" });
   }
 };
