@@ -16,3 +16,9 @@
   level: 'error',
   timestamp: '2021-09-09T10:26:18.677Z'
 }
+{
+  label: 'admin auth login',
+  message: "TypeError: Cannot read property 'activities' of null",
+  level: 'error',
+  timestamp: '2021-09-13T10:01:58.906Z'
+}

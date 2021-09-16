@@ -134,7 +134,6 @@ app.listen(process.env.PORT || 5000, () => {
 
   console.log(
     "app is running",
-    moment().format("DD-MM-YYYY"),
     moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A")
   );
 });

@@ -4,8 +4,9 @@ const { protect } = require("../../middleware/adminAuth");
 const { checkForLogin, checkForSignup } = require("../../utils/zone");
 
 router.post("/login", checkForLogin, auth.login);
-router.post("/signup", checkForSignup,  auth.signup);
+router.post("/signup", checkForSignup, auth.signup);
 router.get("/user", protect, auth.getUser);
+router.get("/admin/login-activities", protect, auth.getLoginActivities);
 router.put("/verify-otp", protect, auth.verifyOtp);
 router.post("/rest-details", protect, auth.restaurantRegister);
 router.get("/admin", protect, auth.getAdminList);

@@ -9,6 +9,8 @@ const logger = require("../../config/logger");
 const { extractErrorMessage } = require("../../utils/error");
 const { incZoneReq } = require("../../utils/zone");
 const size = require("firestore-size");
+const { LoginActivityModel } = require("../../models/loginActivity");
+const { InvoiceModel } = require("../../models/invoice");
 exports.login = async (req, res, next) => {
   try {
     let data = req.body;
@@ -31,12 +33,13 @@ exports.login = async (req, res, next) => {
         .json({ success: false, message: status.INVALID_EMAIL });
     }
 
-    let password, id, rest_id;
+    let password, id, rest_id, tempUser;
 
     user.forEach((doc) => {
-      password = doc.data().password;
+      tempUser = doc.data();
+      password = tempUser.password;
       id = doc.id;
-      rest_id = doc.data().rest_id;
+      rest_id = tempUser.rest_id;
     });
 
     let verifyPassword = await HASH.verifyHash(data.password, password);
@@ -48,6 +51,34 @@ exports.login = async (req, res, next) => {
         .json({ success: false, message: status.INVALID_PASS });
     } else {
       if (rest_id) {
+        console.log(rest_id);
+        let obj = {
+          name: tempUser.f_name + " " + tempUser.l_name,
+          role: tempUser.role,
+          device: data.device,
+          time: moment().utcOffset(process.env.UTC_OFFSET).unix(),
+        };
+
+        let model = await LoginActivityModel.findOne({
+          rest_id: rest_id,
+        });
+
+        let activities = model?.activities || [];
+        if (activities && activities.length > 0) {
+          if (activities.length == 15) {
+            activities.shift();
+          }
+          activities.push({ ...obj });
+          await LoginActivityModel.findByIdAndUpdate(model.id, {
+            activities: activities,
+          });
+        } else {
+          await LoginActivityModel.create({
+            activities: [{ ...obj }],
+            rest_id: rest_id,
+          });
+        }
+
         await sendToken({ user_id: id, rest_id: rest_id }, res);
       } else {
         await sendToken({ user_id: id }, res);
@@ -55,7 +86,25 @@ exports.login = async (req, res, next) => {
     }
   } catch (err) {
     let e = extractErrorMessage(err);
-    logger.error({ label: `admin auth login ${req.user.rest_id}`, message: e });
+    logger.error({ label: `admin auth login`, message: e });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
+exports.getLoginActivities = async (req, res, next) => {
+  try {
+    let model = await LoginActivityModel.findOne({ rest_id: req.user.rest_id });
+
+    res.status(200).json({ success: true, data: model.activities || [] });
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `admin auth getLoginActivities ${req.user.rest_id}`,
+      message: e,
+    });
+
     return res
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR });
@@ -672,6 +721,9 @@ exports.getUser = async (req, res, next) => {
           }
           delete data.rest_id;
           data.rest = true;
+        }
+        if (data.role == "admin") {
+          data.verify_otp = true;
         }
 
         res.status(200).json({ success: true, data: data });
