@@ -389,9 +389,9 @@ function setCustomerOntable(
   if (cookie.table == "takeaway") {
     let index = 0;
     let flag = 0;
-    for (let user of seatCust) {
-      if (user.cid == user.id) {
-        if (user.restore) {
+    for (let u of seatCust) {
+      if (u.cid == user.id) {
+        if (u.restore) {
           flag = 1;
           break;
         } else {
@@ -446,9 +446,9 @@ function setCustomerOntable(
     let index = 0;
     let flag = 0;
 
-    for (let user of takeawayCust) {
-      if (user.cid == user.id) {
-        if (user.restore || !user.req) {
+    for (let u of takeawayCust) {
+      if (u.cid == user.id) {
+        if (u.restore || !u.req) {
           flag = 1;
           break;
         } else {
