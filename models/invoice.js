@@ -18,4 +18,5 @@ const InvoiceSchema = new mongoose.Schema({
   settle: { credit: Number, method: String },
 });
 
+mongoose.connection.use
 module.exports.InvoiceModel = mongoose.model("invoices", InvoiceSchema);

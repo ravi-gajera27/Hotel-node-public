@@ -8,7 +8,7 @@ const logger = require("../../config/logger");
 const { extractErrorMessage } = require("../../utils/error");
 const { incZoneReq } = require("../../utils/zone");
 const { INVALID_TABLE } = require("../../utils/status");
-const { LoginActivityModel } = require('../../models/loginActivity');
+const { LoginActivityModel } = require("../../models/loginActivity");
 
 exports.login = async (req, res, next) => {
   try {
@@ -38,7 +38,7 @@ exports.login = async (req, res, next) => {
     let password, id, rest_id, tempUser;
 
     user.docs.forEach((doc) => {
-      tempUser = doc.data()
+      tempUser = doc.data();
       password = doc.data().password;
       id = doc.id;
       rest_id = doc.data().rest_id;
@@ -52,38 +52,38 @@ exports.login = async (req, res, next) => {
         .status(401)
         .json({ success: false, message: status.INVALID_PASS });
     } else {
-        let obj = {
-          name: tempUser.f_name + " " + tempUser.l_name,
-          role: tempUser.role,
-          device: data.device,
-          time: moment().utcOffset(process.env.UTC_OFFSET).unix(),
-        };
+      let obj = {
+        name: tempUser.f_name + " " + tempUser.l_name,
+        role: tempUser.role,
+        device: data.device,
+        time: moment().utcOffset(process.env.UTC_OFFSET).unix(),
+      };
 
-        let model = await LoginActivityModel.findOne({
-          rest_id: req.user.rest_id,
-        });
-        let activities = model.activities || [];
-        if (activities && activities.length > 0) {
-          if (activities.length == 15) {
-            activities.shift();
-          }
-          activities.push({ ...obj });
-          await LoginActivityModel.findByIdAndUpdate(model.id, {
-            activities: activities,
-          });
-        } else {
-          await LoginActivityModel.create({
-            activities: [{ ...obj }],
-            rest_id: req.user.rest_id,
-          });
+      let model = await LoginActivityModel.findOne({
+        rest_id: tempUser.rest_id,
+      });
+      let activities = model.activities || [];
+      if (activities && activities.length > 0) {
+        if (activities.length == 15) {
+          activities.shift();
         }
+        activities.push({ ...obj });
+        await LoginActivityModel.findByIdAndUpdate(model.id, {
+          activities: activities,
+        });
+      } else {
+        await LoginActivityModel.create({
+          activities: [{ ...obj }],
+          rest_id: tempUser.rest_id,
+        });
+      }
 
-      await sendToken({ user_id: id, rest_id: rest_id }, res);
+      await sendToken({ user_id: id, rest_id: tempUser.rest_id }, res);
     }
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `captain auth login ${req.user.rest_id}`,
+      label: `captain auth login`,
       message: e,
     });
     return res
