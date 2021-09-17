@@ -22,3 +22,9 @@
   level: 'error',
   timestamp: '2021-09-13T10:01:58.906Z'
 }
+{
+  label: 'captain auth login',
+  message: 'ReferenceError: moment is not defined',
+  level: 'error',
+  timestamp: '2021-09-17T14:01:15.345Z'
+}

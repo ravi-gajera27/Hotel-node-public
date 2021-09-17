@@ -9,6 +9,7 @@ const { extractErrorMessage } = require("../../utils/error");
 const { incZoneReq } = require("../../utils/zone");
 const { INVALID_TABLE } = require("../../utils/status");
 const { LoginActivityModel } = require("../../models/loginActivity");
+const moment = require("moment");
 
 exports.login = async (req, res, next) => {
   try {
