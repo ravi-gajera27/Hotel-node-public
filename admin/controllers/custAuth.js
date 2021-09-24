@@ -583,7 +583,7 @@ exports.checkoutCustomer = async (req, res, next) => {
       finalInvoice.type = type;
     }
     finalInvoice.inv_no = restData.inv_no;
-    finalInvoice.clean = false;
+   // finalInvoice.clean = false;
     delete finalInvoice.date;
     delete finalInvoice.qty;
     finalInvoice.inv_date = moment()
@@ -720,7 +720,7 @@ exports.cleanUpCustomers = async (req, res) => {
       .doc("users");
 
     delete invoice.order_no;
-    delete invoice.clean;
+   // delete invoice.clean;
 
     InvoiceModel.findByIdAndUpdate(inv_id, invoice).then(async (e) => {
       await firestore.runTransaction(async (t) => {

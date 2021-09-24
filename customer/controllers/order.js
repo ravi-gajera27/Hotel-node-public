@@ -343,7 +343,7 @@ exports.checkout = async (req, res, next) => {
     if (cookie.type) {
       req.body.type = cookie.type;
     }
-    req.body.clean = false;
+   // req.body.clean = false;
     delete req.body.date;
     delete req.body.qty;
     req.body.inv_date = moment()

@@ -249,7 +249,7 @@ exports.downloadEodPdf = async (req, res) => {
     let topPerformer = [];
 
     for (let tempInvoice of invoices) {
-      if (tempInvoice.clean == false) {
+      if (!tempInvoice.settle) {
         continue;
       }
       for (let itemFromInvoice of tempInvoice.data) {
@@ -406,7 +406,7 @@ exports.getBasicsByInterval = async (req, res, next) => {
         total_item: 0,
       };
       for (let tempInvoice of invoiceRef) {
-        if (tempInvoice.clean == false) {
+        if (!tempInvoice.settle) {
           continue;
         }
         total.total_orders++;
@@ -511,7 +511,7 @@ exports.getInvoicesByInterval = async (req, res, next) => {
     }).then((data) => {
       let invoices = [];
       for (let i of data) {
-        if (i.clean == false) {
+        if (!i.settle) {
           continue;
         }
         invoices.push(i);

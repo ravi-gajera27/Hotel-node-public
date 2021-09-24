@@ -10,9 +10,12 @@ const db = require("./config/db");
 const path = require("path");
 const helmet = require("helmet");
 const payment = require("./config/payment");
+let app = express();
+
+const server = require("http").createServer(app);
+const io = require("socket.io")(server, { cors: { origin: "*" } });
 
 //initialize server
-let app = express();
 
 //initialize database
 DbInitialize = async () => {
@@ -33,7 +36,7 @@ const cron = require("./utils/cron");
 // listing routes
 const authSuperAdmin = require("./super-admin/routes/auth");
 const restSuperAdmin = require("./super-admin/routes/restaurants");
-const paymentSuperAdmin = require('./super-admin/routes/payment');
+const paymentSuperAdmin = require("./super-admin/routes/payment");
 const authAdmin = require("./admin/routes/auth");
 const authUsers = require("./customer/routes/auth");
 const order = require("./customer/routes/order");
@@ -42,7 +45,7 @@ const menuAdmin = require("./admin/routes/menu");
 const statsAdmin = require("./admin/routes/stats");
 const userAdmin = require("./admin/routes/user");
 const custAdmin = require("./admin/routes/custAuth");
-const paymentAdmin = require('./admin/routes/payment');
+const paymentAdmin = require("./admin/routes/payment");
 const authCaptain = require("./captain/routes/auth");
 const orderCaptain = require("./captain/routes/order");
 const menuCaptain = require("./captain/routes/menu");
@@ -115,7 +118,7 @@ app.use("/api/admin/menu", menuAdmin);
 app.use("/api/admin/stats", statsAdmin);
 app.use("/api/admin/user", userAdmin);
 app.use("/api/admin/customer", custAdmin);
-app.use('/api/admin/payment', paymentAdmin);
+app.use("/api/admin/payment", paymentAdmin);
 
 //process routes of captain
 app.use("/api/captain/auth", authCaptain);
@@ -129,7 +132,18 @@ app.use("/api/user/order", order);
 let hash = require("./utils/encryption");
 
 //running app on specific port
-app.listen(process.env.PORT || 5000, () => {
+
+
+io.on("connection", (socket) => {
+
+  console.log("user come", socket.id);
+  socket.emit("socket", socket.id)
+  socket.on("disconnect", (s) => {
+    console.log("user gone", socket.id);
+  });
+});
+
+server.listen(process.env.PORT || 5000, () => {
   cron.startAllCron();
 
   console.log(
