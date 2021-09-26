@@ -397,7 +397,11 @@ table th, table td {
           <div class="company-info">
             <div><%= rest.rest_name %></div>
             <br>
-            <span><%= rest.address %></span>
+            <span><%= rest.addressLine1 %></span>
+            <br>
+            <span><%= rest.addressLine2 %></span>
+            <br>
+            <span><%= rest.city %>,</span>   <span style="margin-left: 10px;"><%= rest.state %>.</span>
             <br>
             <span><%= rest.mobile_no %></span>
             <br>
@@ -425,13 +429,10 @@ table th, table td {
             <span><%= user.name %></span>
           </div>
           
-          <div>
             <span><%= user.email %></span>
-          </div>
-          
-          <div>
+        
             <span><%= user.mobile_no %></span>
-          </div>
+          
 
         </section>
         
@@ -493,8 +494,13 @@ table th, table td {
             </tr>
             
             <tr>
-              <th>Tax(<%= invoice.tax %>%)</th>
-              <td>₹<%= ((invoice.taxable * invoice.tax) / 100).toFixed(2) %></td>
+              <th>CGST(<%= invoice.tax %>%)</th>
+              <td>₹<%= ((invoice.taxable * invoice.tax) / 200).toFixed(2) %></td>
+            </tr>
+
+            <tr>
+              <th>SGST(<%= invoice.tax %>%)</th>
+              <td>₹<%= ((invoice.taxable * invoice.tax) / 200).toFixed(2) %></td>
             </tr>
             
             <tr class="amount-total">
