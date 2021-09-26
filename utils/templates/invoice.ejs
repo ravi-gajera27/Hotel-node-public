@@ -177,7 +177,7 @@ b, strong, .bold {
 }
 
 #invoice-title-number {
-  margin: 50px 0 20px 0;
+  margin: 20px 0 20px 0;
   display: inline-block;
   float: left;
 }
@@ -219,7 +219,6 @@ b, strong, .bold {
   font-weight: bold;
   font-size: 10px;
   text-transform: uppercase;
-  margin: 7px 0;
 }
 #client-info > div {
   margin-bottom: 3px;
@@ -230,7 +229,6 @@ b, strong, .bold {
   min-width: 20px;
 }
 #client-info > span {
-  text-transform: uppercase;
   color: #858585;
   font-size: 10px;
 }
@@ -401,11 +399,11 @@ table th, table td {
             <br>
             <span><%= rest.addressLine2 %></span>
             <br>
-            <span><%= rest.city %>,</span>   <span style="margin-left: 10px;"><%= rest.state %>.</span>
-            <br>
-            <span><%= rest.mobile_no %></span>
+            <span><%= rest.city %>,</span>   <span><%= rest.state %>.</span>
             <br>
             <span><%= rest.email %></span>
+            <br>
+            <span><%= rest.mobile_no %></span>
           </div>
 
           <div class="logo">
