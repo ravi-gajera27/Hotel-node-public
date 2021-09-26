@@ -626,6 +626,7 @@ exports.addMenuFileRestStep = async (req, res, next) => {
 
     let categories = req.body.categories;
     let menu = req.body.menu;
+    
     if (categories.length != 0) {
       await firestore
         .collection("restaurants")
