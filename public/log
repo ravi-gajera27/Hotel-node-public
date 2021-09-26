@@ -28,3 +28,15 @@
   level: 'error',
   timestamp: '2021-09-17T14:01:15.345Z'
 }
+{
+  label: 'admin custAuth updateInvoice cH3za13VsMr0oAnqMT0x',
+  message: 'Error: Argument passed in must be a single String of 12 bytes or a string of 24 hex characters',
+  level: 'error',
+  timestamp: '2021-09-24T09:01:09.264Z'
+}
+{
+  label: 'admin custAuth updateInvoice cH3za13VsMr0oAnqMT0x',
+  message: 'Error: Argument passed in must be a single String of 12 bytes or a string of 24 hex characters',
+  level: 'error',
+  timestamp: '2021-09-24T09:04:42.415Z'
+}

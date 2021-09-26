@@ -12,8 +12,8 @@ const helmet = require("helmet");
 const payment = require("./config/payment");
 let app = express();
 
-const server = require("http").createServer(app);
-const io = require("socket.io")(server, { cors: { origin: "*" } });
+/* const server = require("http").createServer(app);
+const io = require("socket.io")(server, { cors: { origin: "*" } }); */
 
 //initialize server
 
@@ -132,7 +132,7 @@ app.use("/api/user/order", order);
 let hash = require("./utils/encryption");
 
 //running app on specific port
-
+/* 
 
 io.on("connection", (socket) => {
 
@@ -142,8 +142,8 @@ io.on("connection", (socket) => {
     console.log("user gone", socket.id);
   });
 });
-
-server.listen(process.env.PORT || 5000, () => {
+ */
+app.listen(process.env.PORT || 5000, () => {
   cron.startAllCron();
 
   console.log(
