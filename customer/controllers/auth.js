@@ -316,7 +316,7 @@ exports.verifySession = async (req, res, next) => {
             .indexOf(cookie.type);
           total_tables = users.type[index].tables;
         } else {
-          total_tables = users.tables;
+          total_tables = users.type[0].tables;
         }
         let user = { id: req.user.id, name: req.user.name };
         let promise = await setCustomerOntable(

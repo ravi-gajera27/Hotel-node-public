@@ -152,7 +152,7 @@ exports.verifySession = async (req, res) => {
             .indexOf(req.body.type);
           total_tables = data.type[index].tables;
         } else {
-          total_tables = data.tables;
+          total_tables = data.type[0].tables;
         }
         if (Number(req.body.table) > Number(total_tables)) {
           return Promise.resolve({

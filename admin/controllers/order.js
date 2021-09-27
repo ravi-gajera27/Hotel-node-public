@@ -582,7 +582,7 @@ exports.addOrderByTableNo = async (req, res, next) => {
 
           tables = data.type[index].tables;
         } else {
-          tables = data.tables;
+          tables = data.type[0].tables;
         }
         if (Number(tables) < Number(table_no)) {
           return Promise.resolve({
@@ -712,7 +712,7 @@ exports.setOrderByTableNo = async (req, res, next) => {
         .indexOf(type);
       tables = data.type[index].tables;
     } else {
-      tables = data.tables;
+      tables = data.type[0].tables;
     }
     if (Number(tables) < Number(table_no)) {
       return res
