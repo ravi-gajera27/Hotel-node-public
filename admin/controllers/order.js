@@ -13,6 +13,7 @@ exports.cancelOrder = async (req, res, next) => {
     let cid = req.params.cid;
     let type = req.params.type;
     let restoreOrder = req.body?.restoreOrder;
+    console.log(table_no, order_id, cid);
 
     if (!table_no || !order_id || !cid) {
       return res
@@ -92,6 +93,7 @@ exports.cancelOrder = async (req, res, next) => {
 
         let previousOrder;
         if (restoreOrderRef) {
+          console.log(restoreOrder);
           let restoreOrderDoc = await restoreOrderRef.get();
           if (!restoreOrderDoc.exists) {
             return res
