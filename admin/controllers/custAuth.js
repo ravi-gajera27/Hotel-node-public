@@ -583,6 +583,7 @@ exports.checkoutCustomer = async (req, res, next) => {
       finalInvoice.type = type;
     }
     finalInvoice.inv_no = restData.inv_no;
+    finalInvoice.gstin = restData.gstin;
    // finalInvoice.clean = false;
     delete finalInvoice.date;
     delete finalInvoice.qty;

@@ -340,10 +340,11 @@ exports.checkout = async (req, res, next) => {
     req.body.cname = req.user.name;
     req.body.table = cookie.table;
     req.body.inv_no = set_invoice_no;
+    req.body.gstin = data.gstin;
     if (cookie.type) {
       req.body.type = cookie.type;
     }
-   // req.body.clean = false;
+    // req.body.clean = false;
     delete req.body.date;
     delete req.body.qty;
     req.body.inv_date = moment()
