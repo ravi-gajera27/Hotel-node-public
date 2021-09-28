@@ -255,6 +255,11 @@ exports.verifyOtp = async (req, res, next) => {
 
 exports.verifySession = async (req, res, next) => {
   let cookie = await extractCookie(req, res);
+  if (cookie?.table == 'waiting') {
+    return res.status(200).json({
+      success: true,
+    });
+  }
   try {
     let cookie = await extractCookie(req, res);
     if (!cookie) {
