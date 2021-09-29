@@ -313,7 +313,7 @@ exports.generateInvoice = async (req, res, next) => {
         city: rest_ref.city,
         state: rest_ref.state,
       },
-      gst_in: rest_ref.gst_in || "",
+      gstin: rest_ref.gstin || "",
     };
 
     res.status(200).json({
