@@ -307,7 +307,12 @@ exports.generateInvoice = async (req, res, next) => {
 
     let rest_details = {
       rest_name: rest_ref.rest_name,
-      rest_address: rest_ref.address,
+      rest_address: {
+        addressline1: rest_ref.addressline1,
+        addressline2: rest_ref.addressline2,
+        city: rest_ref.city,
+        state: rest_ref.state,
+      },
       gst_in: rest_ref.gst_in || "",
     };
 
