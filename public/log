@@ -46,3 +46,9 @@
   level: 'error',
   timestamp: '2021-09-27T11:17:23.741Z'
 }
+{
+  label: 'customer auth verifySession cRtfyfUpGLC53qA1mCbI',
+  message: "TypeError: Cannot read property 'type' of undefined",
+  level: 'error',
+  timestamp: '2021-09-29T10:58:12.045Z'
+}
