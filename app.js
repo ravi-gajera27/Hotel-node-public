@@ -142,14 +142,14 @@ server.listen(process.env.PORT || 5000, () => {
 });
 
 const io = require("socket.io")(server, { cors: { origin: "*" } });
-const createAdapter = require("socket.io-redis");
+/* const createAdapter = require("socket.io-redis");
 const { RedisClient } = require("redis");
 
 const pubClient = new RedisClient({ host: "localhost", port: 6379 });
 const subClient = pubClient.duplicate();
 
-//io.adapter(createAdapter({ host: "localhost", port: 6379 }));
-
+io.adapter(createAdapter({ host: "localhost", port: 6379 }));
+ */
 user = 0;
 
 io.on("connection", (socket) => {
