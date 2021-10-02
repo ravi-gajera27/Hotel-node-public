@@ -711,6 +711,9 @@ exports.getUser = async (req, res, next) => {
           if (restRef.verified) {
             data.verified = true;
           }
+          if(restRef.plan){
+            
+          }
           if (restRef.locked) {
             data.locked = true;
           }
@@ -720,6 +723,7 @@ exports.getUser = async (req, res, next) => {
           if (restRef.tables || restRef.type?.length >= 0) {
             data.table = true;
           }
+        
           delete data.rest_id;
           data.rest = true;
         }

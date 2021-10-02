@@ -15,6 +15,7 @@ const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
 const { InvoiceModel } = require("../../models/invoice");
 const mongoose = require("mongoose");
+const { default: BSON } = require("bson");
 
 exports.getInvoices = (req, res) => {
   firestore
@@ -514,6 +515,7 @@ exports.getInvoicesByInterval = async (req, res, next) => {
         if (!i.settle) {
           continue;
         }
+
         invoices.push(i);
       }
       res.status(200).json({ success: true, data: invoices });

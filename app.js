@@ -10,16 +10,16 @@ const db = require("./config/db");
 const path = require("path");
 const helmet = require("helmet");
 const payment = require("./config/payment");
+
 let app = express();
 
-/* const server = require("http").createServer(app);
-const io = require("socket.io")(server, { cors: { origin: "*" } }); */
+const server = require("http").createServer(app);
 
 //initialize server
 
 //initialize database
 DbInitialize = async () => {
-  await db.InitializeDatabase();
+  mongoClient = await db.InitializeDatabase();
 };
 DbInitialize();
 
@@ -49,7 +49,6 @@ const paymentAdmin = require("./admin/routes/payment");
 const authCaptain = require("./captain/routes/auth");
 const orderCaptain = require("./captain/routes/order");
 const menuCaptain = require("./captain/routes/menu");
-
 
 let whitelist = [
   "http://localhost:4300",
@@ -132,22 +131,37 @@ app.use("/api/user/order", order);
 let hash = require("./utils/encryption");
 
 //running app on specific port
-/* 
 
-io.on("connection", (socket) => {
-
-  console.log("user come", socket.id);
-  socket.emit("socket", socket.id)
-  socket.on("disconnect", (s) => {
-    console.log("user gone", socket.id);
-  });
-});
- */
-app.listen(process.env.PORT || 5000, () => {
+server.listen(process.env.PORT || 5000, () => {
   cron.startAllCron();
 
   console.log(
     "app is running",
     moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A")
   );
+});
+
+const io = require("socket.io")(server, { cors: { origin: "*" } });
+const createAdapter = require("socket.io-redis");
+const { RedisClient } = require("redis");
+
+const pubClient = new RedisClient({ host: "localhost", port: 6379 });
+const subClient = pubClient.duplicate();
+
+io.adapter(createAdapter({ host: "localhost", port: 6379 }));
+
+user = 0;
+
+io.on("connection", (socket) => {
+  /* console.log("user come", socket.id);
+  socket.emit("socket", socket.id) */
+
+  console.log("user", ++user);
+  socket.on("disconnect", (s) => {
+    console.log("user", --user);
+    console.log("user gone", socket.id);
+  });
+  socket.on("connect_error", (err) => {
+    console.log(`connect_error due to ${err.message}`);
+  });
 });

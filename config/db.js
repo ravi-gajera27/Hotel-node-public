@@ -9,13 +9,15 @@ exports.InitializeDatabase = async () => {
         credential: admin.credential.cert(serviceAccount),
       });
 
-      await mongoose.connect(process.env.MONGODB_URL, {
+      let connection = await mongoose.connect(process.env.MONGODB_URL, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         useFindAndModify: true,
       });
 
-      resolve(true);
+      
+
+      resolve(connection);
     } catch (e) {
       resolve(true);
       console.log(e);
