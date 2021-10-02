@@ -25,13 +25,12 @@ exports.getRestaurantsList = async (req, res) => {
 
 exports.getRestaurantById = async (req, res) => {
   let rest_id = req.params.rest_id;
-  if(!rest_id){
-  return res.status(400).json({message: status.BAD_REQUEST, success: false})
-}
-  let restRef = await firestore
-    .collection("restaurants")
-    .doc(rest_id)
-    .get();
+  if (!rest_id) {
+    return res
+      .status(400)
+      .json({ message: status.BAD_REQUEST, success: false });
+  }
+  let restRef = await firestore.collection("restaurants").doc(rest_id).get();
 
   let rest_details = restRef.data();
 
@@ -59,13 +58,31 @@ exports.getRestaurantsRequestList = async (req, res) => {
 
 exports.verifyRestaurantById = async (req, res) => {
   let rest_id = req.params.rest_id;
-  if(!rest_id){
-    return res.status(400).json({success: false, message: status.BAD_REQUEST})
+  if (!rest_id) {
+    return res
+      .status(400)
+      .json({ success: false, message: status.BAD_REQUEST });
   }
-  restRef = await firestore
-    .collection("restaurants")
-    .doc(rest_id)
-    .set({ verified: true }, { merge: true })
+
+  let restRef = firestore.collection("restaurants").doc(rest_id);
+
+  let restDoc = await restRef.get();
+  restDoc = restDoc.data();
+
+  let plan = {};
+  if (restDoc.plan.name == "trial") {
+    let expired = moment()
+      .utcOffset(process.env.UTC_OFFSET)
+      .add(30, "days")
+      .unix();
+    plan.name = restDoc.plan.name;
+    plan.expired = expired;
+  } else {
+    plan = restDoc.plan;
+  }
+
+  await restRef
+    .set({ verified: true, plan: plan }, { merge: true })
     .then((e) => {
       res.status(200).json({ success: true, message: "Successfully Verified" });
     })

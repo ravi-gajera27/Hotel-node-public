@@ -11,6 +11,7 @@ const { incZoneReq } = require("../../utils/zone");
 const size = require("firestore-size");
 const { LoginActivityModel } = require("../../models/loginActivity");
 const { InvoiceModel } = require("../../models/invoice");
+const e = require("express");
 exports.login = async (req, res, next) => {
   try {
     let data = req.body;
@@ -626,7 +627,7 @@ exports.addMenuFileRestStep = async (req, res, next) => {
 
     let categories = req.body.categories;
     let menu = req.body.menu;
-    
+
     if (categories.length != 0) {
       await firestore
         .collection("restaurants")
@@ -711,8 +712,11 @@ exports.getUser = async (req, res, next) => {
           if (restRef.verified) {
             data.verified = true;
           }
-          if(restRef.plan){
-            
+          if (restRef.plan && restRef.plan.expired) {
+            let unix = moment().utcOffset(process.env.UTC_OFFSET).unix();
+            if (restRef.plan.expired < unix) {
+              data.expired = true;
+            }
           }
           if (restRef.locked) {
             data.locked = true;
@@ -723,7 +727,7 @@ exports.getUser = async (req, res, next) => {
           if (restRef.tables || restRef.type?.length >= 0) {
             data.table = true;
           }
-        
+
           delete data.rest_id;
           data.rest = true;
         }
@@ -934,6 +938,38 @@ exports.verifyOtp = async (req, res, next) => {
     });
 };
 
+exports.continueWithPostPaid = async (req, res) => {
+  await firestore
+    .collection("restaurants")
+    .doc(req.user.rest_id)
+    .set(
+      {
+        plan: {
+          name: "postpaid",
+          start: moment()
+            .utcOffset(process.env.UTC_OFFSET)
+            .format("YYYY-MM-DD"),
+        },
+      },
+      { merge: true }
+    )
+    .then((e) => {
+      res
+        .status(200)
+        .josn({ success: true, message: "Now your postpiad plan is starting" });
+    })
+    .catch((err) => {
+      let e = extractErrorMessage(err);
+      logger.error({
+        label: `admin auth continueWithPostPaid ${req.user.rest_id}`,
+        message: e,
+      });
+      return res
+        .status(500)
+        .json({ success: false, message: status.SERVER_ERROR });
+    });
+};
+
 exports.getRestDetails = async (req, res) => {
   try {
     if (!req.user.rest_id) {
@@ -958,6 +994,17 @@ exports.getRestDetails = async (req, res) => {
     }
 
     let restData = restDetailsDoc.data();
+
+    if (restData.plan && restData.plan.expired) {
+      let unix = moment().utcOffset(process.env.UTC_OFFSET).unix();
+      if (restData.plan.expired < unix) {
+        return res.status(401).json({
+          success: false,
+          message: status.NOT_VERIFIED,
+          redirect: "/postpaid-plan",
+        });
+      }
+    }
 
     if (!restData.verified) {
       return res.status(401).json({
@@ -987,13 +1034,7 @@ exports.getRestDetails = async (req, res) => {
 
     delete restData.verified;
     delete restData.locked;
-
-    /*   restData.type = [
-      {name: 'AC', value: 'ac'},
-      {name: 'NAC', value: 'nac'},
-      {name: 'Garden', value: 'ga'},
-      {name: 'Terrace', value: 'te'}
-    ] */
+    delete restData.plan;
 
     return res.status(200).json({ success: true, data: restData });
   } catch (err) {
