@@ -628,14 +628,6 @@ exports.addMenuFileRestStep = async (req, res, next) => {
     let categories = req.body.categories;
     let menu = req.body.menu;
 
-    if (categories.length != 0) {
-      await firestore
-        .collection("restaurants")
-        .doc(req.user.rest_id)
-        .collection("categories")
-        .add({ cat: [...categories] });
-    }
-
     if (menu.length != 0) {
       let tempMenu = [];
       for (let ele of menu) {
@@ -660,7 +652,7 @@ exports.addMenuFileRestStep = async (req, res, next) => {
         .doc(req.user.rest_id)
         .collection("menu")
         .doc("menu")
-        .set({ menu: [...tempMenu] });
+        .set({ menu: [...tempMenu], cat: [...categories] });
     }
     let typeObject = {};
     if (req.body.restType.length < 2) {

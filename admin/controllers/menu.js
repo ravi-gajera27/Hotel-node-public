@@ -69,42 +69,16 @@ exports.getCategory = async (req, res, next) => {
     });
 };
 
-exports.addCategory = async (req, res, next) => {
-  await firestore
-    .collection("restaurants")
-    .doc(req.user.rest_id)
-    .collection("categories")
-    .add({ cat: req.body })
-    .then((cat) => {
-      res.status(200).json({
-        success: true,
-        data: { cat: req.body, id: cat.id },
-        message: status.SUCCESS_ADDED,
-      });
-    })
-    .catch((err) => {
-      let e = extractErrorMessage(err);
-      logger.error({
-        label: `admin menu addCategory ${req.user.rest_id}`,
-        message: e,
-      });
-      return res
-        .status(500)
-        .json({ success: false, message: status.SERVER_ERROR });
-    });
-};
-
 exports.setCategory = async (req, res, next) => {
   await firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
-    .collection("categories")
-    .doc(req.params.id)
-    .set({ cat: [...req.body] })
+    .collection("menu")
+    .doc("menu")
+    .set({ cat: [...req.body] }, { merge: true })
     .then((cat) => {
       res.status(200).json({
         success: true,
-        data: { cat: req.body, id: req.params.id },
         message: status.SUCCESS_ADDED,
       });
     })
@@ -130,11 +104,12 @@ exports.getMenu = async (req, res, next) => {
       .get();
 
     let menu = [];
+    let cat = [];
     if (menuDoc.exists) {
       menu = menuDoc.data().menu;
+      cat = menuDoc.data().cat;
     }
-
-    res.status(200).json({ success: true, data: menu });
+    res.status(200).json({ success: true, data: { menu: menu, cat: cat } });
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
@@ -199,7 +174,7 @@ exports.addMenu = async (req, res, next) => {
       menu = [...tempMenu];
     }
 
-    await menuRef.set({ menu: [...menu] }).then((menu) => {
+    await menuRef.set({ menu: [...menu] }, { merge: true }).then((menu) => {
       res
         .status(200)
         .json({ success: true, data: data, message: status.SUCCESS_ADDED });
@@ -216,7 +191,7 @@ exports.addMenu = async (req, res, next) => {
   }
 };
 
-exports.addMenuFile = async (req, res, next) => {
+/* exports.addMenuFile = async (req, res, next) => {
   try {
     let menuRef = await firestore
       .collection("restaurants")
@@ -264,7 +239,7 @@ exports.addMenuFile = async (req, res, next) => {
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR });
   }
-};
+}; */
 
 exports.updateMenu = async (req, res, next) => {
   try {
@@ -314,7 +289,7 @@ exports.updateMenu = async (req, res, next) => {
     }
     menu[index] = data;
 
-    await menuRef.set({ menu: [...menu] }).then((e) => {
+    await menuRef.set({ menu: [...menu] }, { merge: true }).then((e) => {
       res.status(200).json({ success: true, message: status.SUCCESS_UPDATED });
     });
   } catch (err) {
@@ -361,7 +336,7 @@ exports.deleteMenu = async (req, res, next) => {
 
     menu.splice(index, 1);
 
-    await menuRef.set({ menu: [...menu] }).then((e) => {
+    await menuRef.set({ menu: [...menu] }, { merge: true }).then((e) => {
       res.status(200).json({ success: true, message: status.SUCCESS_REMOVED });
     });
   } catch (err) {
