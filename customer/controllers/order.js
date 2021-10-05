@@ -76,7 +76,7 @@ exports.addOrder = async (req, res, next) => {
     restorAble = false;
     if (order.exists) {
       let data = order.data();
-      orderData = data.order;
+      orderData = data.order || [];
       if (data.restore) {
         restorAble = true;
         orderData = [];
@@ -118,13 +118,14 @@ exports.addOrder = async (req, res, next) => {
       if (customerDoc) {
         let custObj = {
           cname: req.user.name,
+          cid: req.user.id,
+          rest_id: cookie.rest_id,
           mobile_no: req.user.mobile_no || "",
           email: req.user.email,
-          cid: req.user.id,
           last_visit: moment()
             .utcOffset(process.env.UTC_OFFSET)
             .format("YYYY-MM-DD"),
-          visit: Number(customerDoc.count) + 1,
+          visit: Number(customerDoc.visit) + 1,
         };
         send_data.unique = true;
         await CustomerModel.findOneAndUpdate(
@@ -138,6 +139,7 @@ exports.addOrder = async (req, res, next) => {
         let custObj = {
           cname: req.user.name,
           cid: req.user.id,
+          rest_id: cookie.rest_id,
           mobile_no: req.user.mobile_no || "",
           email: req.user.email,
           last_visit: moment()
@@ -249,6 +251,7 @@ exports.getOrder = async (req, res, next) => {
 
 exports.checkout = async (req, res, next) => {
   let review = req.body.review;
+  console.log(review);
   let custOrders = req.body.orders;
   let cookie = await extractCookie(req, res);
   try {
