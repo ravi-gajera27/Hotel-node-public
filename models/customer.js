@@ -8,7 +8,7 @@ const customnerSchema = new mongoose.Schema({
   mobile_no: String,
   visit: Number,
   last_visit: String,
-  review: { retting: Number, text: String },
+  review: { ratting: Number, text: String },
 });
 
 module.exports.CustomerModel = mongoose.model("customers", customnerSchema);

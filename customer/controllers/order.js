@@ -120,10 +120,11 @@ exports.addOrder = async (req, res, next) => {
           cname: req.user.name,
           mobile_no: req.user.mobile_no || "",
           email: req.user.email,
+          cid: req.user.id,
           last_visit: moment()
             .utcOffset(process.env.UTC_OFFSET)
             .format("YYYY-MM-DD"),
-          count: Number(customerDoc.count) + 1,
+          visit: Number(customerDoc.count) + 1,
         };
         send_data.unique = true;
         await CustomerModel.findOneAndUpdate(
@@ -135,13 +136,14 @@ exports.addOrder = async (req, res, next) => {
         );
       } else {
         let custObj = {
-          name: req.user.name,
+          cname: req.user.name,
+          cid: req.user.id,
           mobile_no: req.user.mobile_no || "",
           email: req.user.email,
           last_visit: moment()
             .utcOffset(process.env.UTC_OFFSET)
             .format("YYYY-MM-DD"),
-          count: 1,
+          visit: 1,
         };
         await CustomerModel.create({ ...custObj });
       }
@@ -247,6 +249,7 @@ exports.getOrder = async (req, res, next) => {
 
 exports.checkout = async (req, res, next) => {
   let review = req.body.review;
+  let custOrders = req.body.orders;
   let cookie = await extractCookie(req, res);
   try {
     if (!cookie) {
@@ -374,28 +377,30 @@ exports.checkout = async (req, res, next) => {
 
     data.inv_no = set_invoice_no;
 
-    req.body.cid = req.user.id;
-    req.body.cname = req.user.name;
-    req.body.table = cookie.table;
-    req.body.inv_no = set_invoice_no;
+    custOrders.cid = req.user.id;
+    custOrders.cname = req.user.name;
+    custOrders.table = cookie.table;
+    custOrders.inv_no = set_invoice_no;
     if (cookie.type) {
-      req.body.type = cookie.type;
+      custOrders.type = cookie.type;
     }
-    // req.body.clean = false;
-    delete req.body.date;
-    delete req.body.qty;
-    req.body.inv_date = moment()
+    // custOrders.clean = false;
+    delete custOrders.date;
+    delete custOrders.qty;
+    custOrders.inv_date = moment()
       .utcOffset(process.env.UTC_OFFSET)
       .format("YYYY-MM-DD");
-    req.body.time = moment().utcOffset(process.env.UTC_OFFSET).format("HH:mm");
-    req.body.tax = Number(data.tax);
+    custOrders.time = moment()
+      .utcOffset(process.env.UTC_OFFSET)
+      .format("HH:mm");
+    custOrders.tax = Number(data.tax);
     if (data.taxInc) {
-      req.body.total_amt = req.body.taxable;
-      req.body.taxable = (req.body.taxable * 100) / (100 + data.tax);
-      req.body.taxInc = true;
+      custOrders.total_amt = custOrders.taxable;
+      custOrders.taxable = (custOrders.taxable * 100) / (100 + data.tax);
+      custOrders.taxInc = true;
     } else {
-      req.body.total_amt =
-        req.body.taxable + (req.body.taxable * data.tax) / 100;
+      custOrders.total_amt =
+        custOrders.taxable + (custOrders.taxable * data.tax) / 100;
     }
 
     let customersRef = await firestore
@@ -404,7 +409,7 @@ exports.checkout = async (req, res, next) => {
       .collection("customers")
       .doc("users");
 
-    InvoiceModel.create(req.body)
+    InvoiceModel.create(custOrders)
       .then(async (e) => {
         await firestore.runTransaction(async (t) => {
           let customers = (await t.get(customersRef)).data();
@@ -443,7 +448,7 @@ exports.checkout = async (req, res, next) => {
         await orderRef.delete();
         await restRef.set(data, { merge: true });
 
-        if (review) {
+        if (review && review.ratting) {
           await CustomerModel.findOneAndUpdate(
             { rest_id: cookie.rest_id, cid: req.user.id },
             { review: review }
