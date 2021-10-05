@@ -52,3 +52,9 @@
   level: 'error',
   timestamp: '2021-09-29T10:58:12.045Z'
 }
+{
+  label: 'admin menu googleDrive auth',
+  message: 'FetchError: request to https://www.googleapis.com/oauth2/v4/token failed, reason: getaddrinfo ENOTFOUND www.googleapis.com',
+  level: 'error',
+  timestamp: '2021-10-04T10:21:41.374Z'
+}

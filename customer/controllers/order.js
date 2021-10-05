@@ -7,6 +7,7 @@ const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
 const randomstring = require("randomstring");
 const { InvoiceModel } = require("../../models/invoice");
+const { CustomerModel } = require("../../models/customer");
 
 exports.addOrder = async (req, res, next) => {
   let cookie = await extractCookie(req, res);
@@ -109,7 +110,43 @@ exports.addOrder = async (req, res, next) => {
         };
       }
 
-      let userRef = await firestore
+      let customerDoc = await CustomerModel.findOne({
+        rest_id: cookie.rest_id,
+        cid: req.user.id,
+      });
+
+      if (customerDoc) {
+        let custObj = {
+          cname: req.user.name,
+          mobile_no: req.user.mobile_no || "",
+          email: req.user.email,
+          last_visit: moment()
+            .utcOffset(process.env.UTC_OFFSET)
+            .format("YYYY-MM-DD"),
+          count: Number(customerDoc.count) + 1,
+        };
+        send_data.unique = true;
+        await CustomerModel.findOneAndUpdate(
+          {
+            rest_id: cookie.rest_id,
+            cid: req.user.id,
+          },
+          { ...custObj }
+        );
+      } else {
+        let custObj = {
+          name: req.user.name,
+          mobile_no: req.user.mobile_no || "",
+          email: req.user.email,
+          last_visit: moment()
+            .utcOffset(process.env.UTC_OFFSET)
+            .format("YYYY-MM-DD"),
+          count: 1,
+        };
+        await CustomerModel.create({ ...custObj });
+      }
+
+      /*    let userRef = await firestore
         .collection(`restaurants/${cookie.rest_id}/users/`)
         .doc(req.user.id);
       let user = await userRef.get();
@@ -135,7 +172,7 @@ exports.addOrder = async (req, res, next) => {
           count: "1",
         });
         send_data.unique = true;
-      }
+      } */
     } else {
       let validId = false;
       let id;
@@ -209,6 +246,7 @@ exports.getOrder = async (req, res, next) => {
 };
 
 exports.checkout = async (req, res, next) => {
+  let review = req.body.review;
   let cookie = await extractCookie(req, res);
   try {
     if (!cookie) {
@@ -404,6 +442,13 @@ exports.checkout = async (req, res, next) => {
 
         await orderRef.delete();
         await restRef.set(data, { merge: true });
+
+        if (review) {
+          await CustomerModel.findOneAndUpdate(
+            { rest_id: cookie.rest_id, cid: req.user.id },
+            { review: review }
+          );
+        }
         return res
           .status(200)
           .json({ success: true, message: "Successfully checkout" });
