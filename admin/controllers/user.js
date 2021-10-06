@@ -47,7 +47,7 @@ exports.getUsersReviews = (req, res) => {
           { rest_id: req.user.rest_id },
           { last_visit: { $gte: start_date } },
           { last_visit: { $lte: end_date } },
-          { "review.ratting": { $ne: undefined } },
+          { "review.rating": { $ne: undefined } },
         ],
       },
     },
@@ -58,7 +58,7 @@ exports.getUsersReviews = (req, res) => {
     .then((data) => {
       res
         .status(200)
-        .json({ data: { avgRatting: 0, reviewList: data }, success: true });
+        .json({ data: { avgRating: 0, reviewList: data }, success: true });
     })
     .catch((err) => {
       let e = extractErrorMessage(err);

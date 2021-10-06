@@ -226,11 +226,29 @@ exports.downloadEodPdf = async (req, res) => {
       .doc(req.user.rest_id)
       .get();
 
-    let date = req.params.date;
+    let interval = req.params.interval;
+
+    if (!interval) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST });
+    }
+
+    interval = interval.split("_");
+
+    if (interval.length != 2) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST });
+    }
+
+    let start_date = interval[0];
+    let end_date = interval[1];
 
     let invoices = await InvoiceModel.find({
       rest_id: req.user.rest_id,
-      inv_date: date,
+      inv_date: { $gte: start_date },
+      inv_date: { $lte: end_date },
     });
 
     let data = rest_details.data();
