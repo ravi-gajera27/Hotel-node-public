@@ -297,7 +297,6 @@ table th, table td {
   padding: 5px 3px;
   text-align: right;
   background: #b0b4b3;
-  color: white;
 }
 #items table th:nth-child(2) {
   width: 30%;
@@ -327,9 +326,16 @@ table th, table td {
   min-width: 100px;
   padding: 8px 3px;
   text-align: right;
+  font-size: 1.5em;
 }
 #sums table tr th {
   padding-right: 25px;
+  font-size: 1.5em;
+}
+#sums table tr th {
+  padding-right: 25px;
+
+  text-align: left !important;
 }
 #sums table tr.amount-total td {
   background: #415472;
@@ -338,10 +344,6 @@ table th, table td {
   font-size: 2em;
   line-height: 1em;
   padding: 7px !important;
-}
-#sums table tr.due-amount th, #sums table tr.due-amount td {
-  font-weight: bold;
-  font-size: 1.2em;
 }
 
 #terms {
@@ -490,7 +492,7 @@ table th, table td {
         
           <table cellpadding="0" cellspacing="0">
             <tr>
-              <th>Sub Total</th>
+              <th>SUB TOTAL</th>
               <td>₹<%= invoice.taxable.toFixed(2) %></td>
             </tr>
             
