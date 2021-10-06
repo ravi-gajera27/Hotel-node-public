@@ -56,7 +56,9 @@ exports.getUsersReviews = (req, res) => {
     },
   ])
     .then((data) => {
-      res.status(200).json({ data: data, success: true });
+      res
+        .status(200)
+        .json({ data: { avgRatting: 0, reviewList: data }, success: true });
     })
     .catch((err) => {
       let e = extractErrorMessage(err);
