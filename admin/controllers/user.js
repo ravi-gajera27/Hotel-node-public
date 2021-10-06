@@ -51,14 +51,39 @@ exports.getUsersReviews = (req, res) => {
         ],
       },
     },
+    /*   {
+      $addFields: {
+        avgStar: { $avg: "$review.ratting" },
+      },
+    },
     {
-      $project: { cname: 1, review: 1 },
+      $project: { cname: 1, review: 1},
+    }, */
+    {
+      $group: {
+        _id: null,
+        documents: { $push: { cname: "$cname", review: "$review" } },
+        avgRating: { $avg: "$review.rating" },
+      },
     },
   ])
     .then((data) => {
-      res
-        .status(200)
-        .json({ data: { avgRating: 0, reviewList: data }, success: true });
+      console.log(data);
+      let starObj = { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
+      for (let ele of data[0].documents) {
+        let rating = ele.review.rating;
+        if (rating) {
+          starObj[`star${rating}`]++;
+        }
+      }
+      res.status(200).json({
+        data: {
+          avgRating: data[0].avgRating,
+          reviewList: data[0].documents,
+          starCount: starObj,
+        },
+        success: true,
+      });
     })
     .catch((err) => {
       let e = extractErrorMessage(err);
