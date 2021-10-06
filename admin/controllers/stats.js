@@ -1,6 +1,7 @@
 const admin = require("firebase-admin");
 const firestore = admin.firestore();
 
+
 const status = require("../../utils/status");
 const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
@@ -543,7 +544,7 @@ exports.downloadSalesReportPdf = async (req, res) => {
         total: total,
         totalType: totalType,
       },
-      (err, data) => {
+      async (err, data) => {
         if (err) {
           throw err;
         } else {
