@@ -1,7 +1,7 @@
 const admin = require("firebase-admin");
 const firestore = admin.firestore();
 
-var html_to_pdf = require("html-pdf-node");
+
 const status = require("../../utils/status");
 const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
@@ -548,31 +548,15 @@ exports.downloadSalesReportPdf = async (req, res) => {
         if (err) {
           throw err;
         } else {
-          /*   let options = {
+          let options = {
             format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
             orientation: "portrait", // portrait or landscape
             border: "0",
             type: "pdf",
-          }; */
+          };
+   
 
-          let options = { format: "A4" };
-          // Example of options with args //
-          // let options = { format: 'A4', args: ['--no-sandbox', '--disable-setuid-sandbox'] };
-
-          let file = { content: data, name: output_path };
-
-          html_to_pdf.generatePdf(file, options).then((pdfBuffer) => {
-            console.log("PDF Buffer:-", pdfBuffer);
-            /*      fs.readFile(output_path, function (err, data) {
-              fs.unlinkSync(output_path);
-              res.contentType("application/pdf");
-              res.status(200).send(data);
-            }); */
-            res.contentType("application/pdf");
-            res.status(200).send(pdfBuffer);
-          });
-
-          /*  pdf.create(data, options).toFile(output_path, function (err, data) {
+          pdf.create(data, options).toFile(output_path, function (err, data) {
             if (err) {
               throw err;
             } else {
@@ -582,7 +566,7 @@ exports.downloadSalesReportPdf = async (req, res) => {
                 res.status(200).send(data);
               });
             }
-          }); */
+          }); 
         }
       }
     );
