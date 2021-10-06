@@ -548,7 +548,7 @@ exports.downloadSalesReportPdf = async (req, res) => {
           throw err;
         } else {
           let options = {
-            format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
+            format: "A3", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
             orientation: "portrait", // portrait or landscape
             border: "0",
             type: "pdf",
