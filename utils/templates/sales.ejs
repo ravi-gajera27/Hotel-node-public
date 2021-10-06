@@ -104,7 +104,7 @@
         font: inherit;
         font-size: 100%;
         vertical-align: baseline;
-        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        font-family:Arial, Helvetica, sans-serif;
       }
 
       html {
@@ -210,6 +210,7 @@
 
       #memo .company-info {
         float: left;
+        
       }
       #memo .company-info div {
         font-size: 20px;
@@ -277,6 +278,7 @@
         vertical-align: top;
         word-break: keep-all;
         word-wrap: break-word;
+      
       }
 
       #invoice-info {
@@ -330,7 +332,7 @@
       }
       #items table th {
         font-family: Sanchez, Serif;
-        font-size: 10px;
+        font-size: 12px;
         text-transform: uppercase;
         padding: 5px 3px;
         text-align: right;
@@ -355,6 +357,7 @@
         text-align: left;
         border-bottom: 1px solid #ddd;
         text-overflow: ellipsis;
+    
       }
       #items table td:first-child {
         text-align: left;
@@ -418,10 +421,10 @@
         <section id="invoice-title-number">
           <div class="title-top">
             <!-- <span>22/10/2028</span>  -->
-            <span><%= date %></span>
+            <span><%= start_date %> - <%= end_date %></span>
           </div>
 
-          <div id="title">END OF DAY REPORT</div>
+          <div id="title">SALES REPORT</div>
         </section>
 
         <div class="clearfix"></div>
@@ -484,50 +487,56 @@
         <div class="currency">
           <span></span> <span></span>
         </div>
-               <section id="invoice-title-number">
+        <section id="invoice-title-number">
               
-          <div id="title">TOP SELLING ITEMS</div>
-        </section>
-        
-        <div class="clearfix"></div>
-
-        <div class="clearfix"></div>
-
-        <div class="currency">
-          <span></span> <span></span>
-        </div>
-        <section id="items">
-          <table cellpadding="0" cellspacing="0">
-
-            <tr>
-              <th>SR.NO</th>
-              <th style="width: 30% !important;">ITEM NAME</th>
-              <th>CATEGORY</th>
-              <th>QUANTITY</th>
-            </tr>
-            <% let i=0;for(let item of topPerformer) { %>
-            <tr>
-              <td><%= ++i %></td>
-              <td style="width: 30% !important;"><%= item.name %></td>
-              <td><%= item.category %></td>
-              <td><%= item.qty %></td>
-              
-            </tr>
-            <% if(i==5) break; } %>
-           
-          </table>
-        </section>
-
-        <section id="sums"></section>
-
-        <div class="clearfix"></div>
-
+            <div id="title">TOTAL SALES REPORT</div>
+          </section>
+          
+          <div class="clearfix"></div>
+  
+          <div class="clearfix"></div>
+  
+          <div class="currency">
+            <span></span> <span></span>
+          </div>
+          <section id="items">
+            <table cellpadding="0" cellspacing="0">
+  
+                <tr>
+                    <th>TYPE</th>
+                    <th>INVOICE</th>
+                    <th>GROSS</th>
+                    <th>DISCOUNT</th>
+                    <Th>Tax</Th>
+                    <th>NET</th>
+                    <th>CASH</th>
+                    <th>CARD</th>
+                    <th>ONLINE</th>
+                    <th>CREDIT</th>
+                  </tr>
+                     <% for(let total of totalType) { %>
+                  </tr>
+      
+                  <tr>
+                    <td><%= total.type %></td>
+                    <td><%= total.total_cust %></td>
+                    <td><%=total.total_gross.toFixed(2) %></td>
+                    <td><%=total.total_discount.toFixed(2)  %></td>
+                    <td><%=total.total_tax.toFixed(2)  %></td>
+                    <td><%=total.total_net.toFixed(2)  %></td>
+                    <td><%=total.total_cash.toFixed(2)  %></td>
+                    <td><%=total.total_card.toFixed(2)  %></td>
+                    <td><%=total.total_online.toFixed(2)  %></td>
+                    <td><%=total.total_credit.toFixed(2)  %></td>
+                  </tr>
+                  <% } %>
+             
+            </table>
+          </section>
         <section id="terms">
           <div style="font-weight: bold; font-size: medium">
-            Thank You for choosing us. Peraket!
+            Thank You for choosing us.
           </div>
-
-          <div style="font-weight: bold; font-size: medium">End of Report.</div>
         </section>
       </div>
     </div>

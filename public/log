@@ -70,3 +70,37 @@
   level: 'error',
   timestamp: '2021-10-05T16:51:56.484Z'
 }
+{
+  label: 'admin state downloadEodPdf cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: date is not defined',
+  level: 'error',
+  timestamp: '2021-10-06T06:40:00.632Z'
+}
+{
+  label: 'admin state downloadEodPdf cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\sales.ejs:420\n' +
+    '    418|           <div class="title-top">\r\n' +
+    '    419|             <!-- <span>22/10/2028</span>  -->\r\n' +
+    ' >> 420|             <span><%= stat_date %> - <%= end_date %></span>\r\n' +
+    '    421|           </div>\r\n' +
+    '    422| \r\n' +
+    '    423|           <div id="title">SALES REPORT</div>\r\n' +
+    '\n' +
+    'stat_date is not defined',
+  level: 'error',
+  timestamp: '2021-10-06T09:44:42.810Z'
+}
+{
+  label: 'admin state downloadEodPdf cH3za13VsMr0oAnqMT0x',
+  message: 'TypeError: F:\\MEAN\\peraket\\Hotel-Node-V.1.0.0\\utils\\templates\\sales.ejs:519\n' +
+    '    517|                     <td><%= item.name %></td>\r\n' +
+    '    518|                     <td><%= item.total_cust %></td>\r\n' +
+    ' >> 519|                     <td><%= item.gross.toFixed(2) %></td>\r\n' +
+    "    520|                     <td><%= item.dis ? item.dis.toFixed(2) : '-' %></td>\r\n" +
+    '    521|                     <td><%= item.tax.toFixed(2) %></td>\r\n' +
+    '    522|                     <td><%= item.total_amt.toFixed(2) %></td>\r\n' +
+    '\n' +
+    "Cannot read property 'toFixed' of undefined",
+  level: 'error',
+  timestamp: '2021-10-06T09:45:41.358Z'
+}

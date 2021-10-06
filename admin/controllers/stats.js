@@ -325,6 +325,22 @@ exports.downloadEodPdf = async (req, res) => {
           total.total_online += tempInvoice.online;
           break;
       }
+      if (!tempInvoice.type) {
+        if (tempInvoice.table == "takeaway") {
+          tempInvoice.type = "Takeaway";
+        } else {
+          tempInvoice.type = "Seat";
+        }
+      } else {
+        let index = data?.type
+          ?.map((e) => {
+            return e.value;
+          })
+          .indexOf(tempInvoice.type);
+        if (index != -1) {
+          tempInvoice.type = data.type[index].name;
+        }
+      }
       invoice_array.push(tempInvoice);
     }
 
@@ -332,7 +348,7 @@ exports.downloadEodPdf = async (req, res) => {
       a.invoice_no > b.invoice_no ? 1 : b.invoice_no > a.invoice_no ? -1 : 0
     );
 
-    var fileName = `eod-${date}-${rest_details.id}.pdf`;
+    var fileName = `eod-${start_date}-${rest_details.id}.pdf`;
 
     var output_path = process.env.EOD_PATH + fileName;
     await ejs.renderFile(
@@ -340,7 +356,7 @@ exports.downloadEodPdf = async (req, res) => {
       {
         invoice_array: invoice_array,
         rest: data,
-        date: date,
+        date: start_date,
         total: total,
         topPerformer: topPerformer,
       },
@@ -349,7 +365,7 @@ exports.downloadEodPdf = async (req, res) => {
           throw err;
         } else {
           let options = {
-            format: "A3", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
+            format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
             orientation: "portrait", // portrait or landscape
             border: "0",
             type: "pdf",
@@ -380,6 +396,190 @@ exports.downloadEodPdf = async (req, res) => {
       .json({ success: false, message: status.SERVER_ERROR });
   }
 };
+
+exports.downloadSalesReportPdf = async (req, res) => {
+  try {
+    let rest_details = await firestore
+      .collection("restaurants")
+      .doc(req.user.rest_id)
+      .get();
+
+    let interval = req.params.interval;
+
+    if (!interval) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST });
+    }
+
+    interval = interval.split("_");
+
+    if (interval.length != 2) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST });
+    }
+
+    let start_date = interval[0];
+    let end_date = interval[1];
+
+    let invoices = await InvoiceModel.find({
+      rest_id: req.user.rest_id,
+      inv_date: { $gte: start_date },
+      inv_date: { $lte: end_date },
+    });
+
+    let data = rest_details.data();
+
+    let total = {
+      total_gross: 0,
+      total_net: 0,
+      total_discount: 0,
+      total_cash: 0,
+      total_card: 0,
+      total_credit: 0,
+      total_online: 0,
+      total_tax: 0,
+      total_cust: 0,
+    };
+
+    let totalType = [];
+    let typeIndex = {};
+
+    let i = 0;
+
+    for (let type of data.type) {
+      typeIndex[`${type.value}`] = { name: type.name, index: i };
+      totalType.push({ type: type.name, value: type.value, ...total });
+      i++;
+    }
+    typeIndex[`takeaway`] = { name: "Takeaway", index: i };
+    totalType.push({ type: "Takeaway", value: "takeaway", ...total });
+
+    let invoice_array = [];
+
+    for (let tempInvoice of invoices) {
+      if (!tempInvoice.settle) {
+        continue;
+      }
+
+      if (tempInvoice.table == "takeaway") {
+        tempInvoice.type = "takeaway";
+      }
+
+      let index = typeIndex[`${tempInvoice.type}`].index;
+
+      tempInvoice.type = typeIndex[`${tempInvoice.type}`].name;
+
+      let tempTotal = { ...totalType[index] };
+
+      tempInvoice.gross = tempInvoice.taxable;
+      total.total_gross += tempInvoice.gross;
+      tempTotal.total_gross += tempInvoice.gross;
+
+      if (tempInvoice.discount) {
+        tempInvoice.dis = tempInvoice.discount.includes("%")
+          ? Number(
+              (tempInvoice.taxable *
+                Number(tempInvoice.discount.split("%")[0])) /
+                100
+            )
+          : Number(tempInvoice.discount);
+      } else {
+        tempInvoice.dis = 0;
+      }
+      total.total_discount += Number(tempInvoice.dis) || 0;
+      tempTotal.total_discount += Number(tempInvoice.dis) || 0;
+
+      tempInvoice.tax =
+        Number(tempInvoice.taxable - tempInvoice.discount) *
+        (Number(tempInvoice.tax) / 100);
+      total.total_tax += tempInvoice.tax;
+      tempTotal.total_tax += tempInvoice.tax;
+
+      total.total_net += tempInvoice.total_amt;
+      tempTotal.total_net += tempInvoice.total_amt;
+      total.total_credit += tempInvoice.settle.credit;
+      tempTotal.total_credit += tempInvoice.settle.credit;
+      total.total_cust++;
+      tempTotal.total_cust++;
+
+      switch (tempInvoice.settle.method) {
+        case "cash":
+          total.total_cash += tempInvoice.total_amt - tempInvoice.settle.credit;
+          tempInvoice.cash = tempInvoice.total_amt - tempInvoice.settle.credit;
+          tempTotal.total_cash += tempInvoice.cash;
+          break;
+        case "card":
+          total.total_card += tempInvoice.total_amt - tempInvoice.settle.credit;
+          tempInvoice.card = tempInvoice.total_amt - tempInvoice.settle.credit;
+          tempTotal.total_card += tempInvoice.card;
+          break;
+        case "online":
+          tempInvoice.online =
+            tempInvoice.total_amt - tempInvoice.settle.credit;
+          total.total_online += tempInvoice.online;
+          tempTotal.total_online += tempInvoice.online;
+          break;
+      }
+      invoice_array.push(tempInvoice);
+      totalType[index] = tempTotal;
+    }
+
+    invoice_array.sort((a, b) =>
+      a.invoice_no > b.invoice_no ? 1 : b.invoice_no > a.invoice_no ? -1 : 0
+    );
+
+    var fileName = `sales-${start_date}-${rest_details.id}.pdf`;
+
+    var output_path = process.env.EOD_PATH + fileName;
+    await ejs.renderFile(
+      path.join(__dirname + "/../../utils/templates/sales.ejs"),
+      {
+        invoice_array: invoice_array,
+        rest: data,
+        start_date: moment(start_date, "YYYY-MM-DD").format("DD-MM-YYYY"),
+        end_date: moment(end_date, "YYYY-MM-DD").format("DD-MM-YYYY"),
+        total: total,
+        totalType: totalType,
+      },
+      (err, data) => {
+        if (err) {
+          throw err;
+        } else {
+          let options = {
+            format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
+            orientation: "portrait", // portrait or landscape
+            border: "0",
+            type: "pdf",
+          };
+
+          pdf.create(data, options).toFile(output_path, function (err, data) {
+            if (err) {
+              throw err;
+            } else {
+              fs.readFile(output_path, function (err, data) {
+                fs.unlinkSync(output_path);
+                res.contentType("application/pdf");
+                res.status(200).send(data);
+              });
+            }
+          });
+        }
+      }
+    );
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `admin state downloadEodPdf ${req.user.rest_id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
 exports.getBasicsByInterval = async (req, res, next) => {
   try {
     let interval = req.params.interval;
