@@ -1,7 +1,6 @@
 const admin = require("firebase-admin");
 const firestore = admin.firestore();
 
-
 const status = require("../../utils/status");
 const HASH = require("../../utils/encryption");
 const TOKEN = require("../../utils/token");
@@ -405,6 +404,186 @@ exports.downloadSalesReportPdf = async (req, res) => {
       .doc(req.user.rest_id)
       .get();
 
+    let dateData = req.body;
+
+    let start_date = dateData.start_date;
+    let end_date = dateData.end_date;
+
+    if (
+      !start_date ||
+      !end_date ||
+      !dateData.type ||
+      dateData.type.length == 0
+    ) {
+      return res
+        .status(400)
+        .json({ status: false, message: status.BAD_REQUEST });
+    }
+
+    let invoices = await InvoiceModel.find({
+      rest_id: req.user.rest_id,
+      inv_date: { $gte: start_date },
+      inv_date: { $lte: end_date },
+    });
+
+    let data = rest_details.data();
+
+    let total = {
+      total_gross: 0,
+      total_net: 0,
+      total_discount: 0,
+      total_cash: 0,
+      total_card: 0,
+      total_credit: 0,
+      total_online: 0,
+      total_tax: 0,
+      total_cust: 0,
+    };
+
+    let totalType = [];
+    let typeIndex = {};
+    let i = 0;
+    console.log(dateData.type)
+    for (let type of dateData.type) {
+      totalType.push({ type: type.name, value: type.value, ...total });
+      typeIndex[`${type.value}`] = { name: type.name, index: i };
+      i++;
+    }
+
+    let invoice_array = [];
+
+    for (let tempInvoice of invoices) {
+      if (!tempInvoice.settle) {
+        continue;
+      }
+      let tempTotal = {};
+      let index;
+      if (tempInvoice.table == "takeaway") {
+        if(!typeIndex['takeaway']){continue;}
+        tempInvoice.type = "Takeaway";
+        index = typeIndex['takeaway'].index
+        tempTotal = { ...totalType[index] };
+      } else {
+        if(!typeIndex['seat']){continue;}
+        tempInvoice.type = "Seat";
+        index = typeIndex['seat'].index
+        tempTotal = { ...totalType[index] };
+      }
+
+      tempInvoice.gross = tempInvoice.taxable;
+      total.total_gross += tempInvoice.gross;
+      tempTotal.total_gross += tempInvoice.gross;
+
+      if (tempInvoice.discount) {
+        tempInvoice.dis = tempInvoice.discount.includes("%")
+          ? Number(
+              (tempInvoice.taxable *
+                Number(tempInvoice.discount.split("%")[0])) /
+                100
+            )
+          : Number(tempInvoice.discount);
+      } else {
+        tempInvoice.dis = 0;
+      }
+      total.total_discount += Number(tempInvoice.dis) || 0;
+      tempTotal.total_discount += Number(tempInvoice.dis) || 0;
+
+      tempInvoice.tax =
+        Number(tempInvoice.taxable - tempInvoice.discount) *
+        (Number(tempInvoice.tax) / 100);
+      total.total_tax += tempInvoice.tax;
+      tempTotal.total_tax += tempInvoice.tax;
+
+      total.total_net += tempInvoice.total_amt;
+      tempTotal.total_net += tempInvoice.total_amt;
+      total.total_credit += tempInvoice.settle.credit;
+      tempTotal.total_credit += tempInvoice.settle.credit;
+      total.total_cust++;
+      tempTotal.total_cust++;
+
+      switch (tempInvoice.settle.method) {
+        case "cash":
+          total.total_cash += tempInvoice.total_amt - tempInvoice.settle.credit;
+          tempInvoice.cash = tempInvoice.total_amt - tempInvoice.settle.credit;
+          tempTotal.total_cash += tempInvoice.cash;
+          break;
+        case "card":
+          total.total_card += tempInvoice.total_amt - tempInvoice.settle.credit;
+          tempInvoice.card = tempInvoice.total_amt - tempInvoice.settle.credit;
+          tempTotal.total_card += tempInvoice.card;
+          break;
+        case "online":
+          tempInvoice.online =
+            tempInvoice.total_amt - tempInvoice.settle.credit;
+          total.total_online += tempInvoice.online;
+          tempTotal.total_online += tempInvoice.online;
+          break;
+      }
+      invoice_array.push(tempInvoice);
+      totalType[index] = tempTotal;
+    }
+
+    invoice_array.sort((a, b) =>
+      a.invoice_no > b.invoice_no ? 1 : b.invoice_no > a.invoice_no ? -1 : 0
+    );
+
+    var fileName = `sales-${start_date}-${rest_details.id}.pdf`;
+
+    var output_path = process.env.EOD_PATH + fileName;
+    await ejs.renderFile(
+      path.join(__dirname + "/../../utils/templates/sales.ejs"),
+      {
+        invoice_array: invoice_array,
+        rest: data,
+        start_date: moment(start_date, "YYYY-MM-DD").format("DD-MM-YYYY"),
+        end_date: moment(end_date, "YYYY-MM-DD").format("DD-MM-YYYY"),
+        total: total,
+        totalType: totalType,
+      },
+      async (err, data) => {
+        if (err) {
+          throw err;
+        } else {
+          let options = {
+            format: "A4", // allowed units: A3, A4, A5, Legal, Letter, Tabloid
+            orientation: "portrait", // portrait or landscape
+            border: "0",
+            type: "pdf",
+          };
+
+          pdf.create(data, options).toFile(output_path, function (err, data) {
+            if (err) {
+              throw err;
+            } else {
+              fs.readFile(output_path, function (err, data) {
+                fs.unlinkSync(output_path);
+                res.contentType("application/pdf");
+                res.status(200).send(data);
+              });
+            }
+          });
+        }
+      }
+    );
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `admin state downloadEodPdf ${req.user.rest_id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
+exports.downloadSalesReportPdfRestType = async (req, res) => {
+  try {
+    let rest_details = await firestore
+      .collection("restaurants")
+      .doc(req.user.rest_id)
+      .get();
+
     let interval = req.params.interval;
 
     if (!interval) {
@@ -554,7 +733,6 @@ exports.downloadSalesReportPdf = async (req, res) => {
             border: "0",
             type: "pdf",
           };
-   
 
           pdf.create(data, options).toFile(output_path, function (err, data) {
             if (err) {
@@ -566,7 +744,7 @@ exports.downloadSalesReportPdf = async (req, res) => {
                 res.status(200).send(data);
               });
             }
-          }); 
+          });
         }
       }
     );

@@ -70,16 +70,18 @@ exports.getUsersReviews = (req, res) => {
     .then((data) => {
       console.log(data);
       let starObj = { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
-      for (let ele of data[0].documents) {
-        let rating = ele.review.rating;
-        if (rating) {
-          starObj[`star${rating}`]++;
+      if (data.length != 0) {
+        for (let ele of data[0]?.documents) {
+          let rating = ele.review.rating;
+          if (rating) {
+            starObj[`star${rating}`]++;
+          }
         }
       }
       res.status(200).json({
         data: {
-          avgRating: data[0].avgRating,
-          reviewList: data[0].documents,
+          avgRating: data[0]?.avgRating || 0,
+          reviewList: data[0]?.documents || [],
           starCount: starObj,
         },
         success: true,
