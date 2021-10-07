@@ -134,3 +134,21 @@
   level: 'error',
   timestamp: '2021-10-07T05:22:15.177Z'
 }
+{
+  label: 'admin state downloadEodPdf eJq9wve34QSCjnCUk39U',
+  message: 'TypeError: dateData is not iterable',
+  level: 'error',
+  timestamp: '2021-10-07T05:27:49.366Z'
+}
+{
+  label: 'admin state downloadEodPdf cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: date is not defined',
+  level: 'error',
+  timestamp: '2021-10-07T06:35:10.637Z'
+}
+{
+  label: 'admin state downloadEodPdf cH3za13VsMr0oAnqMT0x',
+  message: 'ReferenceError: date is not defined',
+  level: 'error',
+  timestamp: '2021-10-07T06:45:15.147Z'
+}

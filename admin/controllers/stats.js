@@ -420,12 +420,6 @@ exports.downloadSalesReportPdf = async (req, res) => {
         .json({ status: false, message: status.BAD_REQUEST });
     }
 
-    let invoices = await InvoiceModel.find({
-      rest_id: req.user.rest_id,
-      inv_date: { $gte: start_date },
-      inv_date: { $lte: end_date },
-    });
-
     let data = rest_details.data();
 
     let total = {
@@ -442,12 +436,38 @@ exports.downloadSalesReportPdf = async (req, res) => {
 
     let totalType = [];
     let typeIndex = {};
+    let typeObject = { seat: { name: "Seat" }, takeaway: { name: "Takeaway" } };
     let i = 0;
-    console.log(dateData.type)
+    console.log(dateData.type);
     for (let type of dateData.type) {
-      totalType.push({ type: type.name, value: type.value, ...total });
-      typeIndex[`${type.value}`] = { name: type.name, index: i };
+      totalType.push({ type: typeObject[type].name, value: type, ...total });
+      typeIndex[`${type}`] = { name: typeObject[type].name, index: i };
       i++;
+    }
+
+    let invoices;
+    if (Object.keys(typeIndex).length == 1) {
+      if (typeIndex["takeaway"]) {
+        invoices = await InvoiceModel.find({
+          rest_id: req.user.rest_id,
+          inv_date: { $gte: start_date },
+          inv_date: { $lte: end_date },
+          table: "takeaway",
+        });
+      } else {
+        invoices = await InvoiceModel.find({
+          rest_id: req.user.rest_id,
+          inv_date: { $gte: start_date },
+          inv_date: { $lte: end_date },
+          table: { $ne: "takeaway" },
+        });
+      }
+    } else {
+      invoices = await InvoiceModel.find({
+        rest_id: req.user.rest_id,
+        inv_date: { $gte: start_date },
+        inv_date: { $lte: end_date },
+      });
     }
 
     let invoice_array = [];
@@ -459,14 +479,18 @@ exports.downloadSalesReportPdf = async (req, res) => {
       let tempTotal = {};
       let index;
       if (tempInvoice.table == "takeaway") {
-        if(!typeIndex['takeaway']){continue;}
+        if (!typeIndex["takeaway"]) {
+          continue;
+        }
         tempInvoice.type = "Takeaway";
-        index = typeIndex['takeaway'].index
+        index = typeIndex["takeaway"].index;
         tempTotal = { ...totalType[index] };
       } else {
-        if(!typeIndex['seat']){continue;}
+        if (!typeIndex["seat"]) {
+          continue;
+        }
         tempInvoice.type = "Seat";
-        index = typeIndex['seat'].index
+        index = typeIndex["seat"].index;
         tempTotal = { ...totalType[index] };
       }
 
@@ -584,30 +608,21 @@ exports.downloadSalesReportPdfRestType = async (req, res) => {
       .doc(req.user.rest_id)
       .get();
 
-    let interval = req.params.interval;
+    let dateData = req.body;
 
-    if (!interval) {
+    let start_date = dateData.start_date;
+    let end_date = dateData.end_date;
+
+    if (
+      !start_date ||
+      !end_date ||
+      !dateData.type ||
+      dateData.type.length == 0
+    ) {
       return res
         .status(400)
         .json({ status: false, message: status.BAD_REQUEST });
     }
-
-    interval = interval.split("_");
-
-    if (interval.length != 2) {
-      return res
-        .status(400)
-        .json({ status: false, message: status.BAD_REQUEST });
-    }
-
-    let start_date = interval[0];
-    let end_date = interval[1];
-
-    let invoices = await InvoiceModel.find({
-      rest_id: req.user.rest_id,
-      inv_date: { $gte: start_date },
-      inv_date: { $lte: end_date },
-    });
 
     let data = rest_details.data();
 
@@ -628,14 +643,25 @@ exports.downloadSalesReportPdfRestType = async (req, res) => {
 
     let i = 0;
 
-    for (let type of data.type) {
-      typeIndex[`${type.value}`] = { name: type.name, index: i };
-      totalType.push({ type: type.name, value: type.value, ...total });
+    data.type.push({ name: "Takeaway", value: "takeaway" });
+
+    for (let type of dateData.type) {
+      let restType = data.type.find((e) => e.value == type);
+      typeIndex[`${type}`] = { name: restType.name, index: i };
+      totalType.push({ type: restType.name, value: type, ...total });
       i++;
     }
-    typeIndex[`takeaway`] = { name: "Takeaway", index: i };
-    totalType.push({ type: "Takeaway", value: "takeaway", ...total });
 
+    let invoices = await InvoiceModel.find({
+      rest_id: req.user.rest_id,
+      inv_date: { $gte: start_date },
+      inv_date: { $lte: end_date },
+      $or: [
+        { table: { $in: dateData.type } },
+        { type: { $in: dateData.type } },
+      ],
+    });
+    console.log(invoices);
     let invoice_array = [];
 
     for (let tempInvoice of invoices) {
