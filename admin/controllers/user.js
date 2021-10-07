@@ -47,22 +47,16 @@ exports.getUsersReviews = (req, res) => {
           { rest_id: req.user.rest_id },
           { last_visit: { $gte: start_date } },
           { last_visit: { $lte: end_date } },
-          { "review.rating": { $ne: undefined } },
+          { review: { $exists: true } },
         ],
       },
     },
-    /*   {
-      $addFields: {
-        avgStar: { $avg: "$review.ratting" },
-      },
-    },
-    {
-      $project: { cname: 1, review: 1},
-    }, */
     {
       $group: {
         _id: null,
-        documents: { $push: { cname: "$cname", review: "$review" } },
+        documents: {
+          $push: { cname: "$cname", review: "$review", date: "$last_visit" },
+        },
         avgRating: { $avg: "$review.rating" },
       },
     },
