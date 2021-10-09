@@ -11,6 +11,12 @@ router.put("/verify-otp", protect, auth.verifyOtp);
 router.post("/rest-details", protect, auth.restaurantRegister);
 router.get("/admin", protect, auth.getAdminList);
 router.post("/admin", protect, auth.addAdmin);
+router.get(
+  "/restaurant-step/service-plans",
+  protect,
+  auth.getRestaurantStepServicePlans
+);
+router.get("/service-plans", protect, auth.getServicePlans);
 router.delete("/admin/:email", protect, auth.removeAdmin);
 router.get("/captain", protect, auth.getCaptainList);
 router.post("/captain", protect, auth.addCaptain);

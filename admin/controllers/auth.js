@@ -686,6 +686,92 @@ exports.addMenuFileRestStep = async (req, res, next) => {
   }
 };
 
+exports.getRestaurantStepServicePlans = async (req, res) => {
+  try {
+    let restDoc = await firestore
+      .collection("restaurants")
+      .doc(req.user.rest_id)
+      .get();
+    let rest_details = restDoc.data();
+
+    firestore
+      .collection("general")
+      .doc("subscriptions")
+      .get()
+      .then(async (plans) => {
+        let plansArray = plans.data()?.plans;
+
+        let tableCount = rest_details.type.reduce((sum, num) => {
+          return Number(sum) + Number(num.tables);
+        }, 0);
+
+        console.log(tableCount);
+
+        let resultPlans = [];
+
+        for (let ele of plansArray) {
+          if (!ele.type && !rest_details.plan) {
+            resultPlans.splice(1, 0, { ...ele });
+          } else if (
+            ele.t_end == "Unlimited" &&
+            Number(ele.t_start) <= tableCount
+          ) {
+            resultPlans.push({ ...ele });
+          } else if (
+            Number(ele.t_start) <= tableCount &&
+            Number(ele.t_end) >= tableCount
+          ) {
+            resultPlans.push({ ...ele });
+          }
+        }
+
+        return res.status(200).json({ success: true, data: resultPlans });
+      });
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `admin auth getRestaurantStepServicePlans ${req.user.rest_id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
+exports.getServicePlans = async (req, res) => {
+  try {
+    firestore
+      .collection("general")
+      .doc("subscriptions")
+      .get()
+      .then(async (plans) => {
+        let plansArray = plans.data()?.plans;
+
+        let resultPlans = [];
+
+        for (let ele of plansArray) {
+          if (!ele.type) {
+            continue;
+          } else {
+            resultPlans.push({ ...ele });
+          }
+        }
+
+        return res.status(200).json({ success: true, data: resultPlans });
+      });
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `admin auth getServicePlans ${req.user.rest_id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
 exports.getUser = async (req, res, next) => {
   firestore
     .collection("admin")
