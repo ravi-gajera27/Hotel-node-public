@@ -9,7 +9,10 @@ const fs = require("fs");
 const path = require("path");
 const randomstring = require("randomstring");
 const sizeof = require("firestore-size");
-var credentials = require("../../peraket-rms-google-drive.json");
+var credentials =
+  process.env.NODE_ENV != "prod"
+    ? require("../../peraket-rms-google-drive.json")
+    : require("../../hungercodes-google-drive.json");
 const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
 

@@ -1,39 +1,55 @@
-const { createLogger, format, transports } = require('winston')
-const { combine, timestamp, label, prettyPrint } = format
-require('winston-mongodb')
+const { createLogger, format, transports } = require("winston");
+const { combine, timestamp, label, prettyPrint } = format;
+require("winston-mongodb");
 
-let logger = null
+let logger = null;
 
-if (process.env.NODE_ENV == 'prod') {
+if (process.env.NODE_ENV == "prod") {
   try {
     logger = createLogger({
       transports: [
         new transports.MongoDB({
           db: process.env.MONGODB_URL,
-          level: 'info',
+          level: "info",
           format: combine(timestamp(), prettyPrint()),
           options: { useUnifiedTopology: true },
         }),
       ],
-    })
+    });
   } catch (e) {
-    let ew = new Error(e)
-    console.log(ew.message)
+    let ew = new Error(e);
+    console.log(ew.message);
   }
-} else if (process.env.NODE_ENV == 'dev') {
+} else if (process.env.NODE_ENV == "dev") {
   try {
     logger = createLogger({
-      level: 'info',
+      level: "info",
       format: combine(timestamp(), prettyPrint()),
       transports: [
-        new transports.File({ filename: 'public/log' }),
+        new transports.File({ filename: "public/log" }),
         new transports.Console(),
       ],
-    })
+    });
   } catch (e) {
-    let ew = new Error(e)
-    console.log(ew.message)
+    let ew = new Error(e);
+    console.log(ew.message);
+  }
+} else {
+  try {
+    logger = createLogger({
+      level: "info",
+      format: combine(timestamp(), prettyPrint()),
+      transports: new transports.MongoDB({
+        db: process.env.MONGODB_URL,
+        level: "info",
+        format: combine(timestamp(), prettyPrint()),
+        options: { useUnifiedTopology: true },
+      }),
+    });
+  } catch (e) {
+    let ew = new Error(e);
+    console.log(ew.message);
   }
 }
 
-module.exports = logger
+module.exports = logger;
