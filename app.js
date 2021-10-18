@@ -1,4 +1,9 @@
-require('dotenv').config()
+if (process.env.NODE_ENV != "prod") {
+  require("dotenv").config({ path: ".env.dev" });
+} else {
+  require("dotenv").config({ path: ".env.prod" });
+}
+
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -91,6 +96,10 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/utils/templates"));
 app.set("trust proxy", true);
 
+app.post("/razorpay", (req, res) => {
+  console.log(req.body);
+  res.send(req.body);
+});
 app.get("/eod1", (req, res) => {
   let invoice_array = [
     {

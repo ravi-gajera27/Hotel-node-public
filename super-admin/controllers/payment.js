@@ -8,91 +8,6 @@ const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
 sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY);
 
-exports.generateInvoiceAPI = async (req, res) => {
-  try {
-    let success = await this.generateInvoice();
-    if (success == true) {
-      res.status(200).json({ success: true, message: status.INVOICE_GEN });
-    }
-  } catch (err) {
-    let e = extractErrorMessage(err);
-    logger.error({
-      label: `super-admin payment generateInvoiceAPI ${req.user.id}`,
-      message: e,
-    });
-    return res
-      .status(500)
-      .json({ success: false, message: status.SERVER_ERROR });
-  }
-};
-
-exports.generateInvoiceByRestId = async (req, res) => {
-  let rest_id = req.params.rest_id;
-  try {
-    if (!rest_id) {
-      return res
-        .status(400)
-        .json({ success: false, message: status.BAD_REQUEST });
-    }
-
-    let start_date = moment()
-      .utcOffset(process.env.UTC_OFFSET)
-      .subtract(1, "month")
-      .startOf("month")
-      .format("YYYY-MM-DD");
-
-    let end_date = moment()
-      .utcOffset(process.env.UTC_OFFSET)
-      .subtract(1, "months")
-      .endOf("month")
-      .format("YYYY-MM-DD");
-
-      let invoices = await InvoiceModel.find({
-        rest_id: req.user.rest_id,
-        inv_date: { $gte: start_date },
-        inv_date: { $lte: end_date },
-      });
-
-    let restDoc = await firestore.collection(`restaurants`).doc(rest_id).get();
-
-    let rest_deatails = restDoc.data();
-
-    let earning = 0;
-      for (let invoice of invoices) {
-        earning += invoice.total_amt;
-    }
-    if(earning == 0){
-      return res.status(400).json({success: false, message: 'Zero Earning'})
-    }
-    let date = moment().utcOffset(process.env.UTC_OFFSET).format("DD-MM-YYYY");
-    earning = Math.round(earning);
-
-    let obj = {
-      payment: earning,
-      date: date,
-      rest_name: rest_details.name,
-      city: rest_deatails.city,
-      state: rest_deatails.state,
-    };
-    await firestore
-      .collection("paymentReq")
-      .doc(rest_id)
-      .set({ ...obj })
-      .then((e) => {
-        res.status(200).json({ success: true, message: status.INVOICE_GEN });
-      });
-  } catch (err) {
-    let e = extractErrorMessage(err);
-    logger.error({
-      label: `super-admin payment generateInvoiceByRestId user: ${req.user.id} rest: ${rest_id}`,
-      message: e,
-    });
-    return res
-      .status(500)
-      .json({ success: false, message: status.SERVER_ERROR });
-  }
-};
-
 exports.restaurantLockedAPI = async (req, res) => {
   try {
     let success = await this.lockedRestaurant();
@@ -165,89 +80,71 @@ exports.restaurantUnLockByRestId = async (req, res) => {
       .json({ success: false, message: status.SERVER_ERROR });
   }
 };
-exports.generateInvoice = async () => {
-  try {
-    let collection = await firestore
-      .collection("restaurants")
-      .where("locked", "!=",true)
-      .get();
-    let start_date = moment()
-      .utcOffset(process.env.UTC_OFFSET)
-      .subtract("1", "month")
-      .startOf("month")
-      .format("YYYY-MM-DD");
-    let end_date = moment()
-      .utcOffset(process.env.UTC_OFFSET)
-      .subtract("1", "month")
-      .endOf("month")
-      .format("YYYY-MM-DD");
 
-    for (let rest of collection.docs) {
-      let rest_id = rest.id;
-      let rest_details = rest.data();
-
-      let invoices = await InvoiceModel.find({
-        rest_id: req.user.rest_id,
-        inv_date: { $gte: start_date },
-        inv_date: { $lte: end_date },
-      });
-
-      let earning = 0;
-        for (let invoice of invoices) {
-          earning += invoice.total_amt;
-      }
-      earning = Math.round(earning);
-      let date = moment()
-        .utcOffset(process.env.UTC_OFFSET)
-        .format("DD-MM-YYYY");
-      let obj = {
-        payment: earning,
-        date: date,
-        rest_name: rest_details.name,
-        city: rest_deatails.city,
-        state: rest_deatails.state,
-      };
-
-      await firestore
-        .collection("paymentReq")
-        .doc(rest_id)
-        .set({ ...obj });
-    }
-    let invoice = moment()
-      .utcOffset(process.env.UTC_OFFSET)
-      .format("DD MMM, YYYY hh:mm A");
-
-    await firestore
-      .collection("super-admin")
-      .doc("general")
-      .set({ invoice: invoice }, { merge: true });
-
-    return true;
-  } catch (err) {
-    throw err;
-  }
-};
 
 exports.lockedRestaurant = async () => {
   try {
-    let paymentReqDoc = await firestore.collection("paymentReq").get();
+    let restaurantsDoc = await firestore.collection("restaurants").get();
 
-    for (let rest of paymentReqDoc.docs) {
+    for (let rest of restaurantsDoc.docs) {
       let rest_id = rest.id;
-      await firestore
-        .collection("restaurants")
-        .doc(rest_id)
-        .set({ locked: true }, { merge: true });
+      if (rest.subs_id) {
+       
+        let locked = false;
+        let subRef = await firestore
+          .collection("restaurants")
+          .doc(rest_id)
+          .collection("subscription")
+          .doc(rest.subs_id)
+          .get();
+
+        if (!subRef.exists) {
+          locked = true;
+        }
+
+        let data = subRef.data();
+        if (
+          !data.payment ||
+          !data.payment_id ||
+          !data.order_id ||
+          !data.signature
+        ) {
+          locked = true;
+        }
+        let generated_signature = hmac_sha256(
+          order_id + "|" + razorpay_payment_id,
+          process.env.RAZORPAY_KEY_SECRET
+        );
+        if (generated_signature != data.signature) {
+          locked = true;
+        }
+
+        if (data.end_date <= moment().utcOffset(process.env.UTC_OFFSET).unix()) {
+          locked = true;
+        }
+
+        if (locked) {
+          await firestore
+            .collection("restaurants")
+            .doc(rest_id)
+            .set({ locked: true }, { merge: true });
+        }
+      } else {
+        await firestore
+          .collection("restaurants")
+          .doc(rest_id)
+          .set({ locked: true }, { merge: true });
+      }
     }
 
-    let locked = moment()
+    /*     let locked = moment()
       .utcOffset(process.env.UTC_OFFSET)
       .format("DD MMM, YYYY hh:mm A");
 
     await firestore
-      .collection("super-admin")
-      .doc("general")
-      .set({ locked: locked }, { merge: true });
+      .collection("activities")
+      .doc("activity")
+      .set({ locked: locked }, { merge: true }); */
     return true;
   } catch (err) {
     throw err;

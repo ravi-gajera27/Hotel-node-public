@@ -568,6 +568,10 @@ exports.restaurantRegister = async (req, res, next) => {
 };
 
 exports.updateRestaurantDetails = async (req, res, next) => {
+  delete req.body.verified;
+  delete req.body.locked;
+  delete req.body.subs_id;
+
   firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
@@ -598,6 +602,10 @@ exports.updateRestaurantDetails = async (req, res, next) => {
 };
 
 exports.updateStepRestaurantDetaials = async (req, res, next) => {
+  delete req.body.verified;
+  delete req.body.lock;
+  delete req.body.subs_id;
+
   firestore
     .collection("restaurants")
     .doc(req.user.rest_id)
@@ -790,15 +798,10 @@ exports.getUser = async (req, res, next) => {
           if (restRef.verified) {
             data.verified = true;
           }
-          if (restRef.plan && restRef.plan.expired) {
-            let unix = moment().utcOffset(process.env.UTC_OFFSET).unix();
-            if (restRef.plan.expired < unix) {
-              data.expired = true;
-            }
-          }
           if (restRef.locked) {
             data.locked = true;
           }
+
           if (restRef.invoice_format) {
             data.invoice = true;
           }
@@ -1073,17 +1076,6 @@ exports.getRestDetails = async (req, res) => {
 
     let restData = restDetailsDoc.data();
 
-    if (restData.plan && restData.plan.expired) {
-      let unix = moment().utcOffset(process.env.UTC_OFFSET).unix();
-      if (restData.plan.expired < unix) {
-        return res.status(401).json({
-          success: false,
-          message: status.NOT_VERIFIED,
-          redirect: "/postpaid-plan",
-        });
-      }
-    }
-
     if (!restData.verified) {
       return res.status(401).json({
         success: false,
@@ -1112,7 +1104,7 @@ exports.getRestDetails = async (req, res) => {
 
     delete restData.verified;
     delete restData.locked;
-    delete restData.plan;
+    delete restData.subs_id;
 
     return res.status(200).json({ success: true, data: restData });
   } catch (err) {
