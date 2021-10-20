@@ -79,7 +79,7 @@ exports.createOrder = async (req, res) => {
 
     let instance = razorpay.getRazorpayInstance();
     var options = {
-      amount: Number(planType.price) * 100, // amount in the smallest currency unit
+      amount: 1 || Number(planType.price) * 100, // amount in the smallest currency unit
       currency: "INR",
       receipt: plans[planIndex].name + " " + planType.name,
     };
@@ -90,7 +90,7 @@ exports.createOrder = async (req, res) => {
         console.log(order);
         let data = {
           key: process.env.RAZORPAY_KEY_ID,
-          amount: Number(planType.price) * 100,
+          amount: 1 | Number(planType.price) * 100,
           currency: "INR",
           name: "HungerCodes",
           order_id: order.id,
