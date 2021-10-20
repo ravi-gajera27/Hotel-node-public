@@ -8,14 +8,12 @@ const randomstring = require("randomstring");
 const logger = require("../../config/logger");
 const { extractErrorMessage } = require("../../utils/error");
 const { incZoneReq } = require("../../utils/zone");
-const size = require("firestore-size");
 const { LoginActivityModel } = require("../../models/loginActivity");
 const { InvoiceModel } = require("../../models/invoice");
-const e = require("express");
+
 exports.login = async (req, res, next) => {
   try {
     let data = req.body;
-    console.log(req.body);
 
     if (!data.email || !data.password) {
       await incZoneReq(req.ip, "login");

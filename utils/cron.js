@@ -7,6 +7,7 @@ let lockedCron = cron.schedule(
   process.env.LOCKED_CRON,
   async function () {
     try{
+      console.log('calll locked cron')
     await payment.lockedRestaurant()
     }catch(err){
       let e = extractErrorMessage(err)
@@ -48,6 +49,7 @@ exports.stopLockedCron = async () => {
 }
 
 exports.startAllCron = async () => {
+  console.log('start all cron')
   lockedCron.start()
   zoneCron.start()
 }

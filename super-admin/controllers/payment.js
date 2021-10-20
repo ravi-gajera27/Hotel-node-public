@@ -81,15 +81,14 @@ exports.restaurantUnLockByRestId = async (req, res) => {
   }
 };
 
-
 exports.lockedRestaurant = async () => {
   try {
+    console.log("calll locked fun");
     let restaurantsDoc = await firestore.collection("restaurants").get();
 
     for (let rest of restaurantsDoc.docs) {
       let rest_id = rest.id;
       if (rest.subs_id) {
-       
         let locked = false;
         let subRef = await firestore
           .collection("restaurants")
@@ -100,27 +99,28 @@ exports.lockedRestaurant = async () => {
 
         if (!subRef.exists) {
           locked = true;
-        }
-
-        let data = subRef.data();
-        if (
-          !data.payment ||
-          !data.payment_id ||
-          !data.order_id ||
-          !data.signature
-        ) {
-          locked = true;
-        }
-        let generated_signature = hmac_sha256(
-          order_id + "|" + razorpay_payment_id,
-          process.env.RAZORPAY_KEY_SECRET
-        );
-        if (generated_signature != data.signature) {
-          locked = true;
-        }
-
-        if (data.end_date <= moment().utcOffset(process.env.UTC_OFFSET).unix()) {
-          locked = true;
+        } else {
+          let data = subRef.data();
+          if (
+            !data.payment ||
+            !data.payment_id ||
+            !data.order_id ||
+            !data.signature
+          ) {
+            locked = true;
+          } else {
+            let generated_signature = hmac_sha256(
+              order_id + "|" + razorpay_payment_id,
+              process.env.RAZORPAY_KEY_SECRET
+            );
+            if (generated_signature != data.signature) {
+              locked = true;
+            } else if (
+              data.end_date <= moment().utcOffset(process.env.UTC_OFFSET).unix()
+            ) {
+              locked = true;
+            }
+          }
         }
 
         if (locked) {
@@ -137,14 +137,11 @@ exports.lockedRestaurant = async () => {
       }
     }
 
-    /*     let locked = moment()
+    let locked = moment()
       .utcOffset(process.env.UTC_OFFSET)
       .format("DD MMM, YYYY hh:mm A");
 
-    await firestore
-      .collection("activities")
-      .doc("activity")
-      .set({ locked: locked }, { merge: true }); */
+    console.log("locked cron ", locked);
     return true;
   } catch (err) {
     throw err;

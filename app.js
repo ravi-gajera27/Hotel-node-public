@@ -16,11 +16,9 @@ const path = require("path");
 const helmet = require("helmet");
 const payment = require("./config/payment");
 
-let app = express();
-
-const server = require("http").createServer(app);
-
 //initialize server
+
+let app = express();
 
 //initialize database
 DbInitialize = async () => {
@@ -67,13 +65,20 @@ let whitelist = [
   "https://peraket-rms-captain.web.app",
   "https://peraket-super-admin.web.app",
   "https://socket-test-4d4f6.web.app",
+  "https://admin-desktop.hunger.codes",
+  "https://admin.hunger.codes",
+  "https://customer.hunger.codes",
+  "https://hunger.codes",
+  "https://www.admin-desktop.hunger.codes",
+  "https://www.admin.hunger.codes",
+  "https://www.customer.hunger.codes",
+  "https://www.hunger.codes",
 ];
 const corsConfig = {
   credentials: true,
   origin: function (origin, callback) {
     // allow requests with no origin
     if (!origin) return callback(null, true);
-    whitelist.includes(origin);
     if (whitelist.indexOf(origin) == -1) {
       var message = `The CORS policy for this origin doesn't 
                 allow access from the particular origin.`;
@@ -96,10 +101,6 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/utils/templates"));
 app.set("trust proxy", true);
 
-app.post("/razorpay", (req, res) => {
-  console.log(req.body);
-  res.send(req.body);
-});
 app.get("/eod1", (req, res) => {
   let invoice_array = [
     {
@@ -142,36 +143,11 @@ let hash = require("./utils/encryption");
 
 //running app on specific port
 
-server.listen(process.env.PORT || 5000, () => {
+app.listen(process.env.PORT || 5000, () => {
   cron.startAllCron();
 
   console.log(
     "app is running",
     moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A")
   );
-});
-
-const io = require("socket.io")(server, { cors: { origin: "*" } });
-/* const createAdapter = require("socket.io-redis");
-const { RedisClient } = require("redis");
-
-const pubClient = new RedisClient({ host: "localhost", port: 6379 });
-const subClient = pubClient.duplicate();
-
-io.adapter(createAdapter({ host: "localhost", port: 6379 }));
- */
-user = 0;
-
-io.on("connection", (socket) => {
-  /* console.log("user come", socket.id);
-  socket.emit("socket", socket.id) */
-
-  console.log("user", ++user);
-  socket.on("disconnect", (s) => {
-    console.log("user", --user);
-    console.log("user gone", socket.id);
-  });
-  socket.on("connect_error", (err) => {
-    console.log(`connect_error due to ${err.message}`);
-  });
 });
