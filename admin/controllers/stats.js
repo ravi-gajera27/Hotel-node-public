@@ -247,8 +247,10 @@ exports.downloadEodPdf = async (req, res) => {
 
     let invoices = await InvoiceModel.find({
       rest_id: req.user.rest_id,
-      inv_date: { $gte: start_date },
-      inv_date: { $lte: end_date },
+      $and: [
+        { inv_date: { $gte: start_date } },
+        { inv_date: { $lte: end_date } },
+      ],
     });
 
     let data = rest_details.data();
@@ -271,6 +273,7 @@ exports.downloadEodPdf = async (req, res) => {
       if (!tempInvoice.settle) {
         continue;
       }
+      console.log(tempInvoice.inv_date);
       for (let itemFromInvoice of tempInvoice.data) {
         var ind = IsIn2D(itemFromInvoice.name, [...topPerformer]);
 
@@ -450,23 +453,29 @@ exports.downloadSalesReportPdf = async (req, res) => {
       if (typeIndex["takeaway"]) {
         invoices = await InvoiceModel.find({
           rest_id: req.user.rest_id,
-          inv_date: { $gte: start_date },
-          inv_date: { $lte: end_date },
+          $and: [
+            { inv_date: { $gte: start_date } },
+            { inv_date: { $lte: end_date } },
+          ],
           table: "takeaway",
         });
       } else {
         invoices = await InvoiceModel.find({
           rest_id: req.user.rest_id,
-          inv_date: { $gte: start_date },
-          inv_date: { $lte: end_date },
+          $and: [
+            { inv_date: { $gte: start_date } },
+            { inv_date: { $lte: end_date } },
+          ],
           table: { $ne: "takeaway" },
         });
       }
     } else {
       invoices = await InvoiceModel.find({
         rest_id: req.user.rest_id,
-        inv_date: { $gte: start_date },
-        inv_date: { $lte: end_date },
+        $and: [
+          { inv_date: { $gte: start_date } },
+          { inv_date: { $lte: end_date } },
+        ],
       });
     }
 
@@ -654,8 +663,10 @@ exports.downloadSalesReportPdfRestType = async (req, res) => {
 
     let invoices = await InvoiceModel.find({
       rest_id: req.user.rest_id,
-      inv_date: { $gte: start_date },
-      inv_date: { $lte: end_date },
+      $and: [
+        { inv_date: { $gte: start_date } },
+        { inv_date: { $lte: end_date } },
+      ],
       $or: [
         { table: { $in: dateData.type } },
         { type: { $in: dateData.type } },
