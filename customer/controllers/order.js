@@ -116,17 +116,28 @@ exports.addOrder = async (req, res, next) => {
       });
 
       if (customerDoc) {
+        let date = moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .format("YYYY-MM-DD");
+
+        let start_date = moment(date, "YYYY-MM-DD");
+        let end_date = moment(customerDoc.last_visit, "YYYY-MM-DD");
+        let m_visit = 1;
+        let days = Number(start_date.diff(end_date, 'days'))
+        if(days <= 31){
+          m_visit = Number(customerDoc.m_visit) + 1;
+        }
         let custObj = {
           cname: req.user.name,
           cid: req.user.id,
           rest_id: cookie.rest_id,
           mobile_no: req.user.mobile_no || "",
           email: req.user.email,
-          last_visit: moment()
-            .utcOffset(process.env.UTC_OFFSET)
-            .format("YYYY-MM-DD"),
+          last_visit: date,
           visit: Number(customerDoc.visit) + 1,
+          m_visit: m_visit
         };
+
         send_data.unique = true;
         await CustomerModel.findOneAndUpdate(
           {
@@ -146,6 +157,7 @@ exports.addOrder = async (req, res, next) => {
             .utcOffset(process.env.UTC_OFFSET)
             .format("YYYY-MM-DD"),
           visit: 1,
+          m_visit: 1,
         };
         await CustomerModel.create({ ...custObj });
       }

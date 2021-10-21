@@ -298,6 +298,15 @@ exports.generateInvoice = async (req, res, next) => {
 
     let invoice = await InvoiceModel.findById(inv_id);
 
+    let visitDoc = await InvoiceModel.findOne({
+      rest_id: req.user.rest_id,
+      cid: invoice.cid,
+    });
+    let m_visit = 0;
+    if (visitDoc) {
+      m_visit = visitDoc.m_visit;
+    }
+
     let rest_ref = await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
@@ -310,7 +319,6 @@ exports.generateInvoice = async (req, res, next) => {
       rest_address: {
         add_1: rest_ref.add_1,
         add_2: rest_ref.add_2,
-
         city: rest_ref.city,
         state: rest_ref.state,
       },
@@ -320,7 +328,7 @@ exports.generateInvoice = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: { invoice: invoice, rest_details: rest_details },
+      data: { invoice: invoice, m_visit: m_visit, rest_details: rest_details },
     });
   } catch (err) {
     let e = extractErrorMessage(err);

@@ -8,6 +8,7 @@ const customnerSchema = new mongoose.Schema({
   mobile_no: String,
   visit: Number,
   last_visit: String,
+  m_visit: String,
   review: { rating: Number, text: String },
 });
 
