@@ -9,7 +9,7 @@ if (process.env.NODE_ENV == "prod") {
     logger = createLogger({
       transports: [
         new transports.MongoDB({
-          db: process.env.MONGODB_URL,
+          db: process.env.MONGODB_WINSTON_URL,
           level: "info",
           format: combine(timestamp(), prettyPrint()),
           options: { useUnifiedTopology: true },

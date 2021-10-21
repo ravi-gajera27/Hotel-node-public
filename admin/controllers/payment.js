@@ -10,8 +10,10 @@ exports.createOrder = async (req, res) => {
     let plan_id = req.params.plan_id;
     let subPlan_id = req.params.subPlan_id;
 
-    if(!plan_id){
-      return res.status(400).json({success: true, message: status.BAD_REQUEST})
+    if (!plan_id) {
+      return res
+        .status(400)
+        .json({ success: true, message: status.BAD_REQUEST });
     }
 
     let subsObj = {};
@@ -52,15 +54,14 @@ exports.createOrder = async (req, res) => {
         .format("YYYY-MM-DD");
       subsObj.rest_id = req.user.rest_id;
 
-      await subsRef.add({ ...subsObj }).then(async (e) => {
-        await firestore
-          .collection("restaurants")
-          .doc(req.user.rest_id)
-          .set({ subs_id: e.id });
-        return res.status(200).json({
-          success: true,
-          message: "Your free trial has been started",
-        });
+      await subsRef.add({ ...subsObj });
+      await firestore
+        .collection("restaurants")
+        .doc(req.user.rest_id)
+        .set({ subs_id: e.id }, { merge: true });
+      return res.status(200).json({
+        success: true,
+        message: "Your free trial has been started",
       });
     }
 
@@ -79,18 +80,19 @@ exports.createOrder = async (req, res) => {
 
     let instance = razorpay.getRazorpayInstance();
     var options = {
-      amount: 1 || Number(planType.price) * 100, // amount in the smallest currency unit
+      amount: Number(planType.price) * 100, // amount in the smallest currency unit
       currency: "INR",
       receipt: plans[planIndex].name + " " + planType.name,
     };
     instance.orders.create(options, function (err, order) {
       if (err) {
+        console.log(err);
         throw err;
       } else {
         console.log(order);
         let data = {
           key: process.env.RAZORPAY_KEY_ID,
-          amount: 1 | Number(planType.price) * 100,
+          amount: Number(planType.price) * 100,
           currency: "INR",
           name: "HungerCodes",
           order_id: order.id,
@@ -176,7 +178,7 @@ exports.verifySignature = async (req, res) => {
     subData.payment_id = payment_id;
     subData.signature = signature;
     subData.payment = true;
-    
+
     await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)

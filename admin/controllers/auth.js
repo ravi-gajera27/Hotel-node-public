@@ -799,7 +799,9 @@ exports.getUser = async (req, res, next) => {
           if (restRef.locked) {
             data.locked = true;
           }
-
+          if (restRef.subs_id) {
+            data.subscritpion = true;
+          }
           if (restRef.invoice_format) {
             data.invoice = true;
           }
@@ -1092,7 +1094,13 @@ exports.getRestDetails = async (req, res) => {
         message: status.REST_STEP_INCOMPLETE,
         redirect: "/restaurant-menu",
       });
-    } else if (restData.locked) {
+    } else if (!restData.subs_id) {
+      return res.status(401).json({
+        success: false,
+        message: status.REST_STEP_INCOMPLETE,
+        redirect: "/service-plan",
+      });
+    }else if (restData.locked) {
       return res.status(401).json({
         success: false,
         message: status.LOCKED,

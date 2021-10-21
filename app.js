@@ -139,11 +139,10 @@ app.use("/api/captain/menu", menuCaptain);
 app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
-let hash = require("./utils/encryption");
 
 //running app on specific port
 
-app.listen(process.env.PORT || 5000, () => {
+app.listen(process.env.PORT || 5000, async() => {
   cron.startAllCron();
 
   console.log(

@@ -26,7 +26,7 @@ const verifyToken = async (token) =>
             process.env.ENC_SECRET
           );
           let decryptData = await JSON.parse(decrypt.toString(crypto.enc.Utf8));
-          console.log('desc',decryptData)
+          console.log("desc", decryptData);
           resolve(decryptData);
         } catch (e) {
           resolve(false);

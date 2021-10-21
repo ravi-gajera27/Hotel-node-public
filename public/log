@@ -152,3 +152,27 @@
   level: 'error',
   timestamp: '2021-10-07T06:45:15.147Z'
 }
+{
+  label: 'admin payment createOrder cH3za13VsMr0oAnqMT0x',
+  message: "TypeError: Cannot read property 'map' of undefined",
+  level: 'error',
+  timestamp: '2021-10-20T11:55:00.924Z'
+}
+{
+  label: 'admin auth getUser cH3za13VsMr0oAnqMT0x',
+  message: "TypeError: Cannot read property 'verified' of undefined",
+  level: 'error',
+  timestamp: '2021-10-20T11:59:04.245Z'
+}
+{
+  label: 'admin payment createOrder eJq9wve34QSCjnCUk39U',
+  message: "TypeError: Cannot read property 'map' of undefined",
+  level: 'error',
+  timestamp: '2021-10-20T12:11:00.742Z'
+}
+{
+  label: 'admin auth getUser cH3za13VsMr0oAnqMT0x',
+  message: "TypeError: Cannot read property 'verified' of undefined",
+  level: 'error',
+  timestamp: '2021-10-20T15:24:28.302Z'
+}
