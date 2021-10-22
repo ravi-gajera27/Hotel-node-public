@@ -97,20 +97,6 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/utils/templates"));
 app.set("trust proxy", true);
 
-app.get("/eod1", (req, res) => {
-  let invoice_array = [
-    {
-      cname: "Ravi",
-      invoice_id: "1234",
-      gross: 2000,
-      tax: 100,
-      total_amt: 2050,
-      cash: 2050,
-      settle: { method: "card", amount: 0 },
-    },
-  ];
-  res.render("eod1", { invoice_array: invoice_array });
-});
 
 // process routes of super-admin
 app.use("/api/super-admin/auth", authSuperAdmin);

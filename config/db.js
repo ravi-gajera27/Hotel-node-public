@@ -35,6 +35,7 @@ exports.InitializeDatabase = async () => {
           useUnifiedTopology: true,
           useFindAndModify: true,
         });
+       
 
         resolve(connection);
       } catch (e) {
