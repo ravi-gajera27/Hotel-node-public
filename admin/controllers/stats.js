@@ -985,12 +985,6 @@ exports.getCategoriesStats = async (req, res, next) => {
         .json({ status: false, message: status.BAD_REQUEST });
     }
 
-    let cat = await firestore
-      .collection("restaurants")
-      .doc(req.user.rest_id)
-      .collection("categories")
-      .get();
-
     let menuRef = await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
@@ -1000,14 +994,11 @@ exports.getCategoriesStats = async (req, res, next) => {
 
     let categories = {};
     let items = {};
-    if (!cat.empty) {
-      cat.docs.map((e) => {
-        let data = e.data().cat;
-        for (let e of data) {
-          categories[`${e.name}`] = 0;
-          items[`${e.name}`] = {};
-        }
-      });
+
+    let cat = menuRef.data().cat;
+    for (let e of cat) {
+      categories[`${e}`] = 0;
+      items[`${e}`] = {};
     }
 
     for (let menu of menuRef.data().menu) {

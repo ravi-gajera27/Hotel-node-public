@@ -192,7 +192,7 @@ exports.verifySignature = async (req, res) => {
     let subsRef = firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
-      .collection("subscription");
+      .collection("subscriptions");
 
     let subsDocs = await subsRef
       .where("order_id", "==", order_id)
