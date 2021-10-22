@@ -26,7 +26,7 @@ exports.createOrder = async (req, res) => {
     let subsRef = firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
-      .collection("subscription");
+      .collection("subscriptions");
 
     let plans = planDoc.data().plans;
 
@@ -50,10 +50,9 @@ exports.createOrder = async (req, res) => {
         .utcOffset(process.env.UTC_OFFSET)
         .add(plans[planIndex].days, "days")
         .unix();
-
       subsObj.rest_id = req.user.rest_id;
 
-     let sub = await subsRef.add({ ...subsObj });
+      let sub = await subsRef.add({ ...subsObj });
       await firestore
         .collection("restaurants")
         .doc(req.user.rest_id)
@@ -64,7 +63,7 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    console.log('callll')
+    console.log("callll");
 
     let subPlanIndex = plans[planIndex].type
       .map((e) => {
@@ -110,6 +109,7 @@ exports.createOrder = async (req, res) => {
           plan_id: plan_id,
           plan_name: plans[planIndex].name,
           duration: planType.value,
+          price: Number(planType.price),
           order_id: order.id,
           start_date: moment().utcOffset(process.env.UTC_OFFSET).unix(),
           end_date: moment()
@@ -122,7 +122,7 @@ exports.createOrder = async (req, res) => {
         firestore
           .collection("restaurants")
           .doc(req.user.rest_id)
-          .collection("subscription")
+          .collection("subscriptions")
           .add({ ...subsObj })
           .then(
             (e) => {
@@ -138,6 +138,42 @@ exports.createOrder = async (req, res) => {
     let e = extractErrorMessage(err);
     logger.error({
       label: `admin payment createOrder ${req.user.rest_id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
+exports.removeOrder = async (req, res) => {
+  try {
+    let order_id = req.params.order_id;
+
+    if (!order_id) {
+      return res
+        .status(400)
+        .json({ message: status.BAD_REQUEST, success: false });
+    }
+
+    let subDoc = await firestore
+      .collection("restaurants")
+      .doc(req.user.rest_id)
+      .collection("subscriptions")
+      .where("order_id", "==", order_id)
+      .limit(1)
+      .get();
+
+    if (!subDoc.empty) {
+      await subDoc.docs[0].ref.delete();
+
+      return res.status(200).json({ success: false });
+    }
+    return res.status(200).json({ success: false });
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `admin payment removeOrder ${req.user.rest_id}`,
       message: e,
     });
     return res

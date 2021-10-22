@@ -96,7 +96,7 @@ exports.lockedRestaurant = async () => {
         let subRef = await firestore
           .collection("restaurants")
           .doc(rest_id)
-          .collection("subscription")
+          .collection("subscriptions")
           .doc(rest.subs_id)
           .get();
 

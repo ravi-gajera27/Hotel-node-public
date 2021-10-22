@@ -19,7 +19,7 @@ exports.extractCookie = async (req, res) =>
       resolve(decryptData);
     } catch (e) {
       console.log(e);
-      res.clearCookie("firestep_access");
+      res.clearCookie("hungercodes_access");
       resolve(false);
     }
   });
