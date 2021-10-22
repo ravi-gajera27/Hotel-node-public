@@ -13,7 +13,7 @@ exports.InitializeDatabase = async () => {
         let connection = await mongoose.connect(process.env.MONGODB_URL, {
           useNewUrlParser: true,
           useUnifiedTopology: true,
-          useFindAndModify: true,
+          useFindAndModify: false,
         });
 
         resolve(connection);
@@ -33,7 +33,7 @@ exports.InitializeDatabase = async () => {
         let connection = await mongoose.connect(process.env.MONGODB_URL, {
           useNewUrlParser: true,
           useUnifiedTopology: true,
-          useFindAndModify: true,
+          useFindAndModify: false,
         });
        
 

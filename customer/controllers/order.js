@@ -48,9 +48,9 @@ exports.addOrder = async (req, res, next) => {
     let valid = false;
     for (let cust of customers) {
       if (
-        cust.table == cookie.table && cust.cid == req.user.id && cookie.type
+        cust.table == cookie.table && cust.cid == req.user.id && (cookie.type
           ? cookie.type == cust.type
-          : true
+          : true)
       ) {
         if (cust.restore) {
           break;
