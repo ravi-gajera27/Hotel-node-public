@@ -45,25 +45,26 @@ exports.createOrder = async (req, res) => {
     if (plans[planIndex] && !plans[planIndex].type) {
       subsObj.plan_id = plan_id;
       subsObj.price = 0;
-      start_date = moment()
-        .utcOffset(process.env.UTC_OFFSET)
-        .format("YYYY-MM-DD");
-      end_date = moment()
+      subsObj.start_date = moment().utcOffset(process.env.UTC_OFFSET).unix();
+      subsObj.end_date = moment()
         .utcOffset(process.env.UTC_OFFSET)
         .add(plans[planIndex].days, "days")
-        .format("YYYY-MM-DD");
+        .unix();
+
       subsObj.rest_id = req.user.rest_id;
 
-      await subsRef.add({ ...subsObj });
+     let sub = await subsRef.add({ ...subsObj });
       await firestore
         .collection("restaurants")
         .doc(req.user.rest_id)
-        .set({ subs_id: e.id }, { merge: true });
+        .set({ subs_id: sub.id }, { merge: true });
       return res.status(200).json({
         success: true,
         message: "Your free trial has been started",
       });
     }
+
+    console.log('callll')
 
     let subPlanIndex = plans[planIndex].type
       .map((e) => {
@@ -80,7 +81,7 @@ exports.createOrder = async (req, res) => {
 
     let instance = razorpay.getRazorpayInstance();
     var options = {
-      amount: Number(planType.price) * 100, // amount in the smallest currency unit
+      amount: (1 || Number(planType.price)) * 100, // amount in the smallest currency unit
       currency: "INR",
       receipt: plans[planIndex].name + " " + planType.name,
     };
@@ -92,7 +93,7 @@ exports.createOrder = async (req, res) => {
         console.log(order);
         let data = {
           key: process.env.RAZORPAY_KEY_ID,
-          amount: Number(planType.price) * 100,
+          amount: (1 || Number(planType.price)) * 100,
           currency: "INR",
           name: "HungerCodes",
           order_id: order.id,
@@ -110,13 +111,11 @@ exports.createOrder = async (req, res) => {
           plan_name: plans[planIndex].name,
           duration: planType.value,
           order_id: order.id,
-          start_date: moment()
-            .utcOffset(process.env.UTC_OFFSET)
-            .format("YYYY-MM-DD"),
+          start_date: moment().utcOffset(process.env.UTC_OFFSET).unix(),
           end_date: moment()
             .utcOffset(process.env.UTC_OFFSET)
             .add(month, "month")
-            .format("YYYY-MM-DD"),
+            .unix(),
           payment: false,
         };
 

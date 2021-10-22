@@ -84,7 +84,10 @@ exports.restaurantUnLockByRestId = async (req, res) => {
 exports.lockedRestaurant = async () => {
   try {
     console.log("calll locked fun");
-    let restaurantsDoc = await firestore.collection("restaurants").get();
+    let restaurantsDoc = await firestore
+      .collection("restaurants")
+      .where("locked", "!=", true)
+      .get();
 
     for (let rest of restaurantsDoc.docs) {
       let rest_id = rest.id;
@@ -101,6 +104,7 @@ exports.lockedRestaurant = async () => {
           locked = true;
         } else {
           let data = subRef.data();
+
           if (
             !data.payment ||
             !data.payment_id ||
@@ -108,6 +112,16 @@ exports.lockedRestaurant = async () => {
             !data.signature
           ) {
             locked = true;
+            if (data.price == 0) {
+              if (
+                data.end_date <
+                moment().utcOffset(process.env.UTC_OFFSET).unix()
+              ) {
+                locked = true;
+              } else {
+                locked = false;
+              }
+            }
           } else {
             let generated_signature = hmac_sha256(
               order_id + "|" + razorpay_payment_id,
@@ -116,7 +130,7 @@ exports.lockedRestaurant = async () => {
             if (generated_signature != data.signature) {
               locked = true;
             } else if (
-              data.end_date <= moment().utcOffset(process.env.UTC_OFFSET).unix()
+              data.end_date < moment().utcOffset(process.env.UTC_OFFSET).unix()
             ) {
               locked = true;
             }
