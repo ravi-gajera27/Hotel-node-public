@@ -13,9 +13,16 @@ exports.extractCookie = async (req, res) =>
       resolve(false);
     }
     try {
-      let decrypt = await crypto.AES.decrypt(cookie, process.env.QR_SECRET);
+      var key = crypto.enc.Hex.parse(`${process.env.QR_SECRET}`);
+      var iv = crypto.enc.Hex.parse(
+        `${process.env.QR_SECRET.toString().split('').reverse().join('')}`
+      );
+      let decrypt = await crypto.AES.decrypt(cookie, key,{
+        mode: crypto.mode.CTR,
+        padding: crypto.pad.NoPadding,
+        iv: iv,
+      });
       let decryptData = await JSON.parse(decrypt.toString(crypto.enc.Utf8));
-      console.log("desc", decryptData);
       resolve(decryptData);
     } catch (e) {
       console.log(e);

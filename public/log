@@ -188,3 +188,9 @@
   level: 'error',
   timestamp: '2021-10-22T04:25:41.530Z'
 }
+{
+  label: 'admin state getCategoriesStats eJq9wve34QSCjnCUk39U',
+  message: "TypeError: Cannot set property 'Chapati' of undefined",
+  level: 'error',
+  timestamp: '2021-10-23T07:27:58.803Z'
+}

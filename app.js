@@ -97,7 +97,6 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "/utils/templates"));
 app.set("trust proxy", true);
 
-
 // process routes of super-admin
 app.use("/api/super-admin/auth", authSuperAdmin);
 app.use("/api/super-admin/restaurant", restSuperAdmin);
@@ -121,13 +120,11 @@ app.use("/api/captain/menu", menuCaptain);
 app.use("/api/user/auth", authUsers);
 app.use("/api/user/order", order);
 
-
 //running app on specific port
 
+let crypto = require("randomstring");
 app.listen(process.env.PORT || 5000, async () => {
   cron.startAllCron();
-
- 
 
   console.log(
     "app is running",
