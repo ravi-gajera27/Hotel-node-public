@@ -222,7 +222,6 @@ exports.addOrder = async (req, res, next) => {
 };
 
 exports.getOrder = async (req, res, next) => {
-  console.log(req.body);
   let cookie = await extractCookie(req, res);
 
   if (!cookie) {
@@ -263,7 +262,7 @@ exports.getOrder = async (req, res, next) => {
 
 exports.checkout = async (req, res, next) => {
   let review = req.body.review;
-  console.log(review);
+
   let custOrders = req.body.orders;
   let cookie = await extractCookie(req, res);
   try {

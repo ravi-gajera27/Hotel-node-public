@@ -13,7 +13,7 @@ exports.cancelOrder = async (req, res, next) => {
     let cid = req.params.cid;
     let type = req.params.type;
     let restoreOrder = req.body?.restoreOrder;
-    console.log(table_no, order_id, cid);
+  
 
     if (!table_no || !order_id || !cid) {
       return res
@@ -93,7 +93,7 @@ exports.cancelOrder = async (req, res, next) => {
 
         let previousOrder;
         if (restoreOrderRef) {
-          console.log(restoreOrder);
+         
           let restoreOrderDoc = await restoreOrderRef.get();
           if (!restoreOrderDoc.exists) {
             return res
@@ -609,7 +609,8 @@ exports.addOrderByTableNo = async (req, res, next) => {
           });
         }
 
-        console.log("1");
+   
+        
         for (let cust of customers) {
           if (type) {
             if (Number(cust.table) == Number(table_no) && cust.type == type) {
@@ -621,7 +622,7 @@ exports.addOrderByTableNo = async (req, res, next) => {
               cust.cname != req.user.role &&
               cust.cid != cid
             ) {
-              console.log("2", cust);
+              
               return Promise.resolve({
                 success: false,
                 status: 403,

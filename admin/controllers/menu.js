@@ -414,7 +414,7 @@ extractImage = async (req, res, parent) => {
         resolve({ success: false, message: "Problem with image upload" });
       } else {
         let img = await compressImage(path_name);
-        console.log(img);
+    
         if (!img) {
           return resolve(img);
         }
@@ -441,7 +441,7 @@ extractImage = async (req, res, parent) => {
               logger.error({ label: "admin menu extractImage", message: e });
               resolve({ success: false, message: "Problem with image upload" });
             } else {
-              console.log(file);
+         
               fs.unlinkSync(path_name);
               fs.unlinkSync(output_path);
               resolve({ success: true, id: file.data.id });
@@ -460,7 +460,6 @@ removeImage = async (id) => {
         fileId: id,
       })
       .then((res) => {
-        console.log(res);
         resolve(true);
       });
   });

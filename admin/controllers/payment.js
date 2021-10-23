@@ -63,7 +63,7 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    console.log("callll");
+
 
     let subPlanIndex = plans[planIndex].type
       .map((e) => {
@@ -89,7 +89,7 @@ exports.createOrder = async (req, res) => {
         console.log(err);
         throw err;
       } else {
-        console.log(order);
+        
         let data = {
           key: process.env.RAZORPAY_KEY_ID,
           amount: (1 || Number(planType.price)) * 100,

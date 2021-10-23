@@ -37,13 +37,7 @@ exports.protect = async (req, res, next) => {
           req.user.rest_id = user.rest_id;
         }
         console.log(req.baseUrl);
-        /*       if (!req.baseUrl.includes("auth") && !req.user.rest_id) {
-          return res.status(401).json({
-            success: false,
-            message: status.NOT_REGISTERED,
-            redirect: "/restaurant-information",
-          });
-        } */
+   
         next();
       } else {
         return res

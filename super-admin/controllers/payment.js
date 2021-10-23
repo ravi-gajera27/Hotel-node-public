@@ -83,7 +83,7 @@ exports.restaurantUnLockByRestId = async (req, res) => {
 
 exports.lockedRestaurant = async () => {
   try {
-    console.log("calll locked fun");
+
     let restaurantsDoc = await firestore
       .collection("restaurants")
       .where("locked", "!=", true)
@@ -155,7 +155,7 @@ exports.lockedRestaurant = async () => {
       .utcOffset(process.env.UTC_OFFSET)
       .format("DD MMM, YYYY hh:mm A");
 
-    console.log("locked cron ", locked);
+   
     return true;
   } catch (err) {
     throw err;

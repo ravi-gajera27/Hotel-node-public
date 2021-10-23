@@ -273,7 +273,7 @@ exports.downloadEodPdf = async (req, res) => {
       if (!tempInvoice.settle) {
         continue;
       }
-      console.log(tempInvoice.inv_date);
+     
       for (let itemFromInvoice of tempInvoice.data) {
         var ind = IsIn2D(itemFromInvoice.name, [...topPerformer]);
 
@@ -441,7 +441,7 @@ exports.downloadSalesReportPdf = async (req, res) => {
     let typeIndex = {};
     let typeObject = { seat: { name: "Seat" }, takeaway: { name: "Takeaway" } };
     let i = 0;
-    console.log(dateData.type);
+    
     for (let type of dateData.type) {
       totalType.push({ type: typeObject[type].name, value: type, ...total });
       typeIndex[`${type}`] = { name: typeObject[type].name, index: i };
@@ -672,7 +672,7 @@ exports.downloadSalesReportPdfRestType = async (req, res) => {
         { type: { $in: dateData.type } },
       ],
     });
-    console.log(invoices);
+ 
     let invoice_array = [];
 
     for (let tempInvoice of invoices) {
@@ -824,7 +824,7 @@ exports.getBasicsByInterval = async (req, res, next) => {
         { inv_date: { $lte: end_date } },
       ],
     }).then((invoiceRef) => {
-      console.log(invoiceRef);
+    
       let itemsArray = [];
       let total_taxable = 0;
       let total = {
@@ -853,7 +853,7 @@ exports.getBasicsByInterval = async (req, res, next) => {
 
         for (let items of tempInvoice.data) {
           if (!itemsArray.includes(items.name)) {
-            // console.log(items.name)
+
             itemsArray.push(items.name);
           }
         }
@@ -1113,7 +1113,7 @@ exports.getAdvanceStats = async (req, res, next) => {
         rest_details.open_time,
         rest_details.close_time
       );
-      console.log(intervalData);
+     
       let data = await InvoiceModel.find({
         $and: [
           { rest_id: req.user.rest_id },
@@ -1125,10 +1125,13 @@ exports.getAdvanceStats = async (req, res, next) => {
         let time = Number(i.time.split(":")[0]);
         if (i.time) {
           index = intervalData.findIndex(
-            (e) => time >= e.open_t && time < e.close_t
+            (e) =>
+              time >= e.open_t &&
+              time <
+                ((e.open_t == 23 || e.open_t == 24) && e.close_t < 24
+                  ? e.close_t + 24
+                  : e.close_t)
           );
-
-          console.log(index, i.time);
 
           if (index == -1) {
             if (i.time > rest_details.close_time)
@@ -1193,6 +1196,9 @@ function getSlotBetweenInterval(interval, start, end) {
         if (c[0] == "00") {
           c[0] = "24";
         }
+        if (o[0] > c[0]) {
+          c[0] = Number(c[0]) + 24;
+        }
         if (o[1] != "00") {
           if (Number(o[0]) + 2 <= Number(c[0])) {
             let name = `${moment(start, "HH:mm").format("h:mm A")}-${moment(
@@ -1212,22 +1218,40 @@ function getSlotBetweenInterval(interval, start, end) {
         }
 
         while (Number(o[0]) + 2 < Number(c[0])) {
-          let name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
-            `${Number(o[0]) + 2}:00`,
-            "HH:mm"
-          ).format("h A")}`;
+          let startTime, tempStrtTime, endTime;
+          Number(o[0]) > 24
+            ? (startTime = Number(o[0]) - 24)
+            : (startTime = Number(o[0]));
+
+          Number(o[0]) + 2 > 24
+            ? (endTime = Number(o[0]) - 24 + 2)
+            : (endTime = Number(o[0]) + 2);
+
+          tempStrtTime = Number(o[0]);
+
+
+          let name = `${moment(`${startTime}:00`, "HH:mm").format(
+            "h A"
+          )}-${moment(`${endTime}:00`, "HH:mm").format("h A")}`;
           let temp = {
             name: name,
-            open_t: Number(o[0]),
-            close_t: Number(o[0]) + 2,
+            open_t: startTime,
+            close_t: endTime,
             value: 0,
           };
-          o[0] = Number(o[0]) + 2;
+          o[0] = tempStrtTime + 2;
+         
           data.push(temp);
         }
 
         if (Number(o[0]) != Number(c[0])) {
           let name;
+          if (Number(c[0]) > 24) {
+            c[0] = Number(c[0]) - 24;
+          }
+          if (Number(o[0]) > 24) {
+            o[0] = Number(o[0]) - 24;
+          }
           if (c[1] != "00") {
             name = `${moment(`${o[0]}:00`, "HH:mm").format("h A")}-${moment(
               `${c[0]}:${c[1]}`,

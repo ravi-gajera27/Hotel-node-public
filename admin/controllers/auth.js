@@ -50,7 +50,7 @@ exports.login = async (req, res, next) => {
         .json({ success: false, message: status.INVALID_PASS });
     } else {
       if (rest_id) {
-        console.log(rest_id);
+        
         let obj = {
           name: tempUser.f_name + " " + tempUser.l_name,
           role: tempUser.role,
@@ -711,8 +711,6 @@ exports.getRestaurantStepServicePlans = async (req, res) => {
           return Number(sum) + Number(num.tables);
         }, 0);
 
-        console.log(tableCount);
-
         let resultPlans = [];
 
         for (let ele of plansArray) {
@@ -836,7 +834,7 @@ exports.getUser = async (req, res, next) => {
 exports.forgotPasswordCheckMail = async (req, res) => {
   try {
     let email = req.body.email;
-    console.log(req.body);
+    
     if (!email) {
       return res
         .status(400)
@@ -895,7 +893,7 @@ exports.forgotPasswordCheckMail = async (req, res) => {
 exports.checkVerificationCodeForForgotPass = async (req, res) => {
   try {
     let data = req.body;
-    console.log(data);
+   
     if (!data.email || !data.code) {
       return res
         .status(400)

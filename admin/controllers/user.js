@@ -62,7 +62,7 @@ exports.getUsersReviews = (req, res) => {
     },
   ])
     .then((data) => {
-      console.log(data);
+ 
       let starObj = { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
       if (data.length != 0) {
         for (let ele of data[0]?.documents) {

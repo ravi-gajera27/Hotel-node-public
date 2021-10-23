@@ -607,7 +607,7 @@ function setCustomerOntable(
 exports.forgotPasswordCheckMail = async (req, res) => {
   try {
     let email = req.body.email;
-    console.log(req.body);
+
     if (!email) {
       return res
         .status(400)
@@ -664,7 +664,7 @@ exports.forgotPasswordCheckMail = async (req, res) => {
 exports.checkVerificationCodeForForgotPass = async (req, res) => {
   try {
     let data = req.body;
-    console.log(data);
+
     if (!data.email || !data.code) {
       return res
         .status(400)
@@ -770,7 +770,7 @@ exports.changePassword = async (req, res) => {
 
 exports.getLogoUrl = async (req, res) => {
   let cookie = await extractCookie(req, res);
-  console.log(cookie);
+
   if (!cookie.rest_id) {
     return res.status(400);
   } else {
@@ -780,7 +780,7 @@ exports.getLogoUrl = async (req, res) => {
       .get();
 
     let data = restDoc.data();
-    console.log(data.logo);
+
     return res.status(200).json({ success: true, logo: data.logo || "" });
   }
 };

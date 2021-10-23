@@ -63,7 +63,7 @@ exports.login = async (req, res, next) => {
 }
 
 sendToken = async (data, res) => {
-  console.log(data)
+
   let token = await TOKEN.generateToken(data)
   return res.status(200).json({ success: true, token: token })
 }

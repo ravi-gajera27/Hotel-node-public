@@ -241,7 +241,7 @@ exports.verifySession = async (req, res) => {
 exports.forgotPasswordCheckMail = async (req, res) => {
   try {
     let email = req.body.email;
-    console.log(req.body);
+
     if (!email) {
       return res
         .status(400)
