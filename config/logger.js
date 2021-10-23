@@ -4,7 +4,7 @@ const { combine, timestamp, label, prettyPrint } = format;
 
 let logger = null;
 
-if (process.env.NODE_ENV == "prod") {
+/* if (process.env.NODE_ENV == "prod") {
   try {
     logger = createLogger({
       transports: [
@@ -20,20 +20,19 @@ if (process.env.NODE_ENV == "prod") {
     let ew = new Error(e);
     console.log(ew.message);
   }
-} else if (process.env.NODE_ENV == "dev") {
-  try {
-    logger = createLogger({
-      level: "info",
-      format: combine(timestamp(), prettyPrint()),
-      transports: [
-        new transports.File({ filename: "public/log" }),
-        new transports.Console(),
-      ],
-    });
-  } catch (e) {
-    let ew = new Error(e);
-    console.log(ew.message);
-  }
+} */
+try {
+  logger = createLogger({
+    level: "info",
+    format: combine(timestamp(), prettyPrint()),
+    transports: [
+      new transports.File({ filename: "public/log" }),
+      new transports.Console(),
+    ],
+  });
+} catch (e) {
+  let ew = new Error(e);
+  console.log(ew.message);
 }
 
 module.exports = logger;
