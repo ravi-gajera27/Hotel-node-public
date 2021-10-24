@@ -63,8 +63,6 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-
-
     let subPlanIndex = plans[planIndex].type
       .map((e) => {
         return e.value;
@@ -80,7 +78,7 @@ exports.createOrder = async (req, res) => {
 
     let instance = razorpay.getRazorpayInstance();
     var options = {
-      amount: (1 || Number(planType.price)) * 100, // amount in the smallest currency unit
+      amount: Number(planType.price) * 100, // amount in the smallest currency unit
       currency: "INR",
       receipt: plans[planIndex].name + " " + planType.name,
     };
@@ -89,10 +87,9 @@ exports.createOrder = async (req, res) => {
         console.log(err);
         throw err;
       } else {
-        
         let data = {
           key: process.env.RAZORPAY_KEY_ID,
-          amount: (1 || Number(planType.price)) * 100,
+          amount: Number(planType.price) * 100,
           currency: "INR",
           name: "HungerCodes",
           order_id: order.id,
