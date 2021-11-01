@@ -523,6 +523,7 @@ function setCustomerOntable(
             ele.table == "waiting" &&
             (ele.type ? ele.type == cookie.type : true)
           ) {
+            console.log(index)
             restCust = true;
             break;
           } else if (ele.table == "waiting") {
