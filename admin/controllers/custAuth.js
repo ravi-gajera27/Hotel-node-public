@@ -251,7 +251,17 @@ exports.removeCustomer = async (req, res, next) => {
       let customers = (await t.get(customersRef)).data();
       let takeawayCust = customers.takeaway || [];
       let seatCust = customers.seat || [];
-      if (table_no == "takeaway") {
+      if (table_no == "waiting") {
+        seatCust = seatCust.filter((e) => e.cid != cid);
+
+        await t.set(
+          customersRef,
+          {
+            seat: [...seatCust],
+          },
+          { merge: true }
+        );
+      } else if (table_no == "takeaway") {
         let newCustomers = [];
 
         for (let cust of takeawayCust) {
@@ -299,6 +309,12 @@ exports.removeCustomer = async (req, res, next) => {
       }
     });
 
+    if (table_no == "waiting") {
+      return res.status(200).json({
+        success: true,
+        message: `Sessoin from ${table_no} is successfully terminated`,
+      });
+    }
     let order = await orderRef.get();
 
     if (order.exists) {
@@ -417,7 +433,7 @@ exports.restoreCustomer = async (req, res, next) => {
             .json({ success: false, message: status.BAD_REQUEST });
         } else {
           let order = await orderRef.get();
-         
+
           if (order.exists && order.data().cid == cid) {
             await orderRef.set({ restore: false }, { merge: true });
           }
@@ -758,7 +774,6 @@ exports.cleanUpCustomers = async (req, res) => {
         );
       });
       if (invoice.cid.length != 12) {
-        
         await firestore
           .collection("users")
           .doc(invoice.cid)

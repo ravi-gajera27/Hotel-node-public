@@ -69,6 +69,7 @@ let whitelist = [
   "https://www.admin.hunger.codes",
   "https://www.customer.hunger.codes",
   "https://www.hunger.codes",
+  "https://firestep-node.herokuapp.com"
 ];
 const corsConfig = {
   credentials: true,
