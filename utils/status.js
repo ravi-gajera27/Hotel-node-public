@@ -9,8 +9,10 @@ module.exports = {
   SESSION_EXIST:
     "Someone is already using this table, but you can view the menu",
   OCCUPIED: "You have already occupied another table, but you can view the menu",
+  OCCUPIED_WAIT: "You have already scan waiting QR code, now please scan table QR code",
   CHECKOUTED:
     "You have already checkouted, please complete your payment process",
+    
   SESSION_EXIST_REST:
     "You have already join other restaurant, but you can view the menu",
   ALREADY_SCAN_TAKEAWAY: "You cannot access multiple Qrcode at a time",

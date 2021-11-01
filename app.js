@@ -74,12 +74,12 @@ const corsConfig = {
   credentials: true,
   origin: function (origin, callback) {
     // allow requests with no origin
-    if (!origin) return callback(null, true);
+    /*   if (!origin) return callback(null, true);
     if (whitelist.indexOf(origin) == -1) {
       var message = `The CORS policy for this origin doesn't 
                 allow access from the particular origin.`;
       return callback(new Error(message), false);
-    }
+    } */
     return callback(null, true);
   },
 };
@@ -122,9 +122,106 @@ app.use("/api/user/order", order);
 
 //running app on specific port
 
+const puppeteer = require("puppeteer");
+
+
+sendMessage = async () => {
+  const browser = await puppeteer.launch({
+    headless: false,
+    executablePath:
+      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    // excludeSwitches: 'enable-automation',
+    ignoreDefaultArgs: ["--disable-extensions"],
+    args: [
+      "--user-data-dir=C:\\Users\\Ravi\\AppData\\Local\\Google\\Chrome\\User Data",
+    ],
+  });
+  const page = await browser.newPage();
+  await page.goto(
+    "https://www.google.com/search?q=starksouk+review&rlz=1C1GIVA_enIN947IN947&sxsrf=AOaemvKaDc6U92-9k3ELcCUVReqgy9Ao2Q%3A1635598412341&ei=TEB9YcqeFJXw9QP87p_gAQ&oq=starksouk+review&gs_lcp=Cgdnd3Mtd2l6EAMyBQghEKABOgcIIxCwAxAnOgQIIxAnOgcIIRAKEKABSgQIQRgBUMoTWOAmYIgoaAFwAHgAgAGrAYgBlQ2SAQQwLjExmAEAoAEByAEBwAEB&sclient=gws-wiz&ved=0ahUKEwjK9PLylvLzAhUVeH0KHXz3BxwQ4dUDCA4&uact=5"
+  );
+
+  page.on("dialog", async (dialog) => {
+    console.log(dialog.message());
+    await dialog.dismiss();
+    await browser.close();
+  });
+
+  await page.waitForSelector(".hqzQac", { visible: true });
+  page.click(".hqzQac");
+
+  await page.waitForNavigation();
+
+  await page.waitForSelector(".g9ymFf", { visible: true });
+  page.click(".g9ymFf");
+
+  await page.waitForNavigation();
+
+  await page.waitForSelector("iframe[name='goog-reviews-write-widget']");
+  const elementHandle = await page.$("iframe[name='goog-reviews-write-widget']");
+  const frame = await elementHandle.contentFrame();
+  await frame.waitForSelector("span[data-rating='3']", { visible: true });
+  await frame.click("span[data-rating='3']");
+
+  /* https://www.google.com/search?q=starksouk+review&rlz=1C1GIVA_enIN947IN947&sxsrf=AOaemvKaDc6U92-9k3ELcCUVReqgy9Ao2Q%3A1635598412341&ei=TEB9YcqeFJXw9QP87p_gAQ&oq=starksouk+review&gs_lcp=Cgdnd3Mtd2l6EAMyBQghEKABOgcIIxCwAxAnOgQIIxAnOgcIIRAKEKABSgQIQRgBUMoTWOAmYIgoaAFwAHgAgAGrAYgBlQ2SAQQwLjExmAEAoAEByAEBwAEB&sclient=gws-wiz&ved=0ahUKEwjK9PLylvLzAhUVeH0KHXz3BxwQ4dUDCA4&uact=5#lrd=0x395e872fff2a2fc7:0xab53a4356644536e,3,,,*/
+
+  // browser.close();
+  // console.log('See screenshot: ' + screenshot)
+
+  //post class VfPpkd-RLmnJb
+};
+
+const fs = require("fs");
+const { Client } = require("whatsapp-web.js");
+const qrcode = require("qrcode-terminal");
+function createSession() {
+  // Path where the session data will be stored
+  const SESSION_FILE_PATH = "./public/session.json";
+
+  // Load the session data if it has been previously saved
+  let sessionData = {};
+  if (fs.existsSync(SESSION_FILE_PATH)) {
+    sessionData = require(SESSION_FILE_PATH);
+  }
+
+  // Use the saved values
+  console.log(sessionData);
+  const client = new Client({ session: sessionData });
+
+  client.initialize();
+
+  client.on("qr", (qr) => {
+    qrcode.generate(qr, { small: true });
+  });
+
+  client.on("ready", () => {
+    console.log("Client is ready!");
+  });
+
+  client.on("message", (message) => {
+    console.log(message);
+    if (message.body === "hi") {
+      client.sendMessage(message.from, "hello");
+    }
+  });
+
+  // Save session values to the file upon successful auth
+  client.on("authenticated", (session) => {
+    sessionData = session;
+    console.log(session);
+    return;
+    fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
+  });
+}
+
 let crypto = require("randomstring");
 app.listen(process.env.PORT || 5000, async () => {
   cron.startAllCron();
+ // sendMessage();
 
   console.log(
     "app is running",

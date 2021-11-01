@@ -255,11 +255,7 @@ exports.verifyOtp = async (req, res, next) => {
 
 exports.verifySession = async (req, res, next) => {
   let cookie = await extractCookie(req, res);
-  if (cookie?.table == 'waiting') {
-    return res.status(200).json({
-      success: true,
-    });
-  }
+
   try {
     let cookie = await extractCookie(req, res);
     if (!cookie) {
@@ -288,9 +284,18 @@ exports.verifySession = async (req, res, next) => {
 
       delete user.blocked;
       delete user.join;
+      delete user.join_date;
     }
 
-    if (req.user.join && req.user.join != cookie.rest_id) {
+    let curr_date = moment()
+      .utcOffset(process.env.UTC_OFFSET)
+      .format("YYYY-MM-DD");
+
+    if (
+      req.user.join &&
+      req.user.join != cookie.rest_id &&
+      req.user.join_date < curr_date
+    ) {
       return res.status(403).json({
         success: false,
         message: status.SESSION_EXIST_REST,
@@ -353,11 +358,19 @@ exports.verifySession = async (req, res, next) => {
             .json({ success: false, message: promise.message });
         }
 
-        if (cookie.table != "takeaway") {
+        if (cookie.table != "takeaway" || cookie.table != "waiting") {
           await firestore
             .collection("users")
             .doc(req.user.id)
-            .set({ join: cookie.rest_id }, { merge: true });
+            .set(
+              {
+                join: cookie.rest_id,
+                join_date: moment()
+                  .utcOffset(process.env.UTC_OFFSET)
+                  .format("YYYY-MM-DD"),
+              },
+              { merge: true }
+            );
         }
 
         if (cookie.table == "takeaway") {
@@ -400,7 +413,15 @@ function setCustomerOntable(
           flag = 1;
           break;
         } else {
-          return { status: 403, success: false, message: status.OCCUPIED };
+          if (u.table == "waiting") {
+            return {
+              status: 403,
+              success: false,
+              message: status.OCCUPIED_WAIT,
+            };
+          } else {
+            return { status: 403, success: false, message: status.OCCUPIED };
+          }
         }
       }
       index++;
@@ -499,6 +520,18 @@ function setCustomerOntable(
             break;
           }
           if (
+            ele.table == "waiting" &&
+            (ele.type ? ele.type == cookie.type : true)
+          ) {
+            restCust = true;
+            break;
+          } else if (ele.table == "waiting") {
+            return {
+              status: 403,
+              success: false,
+              message: `Previously you have scaned ${ele.type.toUpperCase()} waiting QR code, Now you must scan ${ele.type.toUpperCase()} tabel QR code`,
+            };
+          } else if (
             Number(ele.table) == Number(cookie.table) &&
             ele.checkout == false
           ) {
