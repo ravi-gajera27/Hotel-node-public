@@ -15,6 +15,7 @@ const InvoiceSchema = new mongoose.Schema({
   time: String,
   total_amt: Number,
   type: String,
+  members: String,
   settle: { credit: Number, method: String },
 });
 

@@ -127,11 +127,38 @@ exports.getUser = async (req, res, next) => {
 
 exports.verifySession = async (req, res) => {
   try {
-    if (!req.body.table || !req.body.cname) {
+    if (
+      !req.body.table ||
+      !req.body.cname ||
+      !req.body.mobile_no ||
+      !req.body.members
+    ) {
       return res
         .status(400)
         .json({ success: false, message: status.BAD_REQUEST });
     }
+
+    let custData = {
+      name: req.body.cname,
+      mobile_no: req.body.mobile_no,
+      bod: req.body.bod || "",
+    };
+    let usersRef = firestore.collection("users");
+    let user = await usersRef
+      .where("mobile_no", "==", custData.mobile_no)
+      .limit(1)
+      .get();
+
+    if (!user.empty) {
+      return res.status(403).json({
+        success: false,
+        message: status.MOBILE_USED,
+      });
+    }
+
+    let userDoc = await firestore.collection("users").add({
+      ...custData,
+    });
 
     let customersRef = await firestore
       .collection("restaurants")
@@ -191,24 +218,25 @@ exports.verifySession = async (req, res) => {
           });
         }
 
-        let id = await generateRandomString();
         let obj = {};
         if (req.body.type) {
           obj = {
             checkout: false,
             cname: req.body.cname,
-            cid: id,
+            cid: userDoc.id,
             table: req.body.table,
             captain_id: req.user.id,
             type: req.body.type,
+            members: req.body.members,
           };
         } else {
-          let obj = {
+          obj = {
             checkout: false,
             cname: req.body.cname,
-            cid: id,
+            cid: userDoc.id,
             table: req.body.table,
             captain_id: req.user.id,
+            members: req.body.members,
           };
         }
 

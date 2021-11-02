@@ -13,7 +13,7 @@ const { incZoneReq } = require("../../utils/zone");
 const e = require("express");
 sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY);
 
-exports.login = async (req, res, next) => {
+/* exports.login = async (req, res, next) => {
   try {
     let data = req.body;
     if (!data.provider) {
@@ -190,6 +190,94 @@ exports.signup = async (req, res, next) => {
       .status(500)
       .json({ success: false, message: status.SERVER_ERROR });
   }
+}; */
+
+exports.login = async (req, res, next) => {
+  try {
+    let data = req.body;
+
+    if (!data.mobile_no) {
+      return res.status(400).json({
+        success: false,
+        message: status.BAD_REQUEST,
+      });
+    }
+
+    let usersRef = firestore.collection("users");
+    let user = await usersRef
+      .where("mobile_no", "==", data.mobile_no)
+      .limit(1)
+      .get();
+
+    if (user.empty) {
+      return res.status(401).json({success: false, message: status.INVALID_MOBILE})
+    }
+
+    let id;
+
+    user.forEach((doc) => {
+      id = doc.id;
+    });
+    await sendToken(
+      {
+        user_id: id,
+      },
+      res
+    );
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `customer auth login ${req.user.id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
+exports.signup = async (req, res, next) => {
+  try {
+    let data = req.body;
+
+      if (!data.cname || !data.mobile_no) {
+        return res.status(400).json({
+          success: false,
+          message: status.BAD_REQUEST,
+        });
+      }
+
+      let usersRef = firestore.collection("users");
+      let user = await usersRef.where("mobile_no", "==", data.mobile_no).limit(1).get();
+
+      if (!user.empty) {
+        return res.status(403).json({
+          success: false,
+          message: status.MOBILE_USED,
+        });
+      }
+    
+
+    user = await firestore.collection("users").add({
+      ...data,
+    });
+    await incZoneReq(req.ip, "signup");
+    await sendToken(
+      {
+        user_id: user.id,
+      },
+      res
+    );
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `customer auth signup ${req.user.id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
 };
 
 exports.getUser = async (req, res, next) => {
@@ -254,6 +342,8 @@ exports.verifyOtp = async (req, res, next) => {
 };
 
 exports.verifySession = async (req, res, next) => {
+  let members = req.params.members;
+
   let cookie = await extractCookie(req, res);
 
   try {
@@ -523,7 +613,6 @@ function setCustomerOntable(
             ele.table == "waiting" &&
             (ele.type ? ele.type == cookie.type : true)
           ) {
-            console.log(index)
             restCust = true;
             break;
           } else if (ele.table == "waiting") {
@@ -585,6 +674,7 @@ function setCustomerOntable(
             cname: user.name,
             checkout: false,
             type: cookie.type,
+            members: members,
           };
         } else {
           cust = {
@@ -592,6 +682,7 @@ function setCustomerOntable(
             cid: user.id,
             cname: user.name,
             checkout: false,
+            members: members,
           };
         }
         seatCust[index] = cust;
@@ -603,6 +694,7 @@ function setCustomerOntable(
             cname: user.name,
             checkout: false,
             type: cookie.type,
+            members: members,
           });
         } else {
           seatCust.push({
@@ -610,6 +702,7 @@ function setCustomerOntable(
             cid: user.id,
             cname: user.name,
             checkout: false,
+            members: members,
           });
         }
       }

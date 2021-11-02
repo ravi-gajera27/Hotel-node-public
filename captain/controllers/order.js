@@ -5,6 +5,8 @@ let moment = require("moment");
 const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
 const randomstring = require("randomstring");
+const { CustomerModel } = require('../../models/customer');
+
 exports.addOrder = async (req, res, next) => {
   let table = req.params.table_no;
   let type = req.params.type;
@@ -38,7 +40,8 @@ exports.addOrder = async (req, res, next) => {
     let customer;
     for (let cust of customers) {
       if (
-        Number(cust.table) == Number(table) && type ? cust.type == type : true
+        Number(cust.table) == Number(table) &&
+        (type ? cust.type == type : true)
       ) {
         if (cust.restore) {
           break;
@@ -93,7 +96,7 @@ exports.addOrder = async (req, res, next) => {
           cname: customer.cname,
           order: [{ ...req.body }],
           restore: false,
-          type: type || ''
+          type: type || "",
         };
       } else {
         req.body.id = await generateRandomString();
@@ -119,7 +122,58 @@ exports.addOrder = async (req, res, next) => {
       send_data = orderData;
       send_data = { order: [...send_data] };
     }
-    
+
+
+    let customerDoc = await CustomerModel.findOne({
+      rest_id: req.user.rest_id,
+      cid: customer.cid,
+    });
+
+    if (customerDoc) {
+      let date = moment()
+        .utcOffset(process.env.UTC_OFFSET)
+        .format("YYYY-MM-DD");
+
+      let start_date = moment(date, "YYYY-MM-DD");
+      let end_date = moment(customerDoc.last_visit, "YYYY-MM-DD");
+      let m_visit = 1;
+      let days = Number(start_date.diff(end_date, 'days'))
+      if(days <= 31){
+        m_visit = Number(customerDoc.m_visit) + 1;
+      }
+      let custObj = {
+        cname: customer.name,
+        cid: customer.id,
+        rest_id: req.user.rest_id,
+        mobile_no: customer.mobile_no || "",
+        last_visit: date,
+        visit: Number(customerDoc.visit) + 1,
+        m_visit: m_visit
+      };
+
+      send_data.unique = true;
+      await CustomerModel.findOneAndUpdate(
+        {
+          rest_id: cookie.rest_id,
+          cid: req.user.id,
+        },
+        { ...custObj }
+      );
+    } else {
+      let custObj = {
+        cname: customer.name,
+        cid: customer.id,
+        rest_id: req.user.rest_id,
+        mobile_no: customer.mobile_no || "",
+        last_visit: moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .format("YYYY-MM-DD"),
+        visit: 1,
+        m_visit: 1,
+      };
+      await CustomerModel.create({ ...custObj });
+    }
+
     orderRef.set(send_data, { merge: true }).then(async (order) => {
       return res
         .status(200)
