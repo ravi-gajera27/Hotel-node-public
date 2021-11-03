@@ -5,6 +5,7 @@ const logger = require("../../config/logger");
 const randomstring = require("randomstring");
 const moment = require("moment");
 const { InvoiceModel } = require("../../models/invoice");
+const { CustomerModel } = require("../../models/customer");
 
 exports.cancelOrder = async (req, res, next) => {
   try {
@@ -13,7 +14,6 @@ exports.cancelOrder = async (req, res, next) => {
     let cid = req.params.cid;
     let type = req.params.type;
     let restoreOrder = req.body?.restoreOrder;
-  
 
     if (!table_no || !order_id || !cid) {
       return res
@@ -93,7 +93,6 @@ exports.cancelOrder = async (req, res, next) => {
 
         let previousOrder;
         if (restoreOrderRef) {
-         
           let restoreOrderDoc = await restoreOrderRef.get();
           if (!restoreOrderDoc.exists) {
             return res
@@ -298,13 +297,24 @@ exports.generateInvoice = async (req, res, next) => {
 
     let invoice = await InvoiceModel.findById(inv_id);
 
-    let visitDoc = await InvoiceModel.findOne({
-      rest_id: req.user.rest_id,
-      cid: invoice.cid,
-    });
+    let visitDoc = await CustomerModel.findOne(
+      {
+        _id: invoice.cid,
+        rest_details: { $elemMatch: { rest_id: req.user.rest_id } },
+      },
+      { rest_details: 1 }
+    );
+
     let m_visit = 0;
     if (visitDoc) {
-      m_visit = visitDoc.m_visit;
+      let index = visitDoc.rest_details
+        .map((e) => {
+          return rest_id;
+        })
+        .indexOf(req.user.rest_id);
+      if (index != -1) {
+        m_visit = visitDoc.rest_details[index].m_visit;
+      }
     }
 
     let rest_ref = await firestore
@@ -609,8 +619,6 @@ exports.addOrderByTableNo = async (req, res, next) => {
           });
         }
 
-   
-        
         for (let cust of customers) {
           if (type) {
             if (Number(cust.table) == Number(table_no) && cust.type == type) {
@@ -622,7 +630,6 @@ exports.addOrderByTableNo = async (req, res, next) => {
               cust.cname != req.user.role &&
               cust.cid != cid
             ) {
-              
               return Promise.resolve({
                 success: false,
                 status: 403,

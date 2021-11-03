@@ -5,6 +5,7 @@ const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
 const { InvoiceModel } = require("../../models/invoice");
 const mongoose = require("mongoose");
+const { CustomerModel } = require("../../models/customer");
 
 exports.acceptRequest = async (req, res, next) => {
   if (!req.params.cid) {
@@ -18,8 +19,6 @@ exports.acceptRequest = async (req, res, next) => {
       .doc(req.user.rest_id)
       .collection("customers")
       .doc("users");
-
-    let userRef = await firestore.collection("users").doc(req.params.cid);
 
     await firestore
       .runTransaction(async (t) => {
@@ -42,7 +41,10 @@ exports.acceptRequest = async (req, res, next) => {
           });
         }
 
-        let userData = (await t.get(userRef)).data();
+        let userData = await CustomerModel.findOne(
+          { _id: req.params.cid },
+          { join: 1 }
+        );
 
         let join = false;
 
@@ -156,8 +158,6 @@ exports.blockCustomer = async (req, res, next) => {
       .collection("customers")
       .doc("users");
 
-    let userRef = await firestore.collection("users").doc(req.params.cid);
-
     firestore
       .runTransaction(async (t) => {
         let takeawayCust = (await t.get(customersRef)).data().takeaway || [];
@@ -184,7 +184,10 @@ exports.blockCustomer = async (req, res, next) => {
           { merge: true }
         );
 
-        await t.set(userRef, { blocked: blocked, join: "" }, { merge: true });
+        await CustomerModel.findByIdAndUpdate(req.params.cid, {
+          join: "",
+          blocked: blocked,
+        });
 
         return Promise.resolve({ success: true });
       })
@@ -333,10 +336,7 @@ exports.removeCustomer = async (req, res, next) => {
       });
     } else {
       if (cid.length != 12) {
-        await firestore
-          .collection("users")
-          .doc(`${cid}`)
-          .set({ join: "" }, { merge: true });
+        await CustomerModel.findByIdAndUpdate(cid, { join: "" });
       }
       return res.status(200).json({
         success: true,
@@ -398,9 +398,9 @@ exports.restoreCustomer = async (req, res, next) => {
     firestore
       .runTransaction(async (t) => {
         if (table_no == "takeaway") {
-          customers = (await customersRef.get()).data().takeaway || [];
+          customers = (await t.get(customersRef)).data().takeaway || [];
         } else {
-          customers = (await customersRef.get()).data().seat || [];
+          customers = (await t.get(customersRef)).data().seat || [];
         }
         let index = customers.findIndex((ele) => {
           return cid == ele.cid && ele.table == table_no;
@@ -439,10 +439,9 @@ exports.restoreCustomer = async (req, res, next) => {
           }
 
           if (cid.length != 12) {
-            await firestore
-              .collection("users")
-              .doc(cid)
-              .set({ join: req.user.rest_id }, { merge: true });
+            await CustomerModel.findByIdAndUpdate(cid, {
+              join: req.user.rest_id,
+            });
           }
 
           return res
@@ -774,10 +773,7 @@ exports.cleanUpCustomers = async (req, res) => {
         );
       });
       if (invoice.cid.length != 12) {
-        await firestore
-          .collection("users")
-          .doc(invoice.cid)
-          .set({ join: "" }, { merge: true });
+        await CustomerModel.findByIdAndUpdate(invoice.cid, { join: "" });
       }
       return res
         .status(200)

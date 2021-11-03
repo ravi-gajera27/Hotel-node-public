@@ -1,17 +1,18 @@
-const HASH = require('../utils/token');
-const status = require('../utils/status');
-const admin = require('firebase-admin');
-const firstore = admin.firestore()
-const io = require('socket.io');
+const HASH = require("../utils/token");
+const status = require("../utils/status");
+const admin = require("firebase-admin");
+const firstore = admin.firestore();
+const io = require("socket.io");
+const { CustomerModel } = require("../models/customer");
 
 exports.protect = async (req, res, next) => {
-  console.log(req.baseUrl)
+  console.log(req.baseUrl);
   let token;
   if (
     req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization.startsWith("Bearer")
   ) {
-    token = req.headers.authorization.split(' ')[1];
+    token = req.headers.authorization.split(" ")[1];
   }
 
   // Make sure token exists
@@ -25,10 +26,9 @@ exports.protect = async (req, res, next) => {
     if (!decoded) {
       res.status(401).json({ success: false, message: status.UNAUTHORIZED });
     } else {
-      let user = await firstore.collection('users').doc(decoded.user_id).get()
-      if (user.exists) {
-        req.user = user.data();
-        req.user.id = user.id;
+      let user = await CustomerModel.findById(decoded.user_id);
+      if (user) {
+        req.user = user;
         next();
       } else {
         res.status(401).json({ success: false, message: status.UNAUTHORIZED });

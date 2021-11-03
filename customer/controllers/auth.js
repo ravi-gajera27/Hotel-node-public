@@ -11,6 +11,7 @@ const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
 const { incZoneReq } = require("../../utils/zone");
 const e = require("express");
+const { CustomerModel } = require("../../models/customer");
 sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY);
 
 /* exports.login = async (req, res, next) => {
@@ -100,7 +101,7 @@ sgMail.setApiKey(process.env.FORGOT_PASS_API_KEY);
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `customer auth login ${req.user.id}`,
+      label: `customer auth login ${req.user._id}`,
       message: e,
     });
     return res
@@ -183,7 +184,7 @@ exports.signup = async (req, res, next) => {
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `customer auth signup ${req.user.id}`,
+      label: `customer auth signup ${req.user._id}`,
       message: e,
     });
     return res
@@ -203,31 +204,24 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    let usersRef = firestore.collection("users");
-    let user = await usersRef
-      .where("mobile_no", "==", data.mobile_no)
-      .limit(1)
-      .get();
+    let user = await CustomerModel.findOne({ mobile_no: data.mobile_no },{rest_details: 0});
 
-    if (user.empty) {
-      return res.status(401).json({success: false, message: status.INVALID_MOBILE})
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: status.INVALID_MOBILE });
     }
 
-    let id;
-
-    user.forEach((doc) => {
-      id = doc.id;
-    });
     await sendToken(
       {
-        user_id: id,
+        user_id: user._id,
       },
       res
     );
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `customer auth login ${req.user.id}`,
+      label: `customer auth login ${req.user._id}`,
       message: e,
     });
     return res
@@ -240,38 +234,35 @@ exports.signup = async (req, res, next) => {
   try {
     let data = req.body;
 
-      if (!data.cname || !data.mobile_no) {
-        return res.status(400).json({
-          success: false,
-          message: status.BAD_REQUEST,
-        });
-      }
+    if (!data.cname || !data.mobile_no) {
+      return res.status(400).json({
+        success: false,
+        message: status.BAD_REQUEST,
+      });
+    }
 
-      let usersRef = firestore.collection("users");
-      let user = await usersRef.where("mobile_no", "==", data.mobile_no).limit(1).get();
+    let user = await CustomerModel.findOne({ mobile_no: data.mobile_no },{rest_details: 0});
 
-      if (!user.empty) {
-        return res.status(403).json({
-          success: false,
-          message: status.MOBILE_USED,
-        });
-      }
-    
+    if (user) {
+      return res.status(403).json({
+        success: false,
+        message: status.MOBILE_USED,
+      });
+    }
 
-    user = await firestore.collection("users").add({
-      ...data,
-    });
+    user = await CustomerModel.create({ ...data });
+
     await incZoneReq(req.ip, "signup");
     await sendToken(
       {
-        user_id: user.id,
+        user_id: user._id,
       },
       res
     );
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `customer auth signup ${req.user.id}`,
+      label: `customer auth signup ${req.user._id}`,
       message: e,
     });
     return res
@@ -281,18 +272,14 @@ exports.signup = async (req, res, next) => {
 };
 
 exports.getUser = async (req, res, next) => {
-  firestore
-    .collection("users")
-    .doc(req.user.id)
-    .get()
-    .then((userDoc) => {
-      if (userDoc.exists) {
-        let user = userDoc.data();
+  CustomerModel.findById(req.user._id)
+    .then((user) => {
+      if (user) {
         let obj = {
-          name: user.name,
-          email: user.email,
+          name: user.cname,
+          bod: user.bod,
           mobile_no: user.mobile_no,
-          id: userDoc.id,
+          id: user._id,
         };
         res.status(200).json({
           success: true,
@@ -303,7 +290,7 @@ exports.getUser = async (req, res, next) => {
     .catch((err) => {
       let e = extractErrorMessage(err);
       logger.error({
-        label: `customer auth getUser ${req.user.id}`,
+        label: `customer auth getUser ${req.user._id}`,
         message: e,
       });
       return res
@@ -313,17 +300,7 @@ exports.getUser = async (req, res, next) => {
 };
 
 exports.verifyOtp = async (req, res, next) => {
-  await firestore
-    .collection("users")
-    .doc(req.user.id)
-    .set(
-      {
-        verify_otp: true,
-      },
-      {
-        merge: true,
-      }
-    )
+  await CustomerModel.findByIdAndUpdate(req.user._id, { verify_otp: true })
     .then((user) => {
       res.status(200).json({
         success: true,
@@ -332,7 +309,7 @@ exports.verifyOtp = async (req, res, next) => {
     .catch((err) => {
       let e = extractErrorMessage(err);
       logger.error({
-        label: `customer auth verifyOtp ${req.user.id}`,
+        label: `customer auth verifyOtp ${req.user._id}`,
         message: e,
       });
       return res
@@ -418,7 +395,7 @@ exports.verifySession = async (req, res, next) => {
         } else {
           total_tables = users.type[0].tables;
         }
-        let user = { id: req.user.id, name: req.user.name };
+        let user = { id: req.user._id, name: req.user.cname };
         let promise = await setCustomerOntable(
           seatCust,
           takeawayCust,
@@ -449,18 +426,15 @@ exports.verifySession = async (req, res, next) => {
         }
 
         if (cookie.table != "takeaway" || cookie.table != "waiting") {
-          await firestore
-            .collection("users")
-            .doc(req.user.id)
-            .set(
-              {
-                join: cookie.rest_id,
-                join_date: moment()
-                  .utcOffset(process.env.UTC_OFFSET)
-                  .format("YYYY-MM-DD"),
-              },
-              { merge: true }
-            );
+          await CustomerModel.findByIdAndUpdate(
+            req.user._id,
+            {
+              join: cookie.rest_id,
+              join_date: moment()
+                .utcOffset(process.env.UTC_OFFSET)
+                .format("YYYY-MM-DD"),
+            }
+          );
         }
 
         if (cookie.table == "takeaway") {
@@ -779,7 +753,7 @@ exports.forgotPasswordCheckMail = async (req, res) => {
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `customer auth forgotPasswordCheckMail ${req.user.id}`,
+      label: `customer auth forgotPasswordCheckMail ${req.user._id}`,
       message: e,
     });
     return res
@@ -825,7 +799,7 @@ exports.checkVerificationCodeForForgotPass = async (req, res) => {
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `customer auth  checkVerificationCodeForForgotPass ${req.user.id}`,
+      label: `customer auth  checkVerificationCodeForForgotPass ${req.user._id}`,
       message: e,
     });
     return res
@@ -886,7 +860,7 @@ exports.changePassword = async (req, res) => {
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `customer auth  changePassword ${req.user.id}`,
+      label: `customer auth  changePassword ${req.user._id}`,
       message: e,
     });
     return res

@@ -7,8 +7,13 @@ const TOKEN = require("../../utils/token");
 const { extractErrorMessage } = require("../../utils/error");
 const logger = require("../../config/logger");
 const { CustomerModel } = require("../../models/customer");
-exports.getUsers = (req, res) => {
-  CustomerModel.find({ rest_id: req.user.rest_id })
+exports.getUsers = async (req, res) => {
+  await CustomerModel.find(
+    {
+      rest_details: { $elemMatch: { rest_id: req.user.rest_id } },
+    },
+    { rest_details: 0 }
+  )
     .then((data) => {
       res.status(200).json({ data: data, success: true });
     })
@@ -24,7 +29,7 @@ exports.getUsers = (req, res) => {
     });
 };
 
-exports.getUsersReviews = (req, res) => {
+exports.getUsersReviews = async (req, res) => {
   let interval = req.params.interval;
 
   if (!interval) {
@@ -43,26 +48,45 @@ exports.getUsersReviews = (req, res) => {
   CustomerModel.aggregate([
     {
       $match: {
-        $and: [
-          { rest_id: req.user.rest_id },
-          { last_visit: { $gte: start_date } },
-          { last_visit: { $lte: end_date } },
-          { review: { $exists: true } },
-        ],
+        rest_details: {
+          $elemMatch: {
+            $and: [
+              { rest_id: req.user.rest_id },
+              { last_visit: { $gte: start_date } },
+              { last_visit: { $lte: end_date } },
+              { review: { $exists: true } },
+            ],
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        rest_details: {
+          $filter: {
+            input: "$rest_details",
+            as: "rest_details",
+            cond: { $eq: ["$$rest_details.rest_id", req.user.rest_id] },
+          },
+        },
+        _id: 0,
       },
     },
     {
       $group: {
         _id: null,
         documents: {
-          $push: { cname: "$cname", review: "$review", date: "$last_visit" },
+          $push: {
+            cname: "$rest_details.0.cname",
+            review: "$rest_details.0.review",
+            date: "$rest_details.0.last_visit",
+          },
         },
-        avgRating: { $avg: "$review.rating" },
+        avgRating: { $avg: "$rest_details.0.review.rating" },
       },
     },
   ])
     .then((data) => {
- 
       let starObj = { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
       if (data.length != 0) {
         for (let ele of data[0]?.documents) {

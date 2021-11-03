@@ -29,7 +29,7 @@ exports.addOrder = async (req, res, next) => {
     if (cookie.table == "takeaway") {
       orderRef = await firestore
         .collection(`restaurants/${cookie.rest_id}/torder/`)
-        .doc(`${req.user.id}`);
+        .doc(`${req.user._id}`);
 
       customers = customerRef.data().takeaway;
     } else {
@@ -48,9 +48,9 @@ exports.addOrder = async (req, res, next) => {
     let valid = false;
     for (let cust of customers) {
       if (
-        cust.table == cookie.table && cust.cid == req.user.id && (cookie.type
-          ? cookie.type == cust.type
-          : true)
+        cust.table == cookie.table &&
+        cust.cid == req.user._id &&
+        (cookie.type ? cookie.type == cust.type : true)
       ) {
         if (cust.restore) {
           break;
@@ -80,7 +80,7 @@ exports.addOrder = async (req, res, next) => {
       if (data.restore) {
         restorAble = true;
         orderData = [];
-      } else if (data.cid && data.cid != req.user.id) {
+      } else if (data.cid && data.cid != req.user._id) {
         return res
           .status(403)
           .json({ success: false, message: status.SESSION_EXIST });
@@ -95,27 +95,29 @@ exports.addOrder = async (req, res, next) => {
       req.body.id = await generateRandomString();
       if (restorAble) {
         send_data = {
-          cid: req.user.id,
-          cname: req.user.name,
+          cid: req.user._id,
+          cname: req.user.cname,
           order: [{ ...req.body }],
           type: cookie.type || "",
           restore: false,
         };
       } else {
         send_data = {
-          cid: req.user.id,
-          cname: req.user.name,
+          cid: req.user._id,
+          cname: req.user.cname,
           type: cookie.type || "",
           order: [{ ...req.body }],
         };
       }
 
-      let customerDoc = await CustomerModel.findOne({
-        rest_id: cookie.rest_id,
-        cid: req.user.id,
-      });
+      let index = req.user.rest_details
+        .map((e) => {
+          return e.rest_id;
+        })
+        .indexOf(cookie.rest_id);
 
-      if (customerDoc) {
+      if (index != -1) {
+        let customerDoc = req.user.rest_details[index];
         let date = moment()
           .utcOffset(process.env.UTC_OFFSET)
           .format("YYYY-MM-DD");
@@ -123,72 +125,45 @@ exports.addOrder = async (req, res, next) => {
         let start_date = moment(date, "YYYY-MM-DD");
         let end_date = moment(customerDoc.last_visit, "YYYY-MM-DD");
         let m_visit = 1;
-        let days = Number(start_date.diff(end_date, 'days'))
-        if(days <= 31){
+        let days = Number(start_date.diff(end_date, "days"));
+        if (days <= 31) {
           m_visit = Number(customerDoc.m_visit) + 1;
         }
         let custObj = {
-          cname: req.user.name,
-          cid: req.user.id,
           rest_id: cookie.rest_id,
-          mobile_no: req.user.mobile_no || "",
-          email: req.user.email,
           last_visit: date,
           visit: Number(customerDoc.visit) + 1,
-          m_visit: m_visit
+          m_visit: m_visit,
         };
 
         send_data.unique = true;
-        await CustomerModel.findOneAndUpdate(
+        await CustomerModel.updateOne(
           {
-            rest_id: cookie.rest_id,
-            cid: req.user.id,
+            _id: req.user._id,
+            "rest_details.rest_id": cookie.rest_id,
           },
-          { ...custObj }
+          {
+            $set: {
+              "rest_details.$.last_visit": custObj.date,
+              "rest_details.$.visit": custObj.visit,
+              "rest_details.$.m_visit": custObj.m_visit,
+            },
+          }
         );
       } else {
         let custObj = {
-          cname: req.user.name,
-          cid: req.user.id,
           rest_id: cookie.rest_id,
-          mobile_no: req.user.mobile_no || "",
-          email: req.user.email,
           last_visit: moment()
             .utcOffset(process.env.UTC_OFFSET)
             .format("YYYY-MM-DD"),
           visit: 1,
           m_visit: 1,
         };
-        await CustomerModel.create({ ...custObj });
+        await CustomerModel.findByIdAndUpdate(req.user._id, {
+          $push: { rest_details: { ...custObj } },
+        });
       }
 
-      /*    let userRef = await firestore
-        .collection(`restaurants/${cookie.rest_id}/users/`)
-        .doc(req.user.id);
-      let user = await userRef.get();
-      if (user.exists) {
-        user = user.data();
-        await userRef.set({
-          cname: req.user.name,
-          mobile_no: req.user.mobile_no || "",
-          email: req.user.email,
-          last_visit: moment()
-            .utcOffset(process.env.UTC_OFFSET)
-            .format("YYYY-MM-DD"),
-          count: (Number(user.count) + 1).toString(),
-        });
-      } else {
-        await userRef.set({
-          cname: req.user.name,
-          mobile_no: req.user.mobile_no || "",
-          email: req.user.email,
-          last_visit: moment()
-            .utcOffset(process.env.UTC_OFFSET)
-            .format("YYYY-MM-DD"),
-          count: "1",
-        });
-        send_data.unique = true;
-      } */
     } else {
       let validId = false;
       let id;
@@ -212,7 +187,7 @@ exports.addOrder = async (req, res, next) => {
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `customer order addOrder cust: ${req.user.id} rest: ${cookie.rest_id}`,
+      label: `customer order addOrder cust: ${req.user._id} rest: ${cookie.rest_id}`,
       message: e,
     });
     return res
@@ -233,7 +208,7 @@ exports.getOrder = async (req, res, next) => {
   if (cookie.table == "takeaway") {
     orderRef = await firestore
       .collection(`restaurants/${cookie.rest_id}/torder/`)
-      .doc(`${req.user.id}`);
+      .doc(`${req.user._id}`);
   } else {
     if (cookie.type) {
       orderRef = await firestore
@@ -252,7 +227,7 @@ exports.getOrder = async (req, res, next) => {
   if (order.exists) {
     let data = order.data();
     orderData = data.order;
-    if (data.cid && data.cid != req.user.id) {
+    if (data.cid && data.cid != req.user._id) {
       res.status(403).json({ success: false, message: status.SESSION_EXIST });
     } else {
       return res.status(200).json({ success: true, data: orderData });
@@ -275,7 +250,7 @@ exports.checkout = async (req, res, next) => {
     if (cookie.table == "takeaway") {
       orderRef = await firestore
         .collection(`restaurants/${cookie.rest_id}/torder/`)
-        .doc(`${req.user.id}`);
+        .doc(`${req.user._id}`);
     } else {
       if (cookie.type) {
         orderRef = await firestore
@@ -292,7 +267,7 @@ exports.checkout = async (req, res, next) => {
 
     if (!orderExist.exists) {
       res.status(400).json({ success: false, message: status.BAD_REQUEST });
-    } else if (orderExist.data().cid != req.user.id) {
+    } else if (orderExist.data().cid != req.user._id) {
       res.status(400).json({ success: false, message: status.BAD_REQUEST });
     }
 
@@ -391,8 +366,8 @@ exports.checkout = async (req, res, next) => {
 
     data.inv_no = set_invoice_no;
 
-    custOrders.cid = req.user.id;
-    custOrders.cname = req.user.name;
+    custOrders.cid = req.user._id;
+    custOrders.cname = req.user.cname;
     custOrders.table = cookie.table;
     custOrders.inv_no = set_invoice_no;
     if (cookie.type) {
@@ -433,7 +408,7 @@ exports.checkout = async (req, res, next) => {
           let index;
           if (cookie.table == "takeaway") {
             index = takeawayCust.findIndex(
-              (ele) => ele.cid == req.user.id && ele.table == cookie.table
+              (ele) => ele.cid == req.user._id && ele.table == cookie.table
             );
             let obj = { ...takeawayCust[index] };
             obj.checkout = true;
@@ -443,7 +418,7 @@ exports.checkout = async (req, res, next) => {
           } else {
             index = seatCust.findIndex(
               (ele) =>
-                ele.cid == req.user.id &&
+                ele.cid == req.user._id &&
                 ele.table == cookie.table &&
                 (cookie.type ? cookie.type == ele.type : true)
             );
@@ -464,7 +439,7 @@ exports.checkout = async (req, res, next) => {
 
         if (review && review.rating) {
           await CustomerModel.findOneAndUpdate(
-            { rest_id: cookie.rest_id, cid: req.user.id },
+            { rest_id: cookie.rest_id, cid: req.user._id },
             { review: review }
           );
         }
@@ -481,7 +456,7 @@ exports.checkout = async (req, res, next) => {
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
-      label: `customer order checkout cust: ${req.user.id} rest: ${cookie.rest_id}`,
+      label: `customer order checkout cust: ${req.user._id} rest: ${cookie.rest_id}`,
       message: e,
     });
     return res

@@ -139,26 +139,15 @@ exports.verifySession = async (req, res) => {
     }
 
     let custData = {
-      name: req.body.cname,
+      cname: req.body.cname,
       mobile_no: req.body.mobile_no,
       bod: req.body.bod || "",
     };
-    let usersRef = firestore.collection("users");
-    let user = await usersRef
-      .where("mobile_no", "==", custData.mobile_no)
-      .limit(1)
-      .get();
+    let user = await CustomerModel.findOne({ mobile_no: data.mobile_no });
 
-    if (!user.empty) {
-      return res.status(403).json({
-        success: false,
-        message: status.MOBILE_USED,
-      });
+    if(!user){
+      user = await CustomerModel.create({ ...custData });
     }
-
-    let userDoc = await firestore.collection("users").add({
-      ...custData,
-    });
 
     let customersRef = await firestore
       .collection("restaurants")
@@ -222,8 +211,8 @@ exports.verifySession = async (req, res) => {
         if (req.body.type) {
           obj = {
             checkout: false,
-            cname: req.body.cname,
-            cid: userDoc.id,
+            cname: user.cname,
+            cid: user._id,
             table: req.body.table,
             captain_id: req.user.id,
             type: req.body.type,
@@ -232,8 +221,8 @@ exports.verifySession = async (req, res) => {
         } else {
           obj = {
             checkout: false,
-            cname: req.body.cname,
-            cid: userDoc.id,
+            cname: user.cname,
+            cid: user._id,
             table: req.body.table,
             captain_id: req.user.id,
             members: req.body.members,
