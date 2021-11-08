@@ -10,6 +10,7 @@ const InvoiceSchema = new mongoose.Schema({
   discount: String,
   table: String,
   tax: Number,
+  gstin: String,
   taxInc: Boolean,
   taxable: Number,
   time: String,

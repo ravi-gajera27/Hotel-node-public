@@ -194,3 +194,15 @@
   level: 'error',
   timestamp: '2021-10-23T07:27:58.803Z'
 }
+{
+  label: 'admin order addOrderByTableNo admin: tsEHJlRfh7JaShGvLEg8 rest: eJq9wve34QSCjnCUk39U',
+  message: 'RangeError [ERR_HTTP_INVALID_STATUS_CODE]: Invalid status code: undefined',
+  level: 'error',
+  timestamp: '2021-11-08T07:34:01.616Z'
+}
+{
+  label: 'admin order generateInvoice eJq9wve34QSCjnCUk39U',
+  message: 'CastError: Cast to ObjectId failed for value "SoBrkgpiYiy2M9IJO07J" (type string) at path "_id" for model "customers"',
+  level: 'error',
+  timestamp: '2021-11-08T07:48:02.626Z'
+}

@@ -69,7 +69,7 @@ let whitelist = [
   "https://www.admin.hunger.codes",
   "https://www.customer.hunger.codes",
   "https://www.hunger.codes",
-  "https://firestep-node.herokuapp.com"
+  "https://firestep-node.herokuapp.com",
 ];
 const corsConfig = {
   credentials: true,
@@ -125,7 +125,6 @@ app.use("/api/user/order", order);
 
 const puppeteer = require("puppeteer");
 
-
 sendMessage = async () => {
   const browser = await puppeteer.launch({
     headless: false,
@@ -138,17 +137,9 @@ sendMessage = async () => {
     ],
   });
   const page = await browser.newPage();
-  await page.goto(
-    "https://www.google.com/search?q=starksouk+review&rlz=1C1GIVA_enIN947IN947&sxsrf=AOaemvKaDc6U92-9k3ELcCUVReqgy9Ao2Q%3A1635598412341&ei=TEB9YcqeFJXw9QP87p_gAQ&oq=starksouk+review&gs_lcp=Cgdnd3Mtd2l6EAMyBQghEKABOgcIIxCwAxAnOgQIIxAnOgcIIRAKEKABSgQIQRgBUMoTWOAmYIgoaAFwAHgAgAGrAYgBlQ2SAQQwLjExmAEAoAEByAEBwAEB&sclient=gws-wiz&ved=0ahUKEwjK9PLylvLzAhUVeH0KHXz3BxwQ4dUDCA4&uact=5"
-  );
+  await page.goto("https://web.whatsapp.com/send/?phone=917069823148&text=hiii");
 
-  page.on("dialog", async (dialog) => {
-    console.log(dialog.message());
-    await dialog.dismiss();
-    await browser.close();
-  });
-
-  await page.waitForSelector(".hqzQac", { visible: true });
+  /*   await page.waitForSelector(".hqzQac", { visible: true });
   page.click(".hqzQac");
 
   await page.waitForNavigation();
@@ -159,12 +150,12 @@ sendMessage = async () => {
   await page.waitForNavigation();
 
   await page.waitForSelector("iframe[name='goog-reviews-write-widget']");
-  const elementHandle = await page.$("iframe[name='goog-reviews-write-widget']");
+  const elementHandle = await page.$(
+    "iframe[name='goog-reviews-write-widget']"
+  );
   const frame = await elementHandle.contentFrame();
   await frame.waitForSelector("span[data-rating='3']", { visible: true });
-  await frame.click("span[data-rating='3']");
-
-  /* https://www.google.com/search?q=starksouk+review&rlz=1C1GIVA_enIN947IN947&sxsrf=AOaemvKaDc6U92-9k3ELcCUVReqgy9Ao2Q%3A1635598412341&ei=TEB9YcqeFJXw9QP87p_gAQ&oq=starksouk+review&gs_lcp=Cgdnd3Mtd2l6EAMyBQghEKABOgcIIxCwAxAnOgQIIxAnOgcIIRAKEKABSgQIQRgBUMoTWOAmYIgoaAFwAHgAgAGrAYgBlQ2SAQQwLjExmAEAoAEByAEBwAEB&sclient=gws-wiz&ved=0ahUKEwjK9PLylvLzAhUVeH0KHXz3BxwQ4dUDCA4&uact=5#lrd=0x395e872fff2a2fc7:0xab53a4356644536e,3,,,*/
+  await frame.click("span[data-rating='3']"); */
 
   // browser.close();
   // console.log('See screenshot: ' + screenshot)
@@ -222,7 +213,7 @@ function createSession() {
 let crypto = require("randomstring");
 app.listen(process.env.PORT || 5000, async () => {
   cron.startAllCron();
- // sendMessage();
+  //sendMessage();
 
   console.log(
     "app is running",

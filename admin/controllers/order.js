@@ -297,13 +297,16 @@ exports.generateInvoice = async (req, res, next) => {
 
     let invoice = await InvoiceModel.findById(inv_id);
 
-    let visitDoc = await CustomerModel.findOne(
-      {
-        _id: invoice.cid,
-        rest_details: { $elemMatch: { rest_id: req.user.rest_id } },
-      },
-      { rest_details: 1 }
-    );
+    let visitDoc;
+    if (invoice.cid.length != 12) {
+      visitDoc = await CustomerModel.findOne(
+        {
+          _id: invoice.cid,
+          rest_details: { $elemMatch: { rest_id: req.user.rest_id } },
+        },
+        { rest_details: 1 }
+      );
+    }
 
     let m_visit = 0;
     if (visitDoc) {
@@ -640,16 +643,16 @@ exports.addOrderByTableNo = async (req, res, next) => {
             if (cust.table == table_no) {
               customer = cust;
             }
-            if (
+            /*     if (
               cust.table == table_no &&
               (cust.cname != req.user.role || cust.cid != cid)
             ) {
               return Promise.resolve({
                 success: false,
-                statu: 403,
+                status: 403,
                 message: status.SESSION_EXIST,
               });
-            }
+            } */
           }
         }
 
@@ -844,12 +847,6 @@ exports.cancelAllOrderByTableNo = async (req, res) => {
       orderRef = firestore
         .collection(`restaurants/${req.user.rest_id}/order`)
         .doc(`table-${table_no}`);
-    }
-
-    if (cid.length != 12) {
-      return res
-        .status(200)
-        .json({ success: true, message: "Successfully canceled" });
     }
 
     orderRef.delete().then(async (e) => {
