@@ -177,7 +177,7 @@ exports.signup = async (req, res, next) => {
     await incZoneReq(req.ip, "signup");
     await sendToken(
       {
-        user_id: user.id,
+        user_id: user.id.toString(),
       },
       res
     );
@@ -204,7 +204,10 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    let user = await CustomerModel.findOne({ mobile_no: data.mobile_no },{rest_details: 0});
+    let user = await CustomerModel.findOne(
+      { mobile_no: data.mobile_no },
+      { rest_details: 0 }
+    );
 
     if (!user) {
       return res
@@ -241,7 +244,10 @@ exports.signup = async (req, res, next) => {
       });
     }
 
-    let user = await CustomerModel.findOne({ mobile_no: data.mobile_no },{rest_details: 0});
+    let user = await CustomerModel.findOne(
+      { mobile_no: data.mobile_no },
+      { rest_details: 0 }
+    );
 
     if (user) {
       return res.status(403).json({
@@ -320,6 +326,7 @@ exports.verifyOtp = async (req, res, next) => {
 
 exports.verifySession = async (req, res, next) => {
   let members = req.params.members;
+  console.log(members);
 
   let cookie = await extractCookie(req, res);
 
@@ -395,13 +402,14 @@ exports.verifySession = async (req, res, next) => {
         } else {
           total_tables = users.type[0].tables;
         }
-        let user = { id: req.user._id, name: req.user.cname };
+        let user = { id: req.user._id, cname: req.user.cname };
         let promise = await setCustomerOntable(
           seatCust,
           takeawayCust,
           total_tables,
           cookie,
-          user
+          user,
+          members
         );
 
         if (promise.success && !promise.status) {
@@ -426,15 +434,12 @@ exports.verifySession = async (req, res, next) => {
         }
 
         if (cookie.table != "takeaway" || cookie.table != "waiting") {
-          await CustomerModel.findByIdAndUpdate(
-            req.user._id,
-            {
-              join: cookie.rest_id,
-              join_date: moment()
-                .utcOffset(process.env.UTC_OFFSET)
-                .format("YYYY-MM-DD"),
-            }
-          );
+          await CustomerModel.findByIdAndUpdate(req.user._id, {
+            join: cookie.rest_id,
+            join_date: moment()
+              .utcOffset(process.env.UTC_OFFSET)
+              .format("YYYY-MM-DD"),
+          });
         }
 
         if (cookie.table == "takeaway") {
@@ -466,13 +471,14 @@ function setCustomerOntable(
   takeawayCust,
   total_tables,
   cookie,
-  user
+  user,
+  members
 ) {
   if (cookie.table == "takeaway") {
     let index = 0;
     let flag = 0;
     for (let u of seatCust) {
-      if (u.cid == user.id) {
+      if (u.cid == user.id.toString()) {
         if (u.restore) {
           flag = 1;
           break;
@@ -499,7 +505,7 @@ function setCustomerOntable(
       index = 0;
       flag = 0;
       for (let ele of takeawayCust) {
-        if (ele.cid == user.id) {
+        if (ele.cid == user.id.toString()) {
           if (ele.restore) {
             flag = 1;
             break;
@@ -518,16 +524,16 @@ function setCustomerOntable(
       } else {
         takeawayCust.push({
           table: cookie.table,
-          cid: user.id,
-          cname: user.name,
+          cid: user.id.toString().toString(),
+          cname: user.cname,
           checkout: false,
         });
       }
     } else {
       let obj = {
         table: cookie.table,
-        cid: user.id,
-        cname: user.name,
+        cid: user.id.toString().toString(),
+        cname: user.cname,
         checkout: false,
       };
       takeawayCust = [{ ...obj }];
@@ -537,7 +543,7 @@ function setCustomerOntable(
     let flag = 0;
 
     for (let u of takeawayCust) {
-      if (u.cid == user.id) {
+      if (u.cid == user.id.toString()) {
         if (u.restore || !u.req) {
           flag = 1;
           break;
@@ -567,7 +573,7 @@ function setCustomerOntable(
 
       let tempIndex = seatCust.findIndex(
         (ele) =>
-          ele.cid == user.id &&
+          ele.cid == user.id.toString() &&
           ele.restore &&
           (Number(ele.table) != Number(cookie.table) ||
             (ele.type ? ele.type != cookie.type : false))
@@ -578,7 +584,7 @@ function setCustomerOntable(
       }
 
       for (let ele of seatCust) {
-        if (ele.cid == user.id) {
+        if (ele.cid == user.id.toString()) {
           if (ele.restore) {
             flag = 1;
             break;
@@ -644,8 +650,8 @@ function setCustomerOntable(
         if (cookie.type) {
           cust = {
             table: cookie.table,
-            cid: user.id,
-            cname: user.name,
+            cid: user.id.toString(),
+            cname: user.cname,
             checkout: false,
             type: cookie.type,
             members: members,
@@ -653,8 +659,8 @@ function setCustomerOntable(
         } else {
           cust = {
             table: cookie.table,
-            cid: user.id,
-            cname: user.name,
+            cid: user.id.toString(),
+            cname: user.cname,
             checkout: false,
             members: members,
           };
@@ -664,8 +670,8 @@ function setCustomerOntable(
         if (cookie.type) {
           seatCust.push({
             table: cookie.table,
-            cid: user.id,
-            cname: user.name,
+            cid: user.id.toString(),
+            cname: user.cname,
             checkout: false,
             type: cookie.type,
             members: members,
@@ -673,8 +679,8 @@ function setCustomerOntable(
         } else {
           seatCust.push({
             table: cookie.table,
-            cid: user.id,
-            cname: user.name,
+            cid: user.id.toString(),
+            cname: user.cname,
             checkout: false,
             members: members,
           });
@@ -686,17 +692,19 @@ function setCustomerOntable(
       if (cookie.type) {
         obj = {
           table: cookie.table,
-          cid: user.id,
-          cname: user.name,
+          cid: user.id.toString(),
+          cname: user.cname,
           checkout: false,
           type: cookie.type,
+          members: members,
         };
       } else {
         obj = {
           table: cookie.table,
-          cid: user.id,
-          cname: user.name,
+          cid: user.id.toString(),
+          cname: user.cname,
           checkout: false,
+          members: members,
         };
       }
       seatCust = [{ ...obj }];

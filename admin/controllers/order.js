@@ -298,7 +298,7 @@ exports.generateInvoice = async (req, res, next) => {
     let invoice = await InvoiceModel.findById(inv_id);
 
     let visitDoc;
-    if (invoice.cid.length != 12) {
+    if (invoice.cid.length == 24) {
       visitDoc = await CustomerModel.findOne(
         {
           _id: invoice.cid,

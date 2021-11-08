@@ -29,7 +29,7 @@ exports.addOrder = async (req, res, next) => {
     if (cookie.table == "takeaway") {
       orderRef = await firestore
         .collection(`restaurants/${cookie.rest_id}/torder/`)
-        .doc(`${req.user._id}`);
+        .doc(`${req.user._id.toString()}`);
 
       customers = customerRef.data().takeaway;
     } else {
@@ -49,7 +49,7 @@ exports.addOrder = async (req, res, next) => {
     for (let cust of customers) {
       if (
         cust.table == cookie.table &&
-        cust.cid == req.user._id &&
+        cust.cid == req.user._id.toString() &&
         (cookie.type ? cookie.type == cust.type : true)
       ) {
         if (cust.restore) {
@@ -80,7 +80,7 @@ exports.addOrder = async (req, res, next) => {
       if (data.restore) {
         restorAble = true;
         orderData = [];
-      } else if (data.cid && data.cid != req.user._id) {
+      } else if (data.cid && data.cid != req.user._id.toString()) {
         return res
           .status(403)
           .json({ success: false, message: status.SESSION_EXIST });
@@ -95,7 +95,7 @@ exports.addOrder = async (req, res, next) => {
       req.body.id = await generateRandomString();
       if (restorAble) {
         send_data = {
-          cid: req.user._id,
+          cid: req.user._id.toString(),
           cname: req.user.cname,
           order: [{ ...req.body }],
           type: cookie.type || "",
@@ -103,7 +103,7 @@ exports.addOrder = async (req, res, next) => {
         };
       } else {
         send_data = {
-          cid: req.user._id,
+          cid: req.user._id.toString(),
           cname: req.user.cname,
           type: cookie.type || "",
           order: [{ ...req.body }],
@@ -144,7 +144,7 @@ exports.addOrder = async (req, res, next) => {
           },
           {
             $set: {
-              "rest_details.$.last_visit": custObj.date,
+              "rest_details.$.last_visit": custObj.last_visit,
               "rest_details.$.visit": custObj.visit,
               "rest_details.$.m_visit": custObj.m_visit,
             },
@@ -208,7 +208,7 @@ exports.getOrder = async (req, res, next) => {
   if (cookie.table == "takeaway") {
     orderRef = await firestore
       .collection(`restaurants/${cookie.rest_id}/torder/`)
-      .doc(`${req.user._id}`);
+      .doc(`${req.user.id.toString()}`);
   } else {
     if (cookie.type) {
       orderRef = await firestore
@@ -227,7 +227,7 @@ exports.getOrder = async (req, res, next) => {
   if (order.exists) {
     let data = order.data();
     orderData = data.order;
-    if (data.cid && data.cid != req.user._id) {
+    if (data.cid && data.cid != req.user._id.toString()) {
       res.status(403).json({ success: false, message: status.SESSION_EXIST });
     } else {
       return res.status(200).json({ success: true, data: orderData });
@@ -250,7 +250,7 @@ exports.checkout = async (req, res, next) => {
     if (cookie.table == "takeaway") {
       orderRef = await firestore
         .collection(`restaurants/${cookie.rest_id}/torder/`)
-        .doc(`${req.user._id}`);
+        .doc(`${req.user._id.toString()}`);
     } else {
       if (cookie.type) {
         orderRef = await firestore
@@ -267,7 +267,7 @@ exports.checkout = async (req, res, next) => {
 
     if (!orderExist.exists) {
       res.status(400).json({ success: false, message: status.BAD_REQUEST });
-    } else if (orderExist.data().cid != req.user._id) {
+    } else if (orderExist.data().cid != req.user._id.toString()) {
       res.status(400).json({ success: false, message: status.BAD_REQUEST });
     }
 
@@ -366,7 +366,7 @@ exports.checkout = async (req, res, next) => {
 
     data.inv_no = set_invoice_no;
 
-    custOrders.cid = req.user._id;
+    custOrders.cid = req.user._id.toString();
     custOrders.cname = req.user.cname;
     custOrders.table = cookie.table;
     custOrders.inv_no = set_invoice_no;
@@ -408,7 +408,7 @@ exports.checkout = async (req, res, next) => {
           let index;
           if (cookie.table == "takeaway") {
             index = takeawayCust.findIndex(
-              (ele) => ele.cid == req.user._id && ele.table == cookie.table
+              (ele) => ele.cid == req.user._id.toStirng() && ele.table == cookie.table
             );
             let obj = { ...takeawayCust[index] };
             obj.checkout = true;
@@ -418,7 +418,7 @@ exports.checkout = async (req, res, next) => {
           } else {
             index = seatCust.findIndex(
               (ele) =>
-                ele.cid == req.user._id &&
+                ele.cid == req.user._id.toString() &&
                 ele.table == cookie.table &&
                 (cookie.type ? cookie.type == ele.type : true)
             );

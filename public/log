@@ -206,3 +206,69 @@
   level: 'error',
   timestamp: '2021-11-08T07:48:02.626Z'
 }
+{
+  label: 'admin order generateInvoice eJq9wve34QSCjnCUk39U',
+  message: 'CastError: Cast to ObjectId failed for value "SoBrkgpiYiy2M9IJO07J" (type string) at path "_id" for model "customers"',
+  level: 'error',
+  timestamp: '2021-11-08T08:45:37.721Z'
+}
+{
+  label: 'admin order generateInvoice eJq9wve34QSCjnCUk39U',
+  message: 'CastError: Cast to ObjectId failed for value "SoBrkgpiYiy2M9IJO07J" (type string) at path "_id" for model "customers"',
+  level: 'error',
+  timestamp: '2021-11-08T08:46:55.645Z'
+}
+{
+  label: 'admin order generateInvoice eJq9wve34QSCjnCUk39U',
+  message: 'CastError: Cast to ObjectId failed for value "SoBrkgpiYiy2M9IJO07J" (type string) at path "_id" for model "customers"',
+  level: 'error',
+  timestamp: '2021-11-08T08:48:12.431Z'
+}
+{
+  label: 'customer auth verifySession eJq9wve34QSCjnCUk39U',
+  message: "TypeError: Cannot read property 'type' of undefined",
+  level: 'error',
+  timestamp: '2021-11-08T09:49:46.581Z'
+}
+{
+  label: 'customer auth verifySession eJq9wve34QSCjnCUk39U',
+  message: 'Error: Value for argument "data" is not a valid Firestore document. Couldn\'t serialize object of type "ObjectID" (found in field "seat.`0`.cid"). Firestore doesn\'t support JavaScript objects with custom prototypes (i.e. objects that were created via the "new" operator).',
+  level: 'error',
+  timestamp: '2021-11-08T09:54:16.002Z'
+}
+{
+  label: 'customer auth verifySession eJq9wve34QSCjnCUk39U',
+  message: 'Error: Value for argument "data" is not a valid Firestore document. Couldn\'t serialize object of type "ObjectID" (found in field "seat.`0`.cid"). Firestore doesn\'t support JavaScript objects with custom prototypes (i.e. objects that were created via the "new" operator).',
+  level: 'error',
+  timestamp: '2021-11-08T09:56:45.685Z'
+}
+{
+  label: 'customer auth verifySession eJq9wve34QSCjnCUk39U',
+  message: 'Error: Value for argument "data" is not a valid Firestore document. Couldn\'t serialize object of type "ObjectID" (found in field "seat.`0`.cid"). Firestore doesn\'t support JavaScript objects with custom prototypes (i.e. objects that were created via the "new" operator).',
+  level: 'error',
+  timestamp: '2021-11-08T09:58:34.940Z'
+}
+{
+  label: 'customer auth verifySession eJq9wve34QSCjnCUk39U',
+  message: 'Error: Value for argument "data" is not a valid Firestore document. Couldn\'t serialize object of type "ObjectID" (found in field "seat.`0`.cid"). Firestore doesn\'t support JavaScript objects with custom prototypes (i.e. objects that were created via the "new" operator).',
+  level: 'error',
+  timestamp: '2021-11-08T10:00:06.550Z'
+}
+{
+  label: 'customer auth verifySession eJq9wve34QSCjnCUk39U',
+  message: 'Error: Value for argument "data" is not a valid Firestore document. Couldn\'t serialize object of type "ObjectID" (found in field "seat.`0`.cid"). Firestore doesn\'t support JavaScript objects with custom prototypes (i.e. objects that were created via the "new" operator).',
+  level: 'error',
+  timestamp: '2021-11-08T10:00:53.551Z'
+}
+{
+  label: 'customer auth verifySession eJq9wve34QSCjnCUk39U',
+  message: 'Error: Value for argument "data" is not a valid Firestore document. Couldn\'t serialize object of type "ObjectID" (found in field "seat.`0`.cid"). Firestore doesn\'t support JavaScript objects with custom prototypes (i.e. objects that were created via the "new" operator).',
+  level: 'error',
+  timestamp: '2021-11-08T10:01:36.022Z'
+}
+{
+  label: 'customer auth verifySession eJq9wve34QSCjnCUk39U',
+  message: "TypeError: Cannot read property 'success' of undefined",
+  level: 'error',
+  timestamp: '2021-11-08T10:25:48.192Z'
+}

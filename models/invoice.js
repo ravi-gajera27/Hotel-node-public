@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const InvoiceSchema = new mongoose.Schema({
   rest_id: String,
-  cid: String,
+  cid: mongoose.Schema.Types.ObjectId,
   cname: String,
   inv_date: String,
   inv_no: String,
