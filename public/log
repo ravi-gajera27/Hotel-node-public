@@ -272,3 +272,21 @@
   level: 'error',
   timestamp: '2021-11-08T10:25:48.192Z'
 }
+{
+  label: 'captain auth verifyMobileNo urwUrKOQdsqDNVHphH4B',
+  message: 'ReferenceError: CustomerModel is not defined',
+  level: 'error',
+  timestamp: '2021-11-09T10:07:30.055Z'
+}
+{
+  label: 'captain auth verifySession urwUrKOQdsqDNVHphH4B',
+  message: 'ReferenceError: data is not defined',
+  level: 'error',
+  timestamp: '2021-11-09T10:10:10.309Z'
+}
+{
+  label: 'captain auth verifySession urwUrKOQdsqDNVHphH4B',
+  message: 'Error: Value for argument "data" is not a valid Firestore document. Couldn\'t serialize object of type "ObjectID" (found in field "seat.`0`.cid"). Firestore doesn\'t support JavaScript objects with custom prototypes (i.e. objects that were created via the "new" operator).',
+  level: 'error',
+  timestamp: '2021-11-09T10:11:07.510Z'
+}

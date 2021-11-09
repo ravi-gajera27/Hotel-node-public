@@ -9,4 +9,6 @@ router.get('/user', protect, auth.getUser)
 
 router.post('/verify-session', protect, auth.verifySession)
 
+router.post('/verify-mobile-no', protect, auth.verifyMobileNo)
+
 module.exports = router

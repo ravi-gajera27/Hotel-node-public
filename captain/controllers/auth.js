@@ -10,6 +10,7 @@ const { incZoneReq } = require("../../utils/zone");
 const { INVALID_TABLE } = require("../../utils/status");
 const { LoginActivityModel } = require("../../models/loginActivity");
 const moment = require("moment");
+const { CustomerModel } = require('../../models/customer');
 
 exports.login = async (req, res, next) => {
   try {
@@ -125,6 +126,30 @@ exports.getUser = async (req, res, next) => {
     });
 };
 
+exports.verifyMobileNo = async (req, res) => {
+  try {
+    let data = req.body;
+    if (!data.mobile_no || !data.members) {
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST });
+    }
+
+    let user = await CustomerModel.findOne({ mobile_no: data.mobile_no });
+
+    return res.status(200).json({ success: true, data: user });
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `captain auth verifyMobileNo ${req.user.id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
 exports.verifySession = async (req, res) => {
   try {
     if (
@@ -143,9 +168,10 @@ exports.verifySession = async (req, res) => {
       mobile_no: req.body.mobile_no,
       bod: req.body.bod || "",
     };
-    let user = await CustomerModel.findOne({ mobile_no: data.mobile_no });
 
-    if(!user){
+    let user = await CustomerModel.findOne({ mobile_no: custData.mobile_no });
+
+    if (!user) {
       user = await CustomerModel.create({ ...custData });
     }
 
@@ -212,7 +238,7 @@ exports.verifySession = async (req, res) => {
           obj = {
             checkout: false,
             cname: user.cname,
-            cid: user._id,
+            cid: user._id.toString(),
             table: req.body.table,
             captain_id: req.user.id,
             type: req.body.type,
@@ -222,7 +248,7 @@ exports.verifySession = async (req, res) => {
           obj = {
             checkout: false,
             cname: user.cname,
-            cid: user._id,
+            cid: user._id.toString(),
             table: req.body.table,
             captain_id: req.user.id,
             members: req.body.members,
