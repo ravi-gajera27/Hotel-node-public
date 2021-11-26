@@ -791,6 +791,7 @@ exports.getUser = async (req, res, next) => {
             .doc(data.rest_id)
             .get();
           restRef = restRef.data();
+          console.log(restRef)
           if (restRef.verified) {
             data.verified = true;
           }

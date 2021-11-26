@@ -12,7 +12,7 @@ const restDetailsSchema = new mongoose.Schema({
 const customnerSchema = new mongoose.Schema({
   cname: String,
   mobile_no: String,
-  bod: String,
+  dob: String,
   blocked: Boolean,
   join: String,
   join_date: String,

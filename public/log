@@ -392,3 +392,15 @@
   level: 'error',
   timestamp: '2021-11-26T10:50:36.039Z'
 }
+{
+  label: 'admin auth getUser cH3za13VsMr0oAnqMT0x',
+  message: "TypeError: Cannot read property 'verified' of undefined",
+  level: 'error',
+  timestamp: '2021-11-26T14:14:53.876Z'
+}
+{
+  label: 'admin auth getUser cH3za13VsMr0oAnqMT0x',
+  message: "TypeError: Cannot read property 'verified' of undefined",
+  level: 'error',
+  timestamp: '2021-11-26T14:16:45.627Z'
+}
