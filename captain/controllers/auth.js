@@ -166,7 +166,7 @@ exports.verifySession = async (req, res) => {
     let custData = {
       cname: req.body.cname,
       mobile_no: req.body.mobile_no,
-      bod: req.body.bod || "",
+      dob: req.body.dob || "",
     };
 
     let user = await CustomerModel.findOne({ mobile_no: custData.mobile_no });

@@ -290,3 +290,105 @@
   level: 'error',
   timestamp: '2021-11-09T10:11:07.510Z'
 }
+{
+  label: 'admin user getUser eJq9wve34QSCjnCUk39U',
+  message: "MongoError: FieldPath field names may not start with '$'.",
+  level: 'error',
+  timestamp: '2021-11-26T05:05:13.950Z'
+}
+{
+  label: 'admin user getUser eJq9wve34QSCjnCUk39U',
+  message: "MongoError: FieldPath field names may not start with '$'.",
+  level: 'error',
+  timestamp: '2021-11-26T05:07:46.624Z'
+}
+{
+  label: 'admin user getUser eJq9wve34QSCjnCUk39U',
+  message: "MongoError: FieldPath field names may not start with '$'.",
+  level: 'error',
+  timestamp: '2021-11-26T05:08:05.116Z'
+}
+{
+  label: 'admin user getUser eJq9wve34QSCjnCUk39U',
+  message: "MongoError: FieldPath field names may not start with '$'.",
+  level: 'error',
+  timestamp: '2021-11-26T05:11:56.547Z'
+}
+{
+  label: 'admin user getUser eJq9wve34QSCjnCUk39U',
+  message: "MongoError: FieldPath field names may not start with '$'.",
+  level: 'error',
+  timestamp: '2021-11-26T05:13:45.603Z'
+}
+{
+  label: 'admin user getUser eJq9wve34QSCjnCUk39U',
+  message: "MongoError: As of 4.4, it's illegal to specify positional operator in the middle of a path.Positional projection may only be used at the end, for example: a.b.$. If the query previously used a form like a.b.$.d, remove the parts following the '$' and the results will be equivalent.",
+  level: 'error',
+  timestamp: '2021-11-26T05:23:26.212Z'
+}
+{
+  label: 'admin user getUser eJq9wve34QSCjnCUk39U',
+  message: "MongoError: As of 4.4, it's illegal to specify positional operator in the middle of a path.Positional projection may only be used at the end, for example: a.b.$. If the query previously used a form like a.b.$.d, remove the parts following the '$' and the results will be equivalent.",
+  level: 'error',
+  timestamp: '2021-11-26T05:24:26.102Z'
+}
+{
+  label: 'admin user getUser eJq9wve34QSCjnCUk39U',
+  message: 'MongoError: positional projection cannot be used with exclusion',
+  level: 'error',
+  timestamp: '2021-11-26T05:24:38.132Z'
+}
+{
+  label: 'admin user updateTextMessage eJq9wve34QSCjnCUk39U',
+  message: 'ReferenceError: moment is not defined',
+  level: 'error',
+  timestamp: '2021-11-26T09:00:39.639Z'
+}
+{
+  label: 'admin user updateTextMessage eJq9wve34QSCjnCUk39U',
+  message: 'TypeError: messageData.wp.toString(...).replaceAll is not a function',
+  level: 'error',
+  timestamp: '2021-11-26T09:02:12.479Z'
+}
+{
+  label: 'admin user updateTextMessage eJq9wve34QSCjnCUk39U',
+  message: 'ReferenceError: mobile_no is not defined',
+  level: 'error',
+  timestamp: '2021-11-26T09:07:54.245Z'
+}
+{
+  label: 'admin user updateTextMessage eJq9wve34QSCjnCUk39U',
+  message: 'Error: Twilio could not find a Channel with the specified From address',
+  level: 'error',
+  timestamp: '2021-11-26T09:08:41.933Z'
+}
+{
+  label: 'admin user sendMessage eJq9wve34QSCjnCUk39U',
+  message: 'ReferenceError: retrun is not defined',
+  level: 'error',
+  timestamp: '2021-11-26T09:10:04.778Z'
+}
+{
+  label: 'admin user sendMessage eJq9wve34QSCjnCUk39U',
+  message: 'TypeError: wpMessage.replaceAll is not a function',
+  level: 'error',
+  timestamp: '2021-11-26T09:11:12.869Z'
+}
+{
+  label: 'admin user sendMessage eJq9wve34QSCjnCUk39U',
+  message: 'Error: Twilio could not find a Channel with the specified From address',
+  level: 'error',
+  timestamp: '2021-11-26T09:17:59.287Z'
+}
+{
+  label: 'admin user sendMessage eJq9wve34QSCjnCUk39U',
+  message: "Error: The 'From' number whatsapp:+1 415 523 8886 is not a valid phone number, shortcode, or alphanumeric sender ID.",
+  level: 'error',
+  timestamp: '2021-11-26T09:22:47.233Z'
+}
+{
+  label: 'admin user getUser eJq9wve34QSCjnCUk39U',
+  message: 'TypeError: undefined is not iterable (cannot read property Symbol(Symbol.iterator))',
+  level: 'error',
+  timestamp: '2021-11-26T10:50:36.039Z'
+}

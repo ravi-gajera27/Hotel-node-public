@@ -283,7 +283,7 @@ exports.getUser = async (req, res, next) => {
       if (user) {
         let obj = {
           name: user.cname,
-          bod: user.bod,
+          dob: user.dob,
           mobile_no: user.mobile_no,
           id: user._id,
         };
