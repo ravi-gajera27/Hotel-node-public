@@ -766,6 +766,9 @@ exports.cleanUpCustomers = async (req, res) => {
           }
         }
 
+
+        console.log(seatCust)
+
         await t.set(
           customerRef,
           { seat: [...seatCust], takeaway: [...takeawayCust] },
