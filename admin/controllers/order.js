@@ -312,7 +312,7 @@ exports.generateInvoice = async (req, res, next) => {
     if (visitDoc) {
       let index = visitDoc.rest_details
         .map((e) => {
-          return rest_id;
+          return e.rest_id;
         })
         .indexOf(req.user.rest_id);
       if (index != -1) {
