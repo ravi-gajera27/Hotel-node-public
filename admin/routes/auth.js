@@ -22,6 +22,7 @@ router.get("/captain", protect, auth.getCaptainList);
 router.post("/captain", protect, auth.addCaptain);
 router.delete("/captain/:email", protect, auth.removeCaptain);
 router.put("/rest-details", protect, auth.updateRestaurantDetails);
+router.get("/rest-details/rest-tables", protect, auth.getRestTablesDetails);
 router.put("/rest-details/postpaid-plan", protect, auth.continueWithPostPaid);
 router.put("/rest-details/:tables", protect, auth.updateRestaurantDetails);
 router.put("/step-rest-details", protect, auth.updateStepRestaurantDetaials);

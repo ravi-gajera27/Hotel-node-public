@@ -1050,6 +1050,45 @@ exports.continueWithPostPaid = async (req, res) => {
     });
 };
 
+exports.getRestTablesDetails = async(req, res) => {
+  try {
+    if (!req.user.rest_id) {
+      return res.status(401).json({
+        success: false,
+        message: status.NOT_REGISTERED,
+        redirect: "/restaurant-information",
+      });
+    }
+
+    let restDetailsDoc = await firestore
+      .collection("restaurants")
+      .doc(req.user.rest_id)
+      .get();
+
+    if (!restDetailsDoc.exists) {
+      return res.status(401).json({
+        success: false,
+        message: status.NOT_REGISTERED,
+        redirect: "/restaurant-information",
+      });
+    }
+
+    let restData = restDetailsDoc.data();
+
+    return res.status(200).json({ success: true, data: restData.type });
+  }
+  catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `admin auth getRestTablesDetails ${req.user.rest_id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+}
+
 exports.getRestDetails = async (req, res) => {
   try {
     if (!req.user.rest_id) {

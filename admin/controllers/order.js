@@ -316,7 +316,7 @@ exports.generateInvoice = async (req, res, next) => {
         })
         .indexOf(req.user.rest_id);
       if (index != -1) {
-        m_visit = visitDoc.rest_details[index].m_visit;
+        m_visit = Number(visitDoc.rest_details[index].m_visit) + 1;
       }
     }
 

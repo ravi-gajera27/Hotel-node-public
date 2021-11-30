@@ -76,6 +76,26 @@ exports.createOrder = async (req, res) => {
 
     let planType = plans[planIndex].type[subPlanIndex];
 
+    if (plans[planIndex].t_end != "Unlimited") {
+      let restRef = await firestore
+        .collection("restaurants")
+        .doc(req.user.rest_id)
+        .get();
+
+      let restData = restRef.data();
+      total_tables = 0;
+      for (let type of restData.type) {
+        total_tables += Number(type.tables);
+      }
+
+      if (total_tables > Number(plans[planIndex].t_end)) {
+        return res.status(403).json({
+          success: false,
+          message: `Choose correct subscription plan according to table range`,
+        });
+      }
+    }
+
     let instance = razorpay.getRazorpayInstance();
     var options = {
       amount: Number(planType.price) * 100, // amount in the smallest currency unit
@@ -89,7 +109,7 @@ exports.createOrder = async (req, res) => {
       } else {
         let data = {
           key: process.env.RAZORPAY_KEY_ID,
-          amount: Number(planType.price) * 100,
+          amount:  Number(planType.price) * 100,
           currency: "INR",
           name: "HungerCodes",
           order_id: order.id,
@@ -214,7 +234,7 @@ exports.verifySignature = async (req, res) => {
     await firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
-      .set({ subs_id: subId }, { merge: true });
+      .set({ subs_id: subId, locked: false }, { merge: true });
 
     subsRef
       .doc(subId)
