@@ -331,7 +331,7 @@ exports.verifySession = async (req, res, next) => {
   let cookie = await extractCookie(req, res);
 
   try {
-    let cookie = await extractCookie(req, res);
+  
     if (!cookie) {
       return res.status(403).json({
         success: false,
@@ -655,6 +655,7 @@ function setCustomerOntable(
             checkout: false,
             type: cookie.type,
             members: members,
+            mobile_no: user.mobile_no
           };
         } else {
           cust = {
@@ -663,6 +664,7 @@ function setCustomerOntable(
             cname: user.cname,
             checkout: false,
             members: members,
+            mobile_no: user.mobile_no
           };
         }
         seatCust[index] = cust;
@@ -675,6 +677,7 @@ function setCustomerOntable(
             checkout: false,
             type: cookie.type,
             members: members,
+            mobile_no: user.mobile_no
           });
         } else {
           seatCust.push({
@@ -683,6 +686,7 @@ function setCustomerOntable(
             cname: user.cname,
             checkout: false,
             members: members,
+            mobile_no: user.mobile_no
           });
         }
       }
@@ -697,6 +701,7 @@ function setCustomerOntable(
           checkout: false,
           type: cookie.type,
           members: members,
+          mobile_no: user.mobile_no
         };
       } else {
         obj = {
@@ -705,6 +710,7 @@ function setCustomerOntable(
           cname: user.cname,
           checkout: false,
           members: members,
+          mobile_no: user.mobile_no
         };
       }
       seatCust = [{ ...obj }];
