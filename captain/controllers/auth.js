@@ -137,11 +137,9 @@ exports.verifyMobileNo = async (req, res) => {
 
     let user = await CustomerModel.findOne({ mobile_no: data.mobile_no });
 
-    if (!user) {
-      return res.status(200).json({ success: false });
-    }
-
-    return res.status(200).json({ success: true, data: user.cname });
+    return res
+      .status(200)
+      .json({ success: true, data: user ? user.cname : "" });
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
