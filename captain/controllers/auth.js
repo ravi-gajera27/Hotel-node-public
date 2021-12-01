@@ -168,10 +168,7 @@ exports.verifySession = async (req, res) => {
     let custData = {
       cname: req.body.cname,
       mobile_no: req.body.mobile_no,
-      dob:
-        moment(req.body.dob)
-          .utcOffset(process.env.UTC_OFFSET)
-          .format("YYYY-MM-DD") || "",
+      dob: req.body.dob || "",
     };
 
     let user = await CustomerModel.findOne({ mobile_no: custData.mobile_no });
@@ -210,12 +207,12 @@ exports.verifySession = async (req, res) => {
         }
 
         flag = true;
-        msg = ''
+        msg = "";
         if (req.body.type) {
           for (let cust of customers) {
             if (cust.cid == user.id.toString()) {
               flag = false;
-              msg = status.OCCUPIED_CAP
+              msg = status.OCCUPIED_CAP;
               break;
             }
             if (
@@ -224,7 +221,7 @@ exports.verifySession = async (req, res) => {
               !cust.restore
             ) {
               flag = false;
-              msg = status.SESSION_EXIST_CAP
+              msg = status.SESSION_EXIST_CAP;
               break;
             }
           }
@@ -232,12 +229,12 @@ exports.verifySession = async (req, res) => {
           for (let cust of customers) {
             if (cust.cid == user.id.toString()) {
               flag = false;
-              msg = status.OCCUPIED_CAP
+              msg = status.OCCUPIED_CAP;
               break;
             }
             if (Number(cust.table) == Number(req.body.table) && !cust.restore) {
               flag = false;
-              msg = status.SESSION_EXIST_CAP
+              msg = status.SESSION_EXIST_CAP;
               break;
             }
           }
