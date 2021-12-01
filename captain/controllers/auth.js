@@ -210,10 +210,12 @@ exports.verifySession = async (req, res) => {
         }
 
         flag = true;
+        msg = ''
         if (req.body.type) {
           for (let cust of customers) {
             if (cust.cid == user.id.toString()) {
               flag = false;
+              msg = status.OCCUPIED_CAP
               break;
             }
             if (
@@ -222,6 +224,7 @@ exports.verifySession = async (req, res) => {
               !cust.restore
             ) {
               flag = false;
+              msg = status.SESSION_EXIST_CAP
               break;
             }
           }
@@ -229,10 +232,12 @@ exports.verifySession = async (req, res) => {
           for (let cust of customers) {
             if (cust.cid == user.id.toString()) {
               flag = false;
+              msg = status.OCCUPIED_CAP
               break;
             }
             if (Number(cust.table) == Number(req.body.table) && !cust.restore) {
               flag = false;
+              msg = status.SESSION_EXIST_CAP
               break;
             }
           }
@@ -242,7 +247,7 @@ exports.verifySession = async (req, res) => {
           return Promise.resolve({
             success: false,
             status: 403,
-            message: status.SESSION_EXIST,
+            message: msg,
           });
         }
 

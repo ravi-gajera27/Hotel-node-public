@@ -11,6 +11,13 @@ module.exports = {
     "Someone is already using this table, but you can view the menu",
   OCCUPIED:
     "You have already occupied another table, but you can view the menu",
+
+    OCCUPIED_CAP:
+    "This User have already scan other QR code",
+
+    SESSION_EXIST_CAP:
+    "Someone is already using this table",
+
   OCCUPIED_WAIT:
     "You have already scan waiting QR code, now please scan table QR code",
   CHECKOUTED:
