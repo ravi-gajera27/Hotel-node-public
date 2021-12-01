@@ -10,7 +10,7 @@ const { incZoneReq } = require("../../utils/zone");
 const { INVALID_TABLE } = require("../../utils/status");
 const { LoginActivityModel } = require("../../models/loginActivity");
 const moment = require("moment");
-const { CustomerModel } = require('../../models/customer');
+const { CustomerModel } = require("../../models/customer");
 
 exports.login = async (req, res, next) => {
   try {
@@ -137,7 +137,11 @@ exports.verifyMobileNo = async (req, res) => {
 
     let user = await CustomerModel.findOne({ mobile_no: data.mobile_no });
 
-    return res.status(200).json({ success: true, data: user });
+    if (!user) {
+      return res.status(200).json({ success: false });
+    }
+
+    return res.status(200).json({ success: true, data: user.cname });
   } catch (err) {
     let e = extractErrorMessage(err);
     logger.error({
@@ -166,7 +170,10 @@ exports.verifySession = async (req, res) => {
     let custData = {
       cname: req.body.cname,
       mobile_no: req.body.mobile_no,
-      dob: req.body.dob || "",
+      dob:
+        moment(req.body.dob)
+          .utcOffset(process.env.UTC_OFFSET)
+          .format("YYYY-MM-DD") || "",
     };
 
     let user = await CustomerModel.findOne({ mobile_no: custData.mobile_no });
@@ -207,6 +214,10 @@ exports.verifySession = async (req, res) => {
         flag = true;
         if (req.body.type) {
           for (let cust of customers) {
+            if (cust.cid == user.id.toString()) {
+              flag = false;
+              break;
+            }
             if (
               Number(cust.table) == Number(req.body.table) &&
               cust.type == req.body.type &&
@@ -218,6 +229,10 @@ exports.verifySession = async (req, res) => {
           }
         } else {
           for (let cust of customers) {
+            if (cust.cid == user.id.toString()) {
+              flag = false;
+              break;
+            }
             if (Number(cust.table) == Number(req.body.table) && !cust.restore) {
               flag = false;
               break;
