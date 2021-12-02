@@ -286,7 +286,26 @@ exports.getUser = async (req, res, next) => {
           dob: user.dob,
           mobile_no: user.mobile_no,
           id: user._id,
+          hunger_codes_review: true
         };
+
+        let reviewRef = await firestore
+        .collection("restaurants")
+        .doc(cookie.rest_id)
+        .collection("settings")
+        .doc("review").get();
+
+
+        if(reviewRef.exists){
+          let data = reviewRef.data();
+          if(data.google_review){
+            obj.google_review = data.google_review
+          }
+          if(data.hunger_codes_review == false){
+            obj.hunger_codes_review = false
+          }
+        }
+
         res.status(200).json({
           success: true,
           data: obj,
@@ -326,7 +345,6 @@ exports.verifyOtp = async (req, res, next) => {
 
 exports.verifySession = async (req, res, next) => {
   let members = req.params.members;
-  console.log(members);
 
   let cookie = await extractCookie(req, res);
 

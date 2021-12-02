@@ -438,9 +438,16 @@ exports.checkout = async (req, res, next) => {
         await restRef.set(data, { merge: true });
 
         if (review && review.rating) {
-          await CustomerModel.findOneAndUpdate(
-            { rest_id: cookie.rest_id, cid: req.user._id },
-            { review: review }
+          await CustomerModel.updateOne(
+            {
+              _id: req.user._id,
+              "rest_details.rest_id": cookie.rest_id,
+            },
+            {
+              $set: {
+                "rest_details.$.review": review,
+              },
+            }
           );
         }
         return res
