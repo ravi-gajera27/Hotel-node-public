@@ -123,16 +123,16 @@ exports.addOrder = async (req, res, next) => {
           .format("YYYY-MM-DD");
 
         let start_date = moment(date, "YYYY-MM-DD");
-        let end_date = moment(customerDoc.last_visit, "YYYY-MM-DD");
+        let end_date = moment(customerDoc.rest_details[index].last_visit, "YYYY-MM-DD");
         let m_visit = 1;
         let days = Number(start_date.diff(end_date, "days"));
         if (days <= 31) {
-          m_visit = Number(customerDoc.m_visit) + 1;
+          m_visit = Number(customerDoc.rest_details[index].m_visit) + 1;
         }
         let custObj = {
           rest_id: cookie.rest_id,
           last_visit: date,
-          visit: Number(customerDoc.visit) + 1,
+          visit: Number(customerDoc.rest_details[index].visit) + 1,
           m_visit: m_visit,
         };
 
