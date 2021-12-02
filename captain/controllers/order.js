@@ -123,63 +123,68 @@ exports.addOrder = async (req, res, next) => {
       send_data = { order: [...send_data] };
     }
 
-    let customerDoc = await CustomerModel.findOne({
-      _id: customer.cid,
-    });
-
-    if (!customerDoc) {
-    }
-
-    let index = customerDoc.rest_details
-      .map((e) => {
-        return e.rest_id;
-      })
-      .indexOf(req.user.rest_id);
-
-    if (index != -1) {
-      let date = moment()
-        .utcOffset(process.env.UTC_OFFSET)
-        .format("YYYY-MM-DD");
-
-      let start_date = moment(date, "YYYY-MM-DD");
-      let end_date = moment(customerDoc.last_visit, "YYYY-MM-DD");
-      let m_visit = 1;
-      let days = Number(start_date.diff(end_date, "days"));
-      if (days <= 31) {
-        m_visit = Number(customerDoc.m_visit) + 1;
-      }
-      let custObj = {
-        last_visit: date,
-        visit: Number(customerDoc.visit) + 1,
-        m_visit: m_visit,
-      };
-
-      send_data.unique = true;
-      await CustomerModel.updateOne(
-        {
-          _id: req.user._id,
-          "rest_details.rest_id": cookie.rest_id,
-        },
-        {
-          $set: {
-            "rest_details.$.last_visit": custObj.date,
-            "rest_details.$.visit": custObj.visit,
-            "rest_details.$.m_visit": custObj.m_visit,
-          },
-        }
-      );
-    } else {
-      let custObj = {
-        rest_id: req.user.rest_id,
-        last_visit: moment()
-          .utcOffset(process.env.UTC_OFFSET)
-          .format("YYYY-MM-DD"),
-        visit: 1,
-        m_visit: 1,
-      };
-      await CustomerModel.findByIdAndUpdate(customer.cid, {
-        $push: { rest_details: { ...custObj } },
+    if (customer.cid.length != 12) {
+      let customerDoc = await CustomerModel.findOne({
+        _id: customer.cid,
       });
+
+      if (!customerDoc) {
+        return res
+          .status(403)
+          .json({ success: false, message: "No Customer Found" });
+      }
+
+      let index = customerDoc.rest_details
+        .map((e) => {
+          return e.rest_id;
+        })
+        .indexOf(req.user.rest_id);
+
+      if (index != -1) {
+        let date = moment()
+          .utcOffset(process.env.UTC_OFFSET)
+          .format("YYYY-MM-DD");
+
+        let start_date = moment(date, "YYYY-MM-DD");
+        let end_date = moment(customerDoc.last_visit, "YYYY-MM-DD");
+        let m_visit = 1;
+        let days = Number(start_date.diff(end_date, "days"));
+        if (days <= 31) {
+          m_visit = Number(customerDoc.m_visit) + 1;
+        }
+        let custObj = {
+          last_visit: date,
+          visit: Number(customerDoc.visit) + 1,
+          m_visit: m_visit,
+        };
+
+        send_data.unique = true;
+        await CustomerModel.updateOne(
+          {
+            _id: req.user._id,
+            "rest_details.rest_id": req.user.rest_id,
+          },
+          {
+            $set: {
+              "rest_details.$.last_visit": custObj.date,
+              "rest_details.$.visit": custObj.visit,
+              "rest_details.$.m_visit": custObj.m_visit,
+            },
+          }
+        );
+      } else {
+        let custObj = {
+          rest_id: req.user.rest_id,
+          last_visit: moment()
+            .utcOffset(process.env.UTC_OFFSET)
+            .format("YYYY-MM-DD"),
+          visit: 1,
+          m_visit: 1,
+        };
+        await CustomerModel.findByIdAndUpdate(customer.cid, {
+          $push: { rest_details: { ...custObj } },
+        });
+      }
     }
 
     orderRef.set(send_data, { merge: true }).then(async (order) => {
