@@ -278,31 +278,32 @@ exports.signup = async (req, res, next) => {
 };
 
 exports.getUser = async (req, res, next) => {
+  let cookie = await extractCookie(req, res);
   CustomerModel.findById(req.user._id)
-    .then(async(user) => {
+    .then(async (user) => {
       if (user) {
         let obj = {
           name: user.cname,
           dob: user.dob,
           mobile_no: user.mobile_no,
           id: user._id,
-          hunger_codes_review: true
+          hunger_codes_review: true,
         };
 
         let reviewRef = await firestore
-        .collection("restaurants")
-        .doc(cookie.rest_id)
-        .collection("settings")
-        .doc("review").get();
+          .collection("restaurants")
+          .doc(cookie.rest_id)
+          .collection("settings")
+          .doc("review")
+          .get();
 
-
-        if(reviewRef.exists){
+        if (reviewRef.exists) {
           let data = reviewRef.data();
-          if(data.google_review){
-            obj.google_review = data.google_review
+          if (data.google_review) {
+            obj.google_review = data.google_review;
           }
-          if(data.hunger_codes_review == false){
-            obj.hunger_codes_review = false
+          if (data.hunger_codes_review == false) {
+            obj.hunger_codes_review = false;
           }
         }
 
@@ -349,7 +350,6 @@ exports.verifySession = async (req, res, next) => {
   let cookie = await extractCookie(req, res);
 
   try {
-  
     if (!cookie) {
       return res.status(403).json({
         success: false,
@@ -673,7 +673,7 @@ function setCustomerOntable(
             checkout: false,
             type: cookie.type,
             members: members,
-            mobile_no: user.mobile_no
+            mobile_no: user.mobile_no,
           };
         } else {
           cust = {
@@ -682,7 +682,7 @@ function setCustomerOntable(
             cname: user.cname,
             checkout: false,
             members: members,
-            mobile_no: user.mobile_no
+            mobile_no: user.mobile_no,
           };
         }
         seatCust[index] = cust;
@@ -695,7 +695,7 @@ function setCustomerOntable(
             checkout: false,
             type: cookie.type,
             members: members,
-            mobile_no: user.mobile_no
+            mobile_no: user.mobile_no,
           });
         } else {
           seatCust.push({
@@ -704,7 +704,7 @@ function setCustomerOntable(
             cname: user.cname,
             checkout: false,
             members: members,
-            mobile_no: user.mobile_no
+            mobile_no: user.mobile_no,
           });
         }
       }
@@ -719,7 +719,7 @@ function setCustomerOntable(
           checkout: false,
           type: cookie.type,
           members: members,
-          mobile_no: user.mobile_no
+          mobile_no: user.mobile_no,
         };
       } else {
         obj = {
@@ -728,7 +728,7 @@ function setCustomerOntable(
           cname: user.cname,
           checkout: false,
           members: members,
-          mobile_no: user.mobile_no
+          mobile_no: user.mobile_no,
         };
       }
       seatCust = [{ ...obj }];
