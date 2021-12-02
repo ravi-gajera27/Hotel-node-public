@@ -146,7 +146,10 @@ exports.addOrder = async (req, res, next) => {
           .format("YYYY-MM-DD");
 
         let start_date = moment(date, "YYYY-MM-DD");
-        let end_date = moment(customerDoc.rest_details[index].last_visit, "YYYY-MM-DD");
+        let end_date = moment(
+          customerDoc.rest_details[index].last_visit,
+          "YYYY-MM-DD"
+        );
         let m_visit = 1;
         let days = Number(start_date.diff(end_date, "days"));
         if (days <= 31) {
@@ -161,12 +164,12 @@ exports.addOrder = async (req, res, next) => {
         send_data.unique = true;
         await CustomerModel.updateOne(
           {
-            _id: req.user._id,
+            _id: customer.cid,
             "rest_details.rest_id": req.user.rest_id,
           },
           {
             $set: {
-              "rest_details.$.last_visit": custObj.date,
+              "rest_details.$.last_visit": custObj.last_visit,
               "rest_details.$.visit": custObj.visit,
               "rest_details.$.m_visit": custObj.m_visit,
             },
