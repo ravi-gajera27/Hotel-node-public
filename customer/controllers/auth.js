@@ -279,7 +279,7 @@ exports.signup = async (req, res, next) => {
 
 exports.getUser = async (req, res, next) => {
   CustomerModel.findById(req.user._id)
-    .then((user) => {
+    .then(async(user) => {
       if (user) {
         let obj = {
           name: user.cname,
