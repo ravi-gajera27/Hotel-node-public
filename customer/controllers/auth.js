@@ -612,12 +612,10 @@ async function setCustomerOntable(
   if (cookie.table == "takeaway") {
     let index = 0;
     let flag = 0;
-    let restoreCust = {};
     for (let u of seatCust) {
       if (u.cid == user.id.toString()) {
         if (u.restore) {
           flag = 1;
-          restoreCust = u;
           break;
         } else {
           if (u.table == "waiting") {
@@ -627,7 +625,18 @@ async function setCustomerOntable(
               message: status.OCCUPIED_WAIT,
             };
           } else {
-            return { status: 403, success: false, message: status.OCCUPIED };
+            let doc = u.type ? `${u.type}-table-${u.table}` : `table-${u.type}`;
+            let orderRef = await firestore
+              .collection(`restaurants/${cookie.rest_id}/order/`)
+              .doc(doc);
+
+            let orderDoc = await orderRef.get();
+            if (orderDoc.exists && !orderDoc.data().restore) {
+              return { status: 403, success: false, message: status.OCCUPIED };
+            }
+            await orderRef.delete();
+            flag = 1;
+            break;
           }
         }
       }
@@ -689,11 +698,21 @@ async function setCustomerOntable(
           flag = 1;
           break;
         } else {
-          return {
-            status: 403,
-            success: false,
-            message: status.ALREADY_SCAN_TAKEAWAY,
-          };
+          let orderRef = await firestore
+            .collection(`restaurants/${cookie.rest_id}/torder/`)
+            .doc(`${u.cid}`);
+
+          let orderDoc = await orderRef.get();
+          if (orderDoc.exists && !orderDoc.data().restore) {
+            return {
+              status: 403,
+              success: false,
+              message: status.ALREADY_SCAN_TAKEAWAY,
+            };
+          }
+
+          flag = 1;
+          break;
         }
       }
       index++;
@@ -753,7 +772,20 @@ async function setCustomerOntable(
           ) {
             return { status: 200, success: true };
           } else {
-            return { status: 403, success: false, message: status.OCCUPIED };
+            let doc = ele.type
+              ? `${ele.type}-table-${ele.table}`
+              : `table-${ele.table}`;
+            let orderRef = await firestore
+              .collection(`restaurants/${cookie.rest_id}/order/`)
+              .doc(doc);
+
+            let orderDoc = await orderRef.get();
+            if (orderDoc.exists && !orderDoc.data().restore) {
+              return { status: 403, success: false, message: status.OCCUPIED };
+            }
+            await orderRef.delete();
+            restCust = true;
+            break;
           }
         } else if (Number(ele.table) == Number(cookie.table)) {
           if (cookie.type) {
