@@ -217,7 +217,6 @@ app.listen(process.env.PORT || 5000, async () => {
 
   console.log(
     "app is running",
-    moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A"),
-
+    moment().utcOffset(process.env.UTC_OFFSET).format("hh:mm A")
   );
 });

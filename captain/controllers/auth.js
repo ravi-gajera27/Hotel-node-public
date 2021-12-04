@@ -187,6 +187,29 @@ exports.verifySession = async (req, res) => {
       .runTransaction(async (t) => {
         let data = (await t.get(customersRef)).data();
         let customers = data.seat || [];
+        let takeawayCust = data.takeaway || [];
+
+        let index = takeawayCust.findIndex((e) => e.cid == user.id.toString());
+        if (index != -1) {
+          let order = await firestore
+            .collection("restaurants")
+            .doc(req.user.rest_id)
+            .collection("torder")
+            .doc(user.id.toString())
+            .get();
+
+          if (order.exists) {
+            let orderData = order.data();
+            if (!orderData.restore) {
+              return Promise.resolve({
+                status: 403,
+                message: status.ALREADY_SCAN_TAKEAWAY,
+                success: false,
+              });
+            }
+          }
+          takeawayCust.splice(index, 1);
+        }
         let total_tables = 0;
         if (req.body.type) {
           let index = data.type
@@ -208,36 +231,35 @@ exports.verifySession = async (req, res) => {
 
         flag = true;
         msg = "";
-        if (req.body.type) {
-          for (let cust of customers) {
-            if (cust.cid == user.id.toString()) {
+
+        let order = await firestore
+          .collection("restaurants")
+          .doc(req.user.rest_id)
+          .collection("order");
+
+        for (let cust of customers) {
+          if (cust.cid == user.id.toString()) {
+            let doc = req.body.type
+              ? `${cust.type}-table-${cust.table}`
+              : `table-${cust.table}`;
+            let orderDoc = await order.doc(doc).get();
+            if (orderDoc.exists && !orderDoc.data().restore) {
               flag = false;
-              msg = status.OCCUPIED_CAP;
-              break;
-            }
-            if (
-              Number(cust.table) == Number(req.body.table) &&
-              cust.type == req.body.type &&
-              !cust.restore
-            ) {
-              flag = false;
-              msg = status.SESSION_EXIST_CAP;
-              break;
-            }
-          }
-        } else {
-          for (let cust of customers) {
-            if (cust.cid == user.id.toString()) {
-              flag = false;
-              msg = status.OCCUPIED_CAP;
-              break;
-            }
-            if (Number(cust.table) == Number(req.body.table) && !cust.restore) {
-              flag = false;
-              msg = status.SESSION_EXIST_CAP;
+              mesg = status.OCCUPIED_CAP;
               break;
             }
           }
+          if (
+            Number(cust.table) == Number(req.body.table) &&
+            (cust.type ? cust.type == req.body.type : true) &&
+            !cust.restore
+          ) {
+            flag = false;
+            msg = status.SESSION_EXIST_CAP;
+            break;
+          }
+
+          index++;
         }
 
         if (!flag) {
@@ -270,9 +292,15 @@ exports.verifySession = async (req, res) => {
           };
         }
 
+        customers = customers.filter((e) => e.cid != obj.cid);
+
         customers.push(obj);
 
-        await t.set(customersRef, { seat: [...customers] }, { merge: true });
+        await t.set(
+          customersRef,
+          { seat: [...customers], takeaway: [...takeawayCust] },
+          { merge: true }
+        );
         return Promise.resolve({
           status: 200,
           message: "Success",

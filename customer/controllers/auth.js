@@ -344,6 +344,123 @@ exports.verifyOtp = async (req, res, next) => {
     });
 };
 
+exports.removeCustomerFromTable = async (req, res) => {
+  try {
+    if (!req.user.join) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer is not occupied any table",
+      });
+    }
+
+    let customersRef = await firestore
+      .collection("restaurants")
+      .doc(req.user.join)
+      .collection("customers")
+      .doc("users");
+
+    await firestore
+      .runTransaction(async (t) => {
+        let doc = await t.get(customersRef);
+        let users = doc.data();
+        let seatCust = users?.seat || [];
+        let takeawayCust = users?.takeaway || [];
+        let orderRef;
+        let promise = {
+          status: 200,
+          success: true,
+          message: "Customer is removed successfully",
+        };
+
+        for (let u of seatCust) {
+          if (u.cid == req.user._id.toString()) {
+            if (u.type) {
+              orderRef = await firestore
+                .collection(`restaurants/${req.user.join}/order/`)
+                .doc(`${u.type}-table-${u.table}`);
+            } else {
+              orderRef = await firestore
+                .collection(`restaurants/${req.user.join}/order/`)
+                .doc(`table-${u.table}`);
+            }
+            break;
+          }
+        }
+
+        if (!orderRef) {
+          for (let u of takeawayCust) {
+            if (u.cid == req.user._id.toString()) {
+              orderRef = await firestore
+                .collection(`restaurants/${req.user.join}/torder/`)
+                .doc(`${req.user._id.toString()}`);
+
+              break;
+            }
+          }
+        }
+
+        if (!orderRef) {
+          promise = {
+            status: 400,
+            success: false,
+            message: "Customer is not occupied any table",
+          };
+        }
+
+        let orderDoc = await t.get(orderRef);
+
+        let valid = true;
+        if (orderDoc.exists) {
+          let order = orderDoc.data();
+          if (order.restore) {
+            await orderRef.delete();
+            valid = true;
+          } else {
+            valid = false;
+          }
+        }
+
+        if (!valid) {
+          promise = {
+            status: 400,
+            success: false,
+            message: "Customer has already ordered from another table",
+          };
+        }
+
+        seatCust = seatCust.filter((e) => e.cid != req.user.join);
+        takeawayCust = takeawayCust.filter((e) => e.cid != req.user.join);
+
+        if (promise.success) {
+          await t.set(
+            customersRef,
+            {
+              seat: seatCust,
+              takeaway: takeawayCust,
+            },
+            { merge: true }
+          );
+        }
+
+        return new Promise.resolve(promise);
+      })
+      .then((promise) => {
+        return res
+          .status(promise.status)
+          .json({ success: promise.success, message: promise.message });
+      });
+  } catch (err) {
+    let e = extractErrorMessage(err);
+    logger.error({
+      label: `customer auth removeCustomerFromTable ${req.user._id}`,
+      message: e,
+    });
+    return res
+      .status(500)
+      .json({ success: false, message: status.SERVER_ERROR });
+  }
+};
+
 exports.verifySession = async (req, res, next) => {
   let members = req.params.members;
 
@@ -484,7 +601,7 @@ exports.verifySession = async (req, res, next) => {
   }
 };
 
-function setCustomerOntable(
+async function setCustomerOntable(
   seatCust,
   takeawayCust,
   total_tables,
@@ -495,10 +612,12 @@ function setCustomerOntable(
   if (cookie.table == "takeaway") {
     let index = 0;
     let flag = 0;
+    let restoreCust = {};
     for (let u of seatCust) {
       if (u.cid == user.id.toString()) {
         if (u.restore) {
           flag = 1;
+          restoreCust = u;
           break;
         } else {
           if (u.table == "waiting") {
@@ -537,12 +656,16 @@ function setCustomerOntable(
       }
 
       if (flag) {
-        delete takeawayCust[index].restore;
-        delete takeawayCust[index].req;
+        takeawayCust[index] = {
+          table: cookie.table,
+          cid: user.id.toString(),
+          cname: user.cname,
+          checkout: false,
+        };
       } else {
         takeawayCust.push({
           table: cookie.table,
-          cid: user.id.toString().toString(),
+          cid: user.id.toString(),
           cname: user.cname,
           checkout: false,
         });
@@ -577,6 +700,10 @@ function setCustomerOntable(
     }
 
     if (flag) {
+      await firestore
+        .collection(`restaurants/${cookie.rest_id}/torder/`)
+        .doc(`${takeawayCust[index].cid}`)
+        .delete();
       takeawayCust.splice(index, 1);
     }
 
@@ -588,6 +715,7 @@ function setCustomerOntable(
       index = 0;
       flag = 0;
       restCust = false;
+      restoreCust = {};
 
       let tempIndex = seatCust.findIndex(
         (ele) =>
