@@ -817,13 +817,7 @@ async function setCustomerOntable(
         index++;
       }
 
-      if (flag) {
-        let cust = {
-          ...seatCust[index],
-        };
-        delete cust.restore;
-        seatCust[index] = cust;
-      } else if (restCust) {
+     if (flag || restCust) {
         let cust = {};
         if (cookie.type) {
           cust = {
