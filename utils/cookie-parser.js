@@ -9,6 +9,7 @@ exports.extractCookie = async (req, res) =>
     ) {
       cookie = req.headers.authorization.split(" ")[2];
     }
+    console.log('cookie', cookie)
     if (!cookie) {
       resolve(false);
     }
