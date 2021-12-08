@@ -465,7 +465,7 @@ exports.verifySession = async (req, res, next) => {
   let members = req.params.members;
 
   let cookie = await extractCookie(req, res);
-  console.log(cookie)
+  console.log(cookie);
 
   try {
     if (!cookie) {
@@ -538,7 +538,11 @@ exports.verifySession = async (req, res, next) => {
         } else {
           total_tables = users.type[0].tables;
         }
-        let user = {...req.user};
+        let user = {
+          _id: req.user._id,
+          cname: req.user.cname,
+          mobile_no: req.user.mobile_no,
+        };
         let promise = await setCustomerOntable(
           seatCust,
           takeawayCust,
@@ -610,7 +614,6 @@ async function setCustomerOntable(
   user,
   members
 ) {
-  console.log(user)
   if (cookie.table == "takeaway") {
     let index = 0;
     let flag = 0;
@@ -819,7 +822,7 @@ async function setCustomerOntable(
         index++;
       }
 
-     if (flag || restCust) {
+      if (flag || restCust) {
         let cust = {};
         if (cookie.type) {
           cust = {
@@ -889,7 +892,8 @@ async function setCustomerOntable(
       }
       seatCust = [{ ...obj }];
     }
-  }console.log(seatCust, takeawayCust)
+  }
+  console.log(seatCust, takeawayCust);
   return { success: true, seatCust, takeawayCust };
 }
 
