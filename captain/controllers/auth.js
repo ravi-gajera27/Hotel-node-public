@@ -189,13 +189,13 @@ exports.verifySession = async (req, res) => {
         let customers = data.seat || [];
         let takeawayCust = data.takeaway || [];
 
-        let index = takeawayCust.findIndex((e) => e.cid == user.id.toString());
+        let index = takeawayCust.findIndex((e) => e.cid == user._id.toString());
         if (index != -1) {
           let order = await firestore
             .collection("restaurants")
             .doc(req.user.rest_id)
             .collection("torder")
-            .doc(user.id.toString())
+            .doc(user._id.toString())
             .get();
 
           if (order.exists) {
@@ -238,7 +238,7 @@ exports.verifySession = async (req, res) => {
           .collection("order");
 
         for (let cust of customers) {
-          if (cust.cid == user.id.toString()) {
+          if (cust.cid == user._id.toString()) {
             let doc = req.body.type
               ? `${cust.type}-table-${cust.table}`
               : `table-${cust.table}`;

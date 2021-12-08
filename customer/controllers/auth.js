@@ -177,7 +177,7 @@ exports.signup = async (req, res, next) => {
     await incZoneReq(req.ip, "signup");
     await sendToken(
       {
-        user_id: user.id.toString(),
+        user_id: user._id.toString(),
       },
       res
     );
@@ -614,7 +614,7 @@ async function setCustomerOntable(
     let index = 0;
     let flag = 0;
     for (let u of seatCust) {
-      if (u.cid == user.id.toString()) {
+      if (u.cid == user._id.toString()) {
         if (u.restore) {
           flag = 1;
           break;
@@ -652,7 +652,7 @@ async function setCustomerOntable(
       index = 0;
       flag = 0;
       for (let ele of takeawayCust) {
-        if (ele.cid == user.id.toString()) {
+        if (ele.cid == user._id.toString()) {
           if (ele.restore) {
             flag = 1;
             break;
@@ -668,14 +668,14 @@ async function setCustomerOntable(
       if (flag) {
         takeawayCust[index] = {
           table: cookie.table,
-          cid: user.id.toString(),
+          cid: user._id.toString(),
           cname: user.cname,
           checkout: false,
         };
       } else {
         takeawayCust.push({
           table: cookie.table,
-          cid: user.id.toString(),
+          cid: user._id.toString(),
           cname: user.cname,
           checkout: false,
         });
@@ -683,7 +683,7 @@ async function setCustomerOntable(
     } else {
       let obj = {
         table: cookie.table,
-        cid: user.id.toString().toString(),
+        cid: user._id.toString().toString(),
         cname: user.cname,
         checkout: false,
       };
@@ -694,7 +694,7 @@ async function setCustomerOntable(
     let flag = 0;
 
     for (let u of takeawayCust) {
-      if (u.cid == user.id.toString()) {
+      if (u.cid == user._id.toString()) {
         if (u.restore || !u.req) {
           flag = 1;
           break;
@@ -739,7 +739,7 @@ async function setCustomerOntable(
 
       let tempIndex = seatCust.findIndex(
         (ele) =>
-          ele.cid == user.id.toString() &&
+          ele.cid == user._id.toString() &&
           ele.restore &&
           (Number(ele.table) != Number(cookie.table) ||
             (ele.type ? ele.type != cookie.type : false))
@@ -750,7 +750,7 @@ async function setCustomerOntable(
       }
 
       for (let ele of seatCust) {
-        if (ele.cid == user.id.toString()) {
+        if (ele.cid == user._id.toString()) {
           if (ele.restore) {
             flag = 1;
             break;
@@ -823,7 +823,7 @@ async function setCustomerOntable(
         if (cookie.type) {
           cust = {
             table: cookie.table,
-            cid: user.id.toString(),
+            cid: user._id.toString(),
             cname: user.cname,
             checkout: false,
             type: cookie.type,
@@ -833,7 +833,7 @@ async function setCustomerOntable(
         } else {
           cust = {
             table: cookie.table,
-            cid: user.id.toString(),
+            cid: user._id.toString(),
             cname: user.cname,
             checkout: false,
             members: members,
@@ -845,7 +845,7 @@ async function setCustomerOntable(
         if (cookie.type) {
           seatCust.push({
             table: cookie.table,
-            cid: user.id.toString(),
+            cid: user._id.toString(),
             cname: user.cname,
             checkout: false,
             type: cookie.type,
@@ -855,7 +855,7 @@ async function setCustomerOntable(
         } else {
           seatCust.push({
             table: cookie.table,
-            cid: user.id.toString(),
+            cid: user._id.toString(),
             cname: user.cname,
             checkout: false,
             members: members,
@@ -869,7 +869,7 @@ async function setCustomerOntable(
       if (cookie.type) {
         obj = {
           table: cookie.table,
-          cid: user.id.toString(),
+          cid: user._id.toString(),
           cname: user.cname,
           checkout: false,
           type: cookie.type,
@@ -879,7 +879,7 @@ async function setCustomerOntable(
       } else {
         obj = {
           table: cookie.table,
-          cid: user.id.toString(),
+          cid: user._id.toString(),
           cname: user.cname,
           checkout: false,
           members: members,

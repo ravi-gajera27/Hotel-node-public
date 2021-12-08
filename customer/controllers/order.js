@@ -208,7 +208,7 @@ exports.getOrder = async (req, res, next) => {
   if (cookie.table == "takeaway") {
     orderRef = await firestore
       .collection(`restaurants/${cookie.rest_id}/torder/`)
-      .doc(`${req.user.id.toString()}`);
+      .doc(`${req.user._id.toString()}`);
   } else {
     if (cookie.type) {
       orderRef = await firestore
