@@ -610,6 +610,7 @@ async function setCustomerOntable(
   user,
   members
 ) {
+  console.log(user)
   if (cookie.table == "takeaway") {
     let index = 0;
     let flag = 0;
