@@ -538,7 +538,7 @@ exports.verifySession = async (req, res, next) => {
         } else {
           total_tables = users.type[0].tables;
         }
-        let user = { id: req.user._id, cname: req.user.cname };
+        let user = {...req.user};
         let promise = await setCustomerOntable(
           seatCust,
           takeawayCust,
