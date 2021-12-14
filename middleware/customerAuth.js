@@ -2,7 +2,7 @@ const HASH = require("../utils/token");
 const status = require("../utils/status");
 const admin = require("firebase-admin");
 const firstore = admin.firestore();
-const io = require("socket.io");
+
 const { CustomerModel } = require("../models/customer");
 
 exports.protect = async (req, res, next) => {

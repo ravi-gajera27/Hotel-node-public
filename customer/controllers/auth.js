@@ -465,7 +465,6 @@ exports.verifySession = async (req, res, next) => {
   let members = req.params.members;
 
   let cookie = await extractCookie(req, res);
-  console.log(cookie);
 
   try {
     if (!cookie) {
@@ -893,7 +892,6 @@ async function setCustomerOntable(
       seatCust = [{ ...obj }];
     }
   }
-  console.log(seatCust, takeawayCust);
   return { success: true, seatCust, takeawayCust };
 }
 
