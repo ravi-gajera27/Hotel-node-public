@@ -7,13 +7,9 @@ let logger = null;
 if (process.env.NODE_ENV == "prod") {
   try {
     logger = createLogger({
+      level: "info",
+      format: combine(timestamp(), prettyPrint()),
       transports: [
-        new transports.MongoDB({
-          db: process.env.MONGODB_URL,
-          level: "info",
-          format: combine(timestamp(), prettyPrint()),
-          options: { useUnifiedTopology: true },
-        }),
         new transports.File({ filename: "public/log" }),
         new transports.Console(),
       ],
