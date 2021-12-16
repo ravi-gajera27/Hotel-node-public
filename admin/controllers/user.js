@@ -55,8 +55,8 @@ exports.getUsersReviews = async (req, res) => {
             $and: [
               { rest_id: req.user.rest_id },
               { review: { $exists: true } },
-              { $gte: { last_visit: start_date } },
-              { $lte: { last_visit: end_date } },
+              { last_visit: { $gte: start_date } },
+              { last_visit: { $lte: end_date } },
             ],
           },
         },
@@ -112,7 +112,7 @@ exports.getUsersReviews = async (req, res) => {
     });
 };
 
-exports.getWPMessage = async(req, res) => {
+exports.getWPMessage = async (req, res) => {
   try {
     let credentialDoc = await firestore
       .collection("restaurants")
@@ -158,7 +158,7 @@ exports.getWPMessage = async(req, res) => {
   }
 };
 
-exports.updateWPMessage = async(req, res) => {
+exports.updateWPMessage = async (req, res) => {
   try {
     console.log(req.body.msg);
     firestore
@@ -182,7 +182,7 @@ exports.updateWPMessage = async(req, res) => {
   }
 };
 
-exports.getTextMessage = async(req, res) => {
+exports.getTextMessage = async (req, res) => {
   try {
     firestore
       .collection("restaurants")
@@ -205,7 +205,7 @@ exports.getTextMessage = async(req, res) => {
   }
 };
 
-exports.getALLMessage = async(req, res) => {
+exports.getALLMessage = async (req, res) => {
   try {
     firestore
       .collection("restaurants")
@@ -315,7 +315,7 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
-exports.updateTextMessage = async(req, res) => {
+exports.updateTextMessage = async (req, res) => {
   try {
     firestore
       .collection("restaurants")
