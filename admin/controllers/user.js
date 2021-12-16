@@ -112,7 +112,7 @@ exports.getUsersReviews = async (req, res) => {
     });
 };
 
-exports.getWPMessage = (req, res) => {
+exports.getWPMessage = async(req, res) => {
   try {
     let credentialDoc = await firestore
       .collection("restaurants")
@@ -158,7 +158,7 @@ exports.getWPMessage = (req, res) => {
   }
 };
 
-exports.updateWPMessage = (req, res) => {
+exports.updateWPMessage = async(req, res) => {
   try {
     console.log(req.body.msg);
     firestore
@@ -182,7 +182,7 @@ exports.updateWPMessage = (req, res) => {
   }
 };
 
-exports.getTextMessage = (req, res) => {
+exports.getTextMessage = async(req, res) => {
   try {
     firestore
       .collection("restaurants")
@@ -205,7 +205,7 @@ exports.getTextMessage = (req, res) => {
   }
 };
 
-exports.getALLMessage = (req, res) => {
+exports.getALLMessage = async(req, res) => {
   try {
     firestore
       .collection("restaurants")
@@ -315,7 +315,7 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
-exports.updateTextMessage = (req, res) => {
+exports.updateTextMessage = async(req, res) => {
   try {
     firestore
       .collection("restaurants")
