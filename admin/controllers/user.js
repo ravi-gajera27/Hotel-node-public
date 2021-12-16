@@ -54,7 +54,6 @@ exports.getUsersReviews = async (req, res) => {
           $elemMatch: {
             $and: [
               { rest_id: req.user.rest_id },
-             
               { review: { $exists: true } },
             ],
           },
@@ -70,38 +69,28 @@ exports.getUsersReviews = async (req, res) => {
             cond: { $eq: ["$$rest_details.rest_id", req.user.rest_id] },
           },
         },
+        cname: 1,
         _id: 0,
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        documents: {
-          $push: {
-            cname: "$rest_details.0.cname",
-            review: "$rest_details.0.review",
-            date: "$rest_details.0.last_visit",
-          },
-        },
-        avgRating: { $avg: "$rest_details.0.review.rating" },
       },
     },
   ])
     .then((data) => {
-      console.log(data, data[0].documents)
+      console.log(data);
       let starObj = { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
+      let avgRating = 0
       if (data.length != 0) {
-        for (let ele of data[0]?.documents) {
-          let rating = ele.review.rating;
+        for (let ele of data) {
+          let rating = ele.rest_details[0].review.rating;
           if (rating) {
             starObj[`star${rating}`]++;
+            avgRating += Number(rating) 
           }
         }
       }
-      res.status(200).json({
+      return res.status(200).json({
         data: {
-          avgRating: data[0]?.avgRating || 0,
-          reviewList: data[0]?.documents || [],
+          avgRating: avgRating ? avgRating / data.length : 0,
+          reviewList: data,
           starCount: starObj,
         },
         success: true,
@@ -266,15 +255,15 @@ exports.sendMessage = async (req, res) => {
     for (let cust of customers) {
       let wpMessage = messageData.wp;
 
-      wpMessage = wpMessage.replace(new RegExp('%name%', 'g'), cust.cname)
+      wpMessage = wpMessage.replace(new RegExp("%name%", "g"), cust.cname);
 
-       if (req.body.wp) {
+      if (req.body.wp) {
         await client.messages.create({
           body: wpMessage,
           from: `whatsapp:${credData.wp_no}`,
           to: `whatsapp:+91${cust.mobile_no}`,
         });
-      } 
+      }
       if (req.body.sms) {
         await client.messages.create({
           body: wpMessage,
