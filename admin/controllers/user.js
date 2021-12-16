@@ -75,22 +75,24 @@ exports.getUsersReviews = async (req, res) => {
     },
   ])
     .then((data) => {
-      console.log(data);
       let starObj = { star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
-      let avgRating = 0
+      let avgRating = 0;
+      let newData = [];
       if (data.length != 0) {
         for (let ele of data) {
-          let rating = ele.rest_details[0].review.rating;
+          let details = { ...ele.rest_details[0] };
+          newData.push({ cname: ele.cname, ...details });
+          let rating = details.review.rating;
           if (rating) {
             starObj[`star${rating}`]++;
-            avgRating += Number(rating) 
+            avgRating += Number(rating);
           }
         }
       }
       return res.status(200).json({
         data: {
           avgRating: avgRating ? avgRating / data.length : 0,
-          reviewList: data,
+          reviewList: newData,
           starCount: starObj,
         },
         success: true,
