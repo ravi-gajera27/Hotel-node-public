@@ -55,6 +55,8 @@ exports.getUsersReviews = async (req, res) => {
             $and: [
               { rest_id: req.user.rest_id },
               { review: { $exists: true } },
+              { $gte: { last_visit: start_date } },
+              { $lte: { last_visit: end_date } },
             ],
           },
         },
@@ -112,6 +114,29 @@ exports.getUsersReviews = async (req, res) => {
 
 exports.getWPMessage = (req, res) => {
   try {
+    let credentialDoc = await firestore
+      .collection("restaurants")
+      .doc(req.user.rest_id)
+      .collection("social")
+      .doc("credentials")
+      .get();
+
+    if (!credentialDoc.exists) {
+      return res.status(403).json({
+        success: false,
+        message: "If you wanna Send messages, please contact us",
+      });
+    }
+
+    let credData = credentialDoc.data();
+
+    if (!credData.auth_token || !credData.account_sid) {
+      return res.status(403).json({
+        success: false,
+        message: "If you wanna Send messages, please contact us",
+      });
+    }
+
     firestore
       .collection("restaurants")
       .doc(req.user.rest_id)
@@ -119,7 +144,7 @@ exports.getWPMessage = (req, res) => {
       .doc("message")
       .get()
       .then((data) => {
-        res.status(200).json({ data: data.data().wp, success: true });
+        res.status(200).json({ data: data?.data()?.wp || {}, success: true });
       });
   } catch (err) {
     let e = extractErrorMessage(err);
