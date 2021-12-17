@@ -234,9 +234,11 @@ exports.sendMessage = async (req, res) => {
       {
         $and: [
           {
-            dob: moment()
-              .utcOffset(process.env.UTC_OFFSET)
-              .format("YYYY-MM-DD"),
+            dob: {
+              $regex: moment()
+                .utcOffset(process.env.UTC_OFFSET)
+                .format("-MM-DD"),
+            },
           },
           { rest_details: { $elemMatch: { rest_id: req.user.rest_id } } },
         ],
@@ -264,40 +266,52 @@ exports.sendMessage = async (req, res) => {
         .status(400)
         .json({ success: false, message: status.BAD_REQUEST });
     }
+    try {
+      const client = await require("twilio")(
+        credData.account_sid,
+        credData.auth_token
+      );
 
-    const client = await require("twilio")(
-      credData.account_sid,
-      credData.auth_token
-    );
+      let socialDoc = await firestore
+        .collection("restaurants")
+        .doc(req.user.rest_id)
+        .collection("social")
+        .doc("message")
+        .get();
 
-    let socialDoc = await firestore
-      .collection("restaurants")
-      .doc(req.user.rest_id)
-      .collection("social")
-      .doc("message")
-      .get();
+      let messageData = socialDoc.data();
 
-    let messageData = socialDoc.data();
+      for (let cust of customers) {
+        let wpMessage = messageData.wp;
 
-    for (let cust of customers) {
-      let wpMessage = messageData.wp;
+        wpMessage = wpMessage.replace(new RegExp("%name%", "g"), cust.cname);
 
-      wpMessage = wpMessage.replace(new RegExp("%name%", "g"), cust.cname);
-
-      if (req.body.wp) {
-        await client.messages.create({
-          body: wpMessage,
-          from: `whatsapp:${credData.wp_no}`,
-          to: `whatsapp:+91${cust.mobile_no}`,
-        });
+        if (req.body.wp) {
+          await client.messages.create({
+            body: wpMessage,
+            from: `whatsapp:${credData.wp_no}`,
+            to: `whatsapp:+91${cust.mobile_no}`,
+          });
+         
+        }
+        if (req.body.sms) {
+          await client.messages.create({
+            body: wpMessage,
+            from: `${credData.sms_no}`,
+            to: `+91${cust.mobile_no}`,
+          });
+        }
       }
-      if (req.body.sms) {
-        await client.messages.create({
-          body: wpMessage,
-          from: `${credData.sms_no}`,
-          to: `+91${cust.mobile_no}`,
-        });
-      }
+    } catch (err) {
+      let e = extractErrorMessage(err);
+      logger.error({
+        label: `admin user sendMessage block ${req.user.rest_id}`,
+        message: e,
+      });
+      console.log(e)
+      return res
+        .status(400)
+        .json({ success: false, message: status.BAD_REQUEST });
     }
 
     return res

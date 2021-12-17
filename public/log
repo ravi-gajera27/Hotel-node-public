@@ -410,3 +410,27 @@
   level: 'error',
   timestamp: '2021-11-30T13:31:13.881Z'
 }
+{
+  label: 'admin user sendMessage eJq9wve34QSCjnCUk39U',
+  message: 'Error: The requested resource /2010-04-01/Accounts/AC977e361e3bfe6878940387078647bbb/Messages.json was not found',
+  level: 'error',
+  timestamp: '2021-12-17T16:54:49.383Z'
+}
+{
+  label: 'admin user sendMessage eJq9wve34QSCjnCUk39U',
+  message: 'ReferenceError: client is not defined',
+  level: 'error',
+  timestamp: '2021-12-17T16:55:58.459Z'
+}
+{
+  label: 'admin user sendMessage eJq9wve34QSCjnCUk39U',
+  message: 'Error: The requested resource /2010-04-01/Accounts/AC977e361e3bfe6878940387078647bbb/Messages.json was not found',
+  level: 'error',
+  timestamp: '2021-12-17T16:56:48.662Z'
+}
+{
+  label: 'admin user sendMessage block eJq9wve34QSCjnCUk39U',
+  message: 'Error: The requested resource /2010-04-01/Accounts/AC977e361e3bfe6878940387078647bbb/Messages.json was not found',
+  level: 'error',
+  timestamp: '2021-12-17T16:58:24.940Z'
+}
