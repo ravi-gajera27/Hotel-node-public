@@ -132,7 +132,7 @@ exports.addOrder = async (req, res, next) => {
         let custObj = {
           rest_id: cookie.rest_id,
           last_visit: date,
-          visit: Number(customerDoc[index].visit) + 1,
+          visit: Number(customerDoc.visit) + 1,
           m_visit: m_visit,
         };
 
