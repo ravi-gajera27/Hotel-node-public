@@ -234,11 +234,12 @@ exports.sendMessage = async (req, res) => {
       {
         $and: [
           {
-            dob: {
+            /*  dob: {
               $regex: moment()
                 .utcOffset(process.env.UTC_OFFSET)
                 .format("-MM-DD"),
-            },
+            }, */
+            dob: { $exists: true },
           },
           { rest_details: { $elemMatch: { rest_id: req.user.rest_id } } },
         ],
@@ -292,7 +293,6 @@ exports.sendMessage = async (req, res) => {
             from: `whatsapp:${credData.wp_no}`,
             to: `whatsapp:+91${cust.mobile_no}`,
           });
-         
         }
         if (req.body.sms) {
           await client.messages.create({
@@ -308,7 +308,7 @@ exports.sendMessage = async (req, res) => {
         label: `admin user sendMessage block ${req.user.rest_id}`,
         message: e,
       });
-      console.log(e)
+      console.log(e);
       return res
         .status(400)
         .json({ success: false, message: status.BAD_REQUEST });
